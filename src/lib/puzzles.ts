@@ -118,6 +118,46 @@ export const PUZZLES: Puzzle[] = [
     description: 'O adversário domina o centro. Completa a tua linha de casa!',
     hint: 'Tens 1 e 2. Falta a casa 3. A peça na casa 6 (meio-direito) pode alcançá-la.',
   },
+  // ============ MATE-IN-2 (vitória forçada em 2 jogadas) ============
+  {
+    id: 'm2-1',
+    day: 0, // também acessível por índice (modo treinar)
+    title: 'O Ataque do Centro (II)',
+    difficulty: 'Difícil',
+    // P1={1,2,6}, P2={3,4,7} → P1 joga 6→5 (centro), depois vitória forçada
+    board: ['P1', 'P1', 'P2', 'P2', null, 'P1', 'P2', null, null],
+    turn: 'P1',
+    mateIn: 2,
+    solution: { from: 6 as Square, to: 5 as Square },
+    description: 'O centro é a chave! Ocupa-o e cria uma ameaça imparável.',
+    hint: 'A casa 5 (centro) está livre. Move a tua peça da casa 6 para lá.',
+  },
+  {
+    id: 'm2-2',
+    day: 0,
+    title: 'A Emboscada (II)',
+    difficulty: 'Difícil',
+    // P1={1,2,6}, P2={3,7,8} → P1 joga 2→5 (centro), depois vitória forçada
+    board: ['P1', 'P1', 'P2', null, null, 'P1', 'P2', 'P2', null],
+    turn: 'P1',
+    mateIn: 2,
+    solution: { from: 2 as Square, to: 5 as Square },
+    description: 'O centro é a posição mais poderosa. Ocupa-o e prepara a vitória!',
+    hint: 'A casa 5 (centro) está livre. Que peça a pode alcançar?',
+  },
+  {
+    id: 'm2-3',
+    day: 0,
+    title: 'O Flanco Oculto (II)',
+    difficulty: 'Difícil',
+    // P1={1,2,9}, P2={5,6,8} → P1 joga 9→4, depois vitória forçada
+    board: ['P1', 'P1', null, null, 'P2', 'P2', null, 'P2', 'P1'],
+    turn: 'P1',
+    mateIn: 2,
+    solution: { from: 9 as Square, to: 4 as Square },
+    description: 'O adversário controla o centro. Contorna-o pelo flanco!',
+    hint: 'Tens peças em 1, 2 e 9. A casa 4 (meio-esquerda) está livre.',
+  },
 ];
 
 /**

@@ -20,6 +20,7 @@ import {
   applyMove,
   createGame,
   getLegalMoves,
+  isGameOver,
   type Cell,
   type GameState,
   type Line,
@@ -203,7 +204,13 @@ export function solve(): SolverResult {
     for (const mv of moves) {
       try {
         const { state: childState } = applyMove(probeState, mv);
-        const ck = boardKey(childState.board, childState.currentPlayer);
+        // CORREÇÃO: para estados de vitória, o childState.currentPlayer é o vencedor (mover).
+        // Mas para o solver, precisamos que o child tenha currentPlayer = oponente (de quem seria a vez),
+        // para que a deteção de terminal (oponente tem linha vencedora) funcione.
+        const childPlayer: PlayerId = isGameOver(childState)
+          ? (st.player === 'P1' ? 'P2' : 'P1')
+          : childState.currentPlayer;
+        const ck = boardKey(childState.board, childPlayer);
         childKeys.push(ck);
       } catch {
         // movimento inválido (não deveria acontecer)

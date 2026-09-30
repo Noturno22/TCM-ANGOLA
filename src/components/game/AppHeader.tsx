@@ -16,6 +16,7 @@ const SCREEN_TITLES: Record<string, string> = {
   replay: 'Replay',
   achievements: 'Conquistas',
   challenge: 'Desafio Diário',
+  stats: 'Estatísticas',
 };
 
 export function AppHeader() {

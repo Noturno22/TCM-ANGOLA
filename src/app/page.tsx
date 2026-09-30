@@ -19,14 +19,35 @@ import { WalletScreen } from '@/components/screens/WalletScreen';
 import { ReplayScreen } from '@/components/screens/ReplayScreen';
 import { AchievementsScreen } from '@/components/screens/AchievementsScreen';
 import { ChallengeScreen } from '@/components/screens/ChallengeScreen';
+import { StatsScreen } from '@/components/screens/StatsScreen';
 import { AppHeader } from '@/components/game/AppHeader';
 import { TabBar } from '@/components/game/TabBar';
+import { useMusicSync, useSound, startMusic } from '@/lib/sound';
 
 export default function Home() {
   const screen = useApp((s) => s.screen);
   const theme = useSettings((s) => s.theme);
   const reduceMotion = useSettings((s) => s.reduceMotion);
   const colorblind = useSettings((s) => s.colorblindMode);
+
+  // Sincronizar sons + música com as settings
+  useSound();
+  useMusicSync();
+
+  // Desbloquear áudio na primeira interação (política de autoplay dos browsers)
+  useEffect(() => {
+    const unlock = () => {
+      startMusic();
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, []);
 
   // Aplicar tema (dark/light) na raiz <html>
   useEffect(() => {
@@ -82,6 +103,7 @@ export default function Home() {
         {screen === 'replay' && <ReplayScreen />}
         {screen === 'achievements' && <AchievementsScreen />}
         {screen === 'challenge' && <ChallengeScreen />}
+        {screen === 'stats' && <StatsScreen />}
       </main>
 
       {showTabBar && <TabBar active={screen} />}

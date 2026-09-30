@@ -13,6 +13,7 @@ import {
   Play,
   Calendar,
   Clock,
+  BarChart3,
 } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useProfile, xpProgress } from '@/store/profile';
@@ -93,6 +94,12 @@ export function ProfileScreen() {
           </div>
         </div>
       </GameCard>
+
+      {/* Botão de estatísticas detalhadas */}
+      <GameButton variant="gold" className="w-full" onClick={() => navigate('stats')}>
+        <BarChart3 className="w-4 h-4 mr-2" />
+        Ver estatísticas detalhadas e gráficos
+      </GameButton>
 
       {/* Tabs */}
       <div className="flex gap-2 overflow-x-auto scrollbar-custom pb-1">

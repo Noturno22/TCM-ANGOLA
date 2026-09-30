@@ -188,3 +188,142 @@ export function useSound() {
   }, [soundEnabled]);
   return { play: playSound };
 }
+
+// ============ MÚSICA DE FUNDO AMBIENTE ============
+// Loop sintetizado, discreto, inspirado em sons angolanos contemporâneos.
+// Usa uma progressão de acordes suave com pad + arpejo subtil.
+
+let musicGain: GainNode | null = null;
+let musicTimer: ReturnType<typeof setInterval> | null = null;
+let musicEnabled = false;
+let musicStep = 0;
+
+/**
+ * Progressão de acordes (Am - F - C - G) em frequências (Hz).
+ * Cada acorde tem 3 notas (tríade).
+ */
+const CHORDS: number[][] = [
+  [220.0, 261.63, 329.63], // Am: A, C, E
+  [174.61, 220.0, 261.63], // F: F, A, C
+  [261.63, 329.63, 392.0], // C: C, E, G
+  [196.0, 246.94, 293.66], // G: G, B, D
+];
+
+function isMusicOn(): boolean {
+  if (typeof window === 'undefined') return musicEnabled;
+  try {
+    const raw = localStorage.getItem('tira-coco-settings');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const val = parsed?.state?.musicEnabled;
+      if (typeof val === 'boolean') return val;
+    }
+  } catch {
+    // ignore
+  }
+  return musicEnabled;
+}
+
+function playChordPad(freqs: number[], duration: number, volume: number) {
+  const c = getCtx();
+  if (!c) return;
+  const now = c.currentTime;
+  for (const freq of freqs) {
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.linearRampToValueAtTime(volume, now + 0.5);
+    g.gain.linearRampToValueAtTime(volume * 0.7, now + duration * 0.6);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    osc.connect(g);
+    g.connect(musicGain ?? c.destination);
+    osc.start(now);
+    osc.stop(now + duration);
+  }
+}
+
+function playArpeggioNote(freq: number, time: number, volume: number) {
+  const c = getCtx();
+  if (!c) return;
+  const now = c.currentTime + time;
+  const osc = c.createOscillator();
+  const g = c.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = freq * 2; // oitava acima
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.linearRampToValueAtTime(volume, now + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+  osc.connect(g);
+  g.connect(musicGain ?? c.destination);
+  osc.start(now);
+  osc.stop(now + 0.4);
+}
+
+function stepMusic() {
+  if (!isMusicOn()) return;
+  const c = getCtx();
+  if (!c || !musicGain) return;
+  const chord = CHORDS[musicStep % CHORDS.length];
+  // Pad (acorde sustentado)
+  playChordPad(chord, 4.0, 0.03);
+  // Arpejo subtil (uma nota a cada 1s)
+  for (let i = 0; i < 4; i++) {
+    playArpeggioNote(chord[i % chord.length], i * 1.0, 0.015);
+  }
+  musicStep++;
+}
+
+export function startMusic() {
+  if (!isMusicOn()) return;
+  const c = getCtx();
+  if (!c) return;
+  if (musicTimer) return; // já a tocar
+  musicGain = c.createGain();
+  musicGain.gain.value = 0.5;
+  musicGain.connect(c.destination);
+  musicStep = 0;
+  stepMusic();
+  musicTimer = setInterval(stepMusic, 4000); // novo acorde a cada 4s
+  musicEnabled = true;
+}
+
+export function stopMusic() {
+  if (musicTimer) {
+    clearInterval(musicTimer);
+    musicTimer = null;
+  }
+  if (musicGain) {
+    try {
+      musicGain.disconnect();
+    } catch {
+      // ignore
+    }
+    musicGain = null;
+  }
+  musicEnabled = false;
+}
+
+export function setMusicEnabled(v: boolean) {
+  musicEnabled = v;
+  if (v) startMusic();
+  else stopMusic();
+}
+
+/**
+ * Hook para sincronizar a música com as settings.
+ * Deve ser usado num componente de topo (ex.: AppShell).
+ */
+export function useMusicSync() {
+  const musicOn = useSettings((s) => s.musicEnabled);
+  const soundOn = useSettings((s) => s.soundEnabled);
+  useEffect(() => {
+    if (musicOn && soundOn) {
+      startMusic();
+    } else {
+      stopMusic();
+    }
+  }, [musicOn, soundOn]);
+}
+

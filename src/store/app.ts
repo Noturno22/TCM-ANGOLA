@@ -20,7 +20,8 @@ export type Screen =
   | 'wallet'
   | 'replay'
   | 'achievements'
-  | 'challenge';
+  | 'challenge'
+  | 'stats';
 
 interface AppState {
   screen: Screen;
