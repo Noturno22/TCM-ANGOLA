@@ -121,3 +121,36 @@ Unresolved issues / próximas fases:
 - i18n: só PT implementado (EN preparado mas desativado).
 - Solver: 3360 estados confirmados; valores exatos 2416/288/656 podem diferir ligeiramente consoante a interpretação do ciclo (a IA Perfeita é muito forte independentemente).
 - Cron job de 15 min (webDevReview) criado para continuar desenvolvimento e QA automáticos.
+
+---
+Task ID: cron-round-1
+Agent: QA + Features (webDevReview cron)
+Task: QA completo, adicionar sons, adicionar Desafio Diário, melhorar estilo
+
+Work Log:
+- QA completo com agent-browser: testados 15 ecrãs, CvC mode (IA 1 venceu com diagonal 1-5-9), Wallet (bónus diário +500 KZ), Tutorial (navegação por passos), mobile viewport (390x844 — sem overflow, targets ≥44px, board visível). Nenhum bug encontrado.
+- Criado `src/lib/sound/index.ts` — gestor de som com Web Audio API sintetizado (zero assets externos). 10 eventos: select, move, error, threat, win, draw, start, click, bonus, achievement. Cada som é gerado proceduralmente com osciladores (ADSR envelope), sequências de tons e ruído filtrado. Lê o estado `soundEnabled` do localStorage para funcionar fora do React (no store Zustand).
+- Integrado sons no game store: start (início), select (seleção de peça), move (movimento humano + IA), error (movimento inválido), threat (ameaça detetada), win (vitória), draw (empate).
+- Integrado sons no profile store: bonus (addCoins positivo), achievement (unlockAchievement).
+- Adicionado som de click ao GameButton (toca em qualquer botão do jogo).
+- Criado `src/lib/puzzles.ts` — 7 puzzles verificados (mate-in-1 com solução ÚNICA e onde P2 não tem ameaça). Posições geradas e verificadas programaticamente com getWinningMoves. Cada puzzle tem: id, dia da semana, título, dificuldade, board, turn, mateIn, solution, description, hint.
+- Criado `src/store/challenge.ts` — store persistido para puzzles resolvidos (solved[], totalAttempts, totalSolved, markSolved, isSolved, reset).
+- Criado `src/components/screens/ChallengeScreen.tsx` — ecrã completo de puzzle: mostra desafio do dia, board interativo, seleção de peça + destinos válidos, validação da solução (correto → overlay "Resolvido!" + 200 KZ + som de vitória; errado → overlay "Tenta outra vez" + reset automático), botão de dica, secção de estatísticas, lista de todos os puzzles (7) com estado resolvido/hoje.
+- Adicionado cartão "Desafio Diário" na Home screen (gradient dourado, mostra título do puzzle de hoje, estado resolvido/por resolver, +200 KZ). Navega para ecrã challenge.
+- Adicionado 'challenge' ao tipo Screen e ao AppHeader titles.
+- Verificação: puzzle "Diagonal Dourada" (solução 2→9) resolvido com sucesso → +200 KZ, overlay de vitória, Home atualizada para "RESOLVIDO".
+
+Stage Summary:
+- **QA**: app estável em desktop e mobile, sem bugs de runtime.
+- **Sons**: 10 efeitos sintetizados via Web Audio API, integrados em todos os fluxos (jogo, bónus, conquistas, clicks). Sem assets externos.
+- **Desafio Diário**: novo modo de jogo com 7 puzzles verificados, rotação diária, recompensa de 200 KZ, persistência de progresso. Validação correto/errado com feedback visual e sonoro.
+- **Lint**: 0 erros. **Testes**: 30/30 passam.
+- **Features novas**: sons + Desafio Diário = 2 funcionalidades maiores adicionadas.
+
+Unresolved issues / próximas fases:
+- Som: funciona mas o utilizador precisa de interagir primeiro (política de autoplay do browser) — já mitigado com resume() no getCtx().
+- i18n: ainda só PT (EN preparado mas desativado).
+- Modo online: ainda simulado (salas redirecionam para offline).
+- Mate-in-2 e mate-in-3 puzzles: atualmente só mate-in-1 (poderia adicionar puzzles mais complexos usando o solver para encontrar posições com vitória forçada em 2-3 plies).
+- Música de fundo: toggle existe mas não toca nada (poderia adicionar um loop ambiente sintetizado).
+- Próxima ronda recomendada: adicionar mate-in-2 puzzles, música de fundo ambiente, e talvez um modo "Estatísticas Avançadas" com gráfico de progresso (XP ao longo do tempo).

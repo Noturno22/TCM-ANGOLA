@@ -18,6 +18,7 @@ import { RoomsScreen } from '@/components/screens/RoomsScreen';
 import { WalletScreen } from '@/components/screens/WalletScreen';
 import { ReplayScreen } from '@/components/screens/ReplayScreen';
 import { AchievementsScreen } from '@/components/screens/AchievementsScreen';
+import { ChallengeScreen } from '@/components/screens/ChallengeScreen';
 import { AppHeader } from '@/components/game/AppHeader';
 import { TabBar } from '@/components/game/TabBar';
 
@@ -80,6 +81,7 @@ export default function Home() {
         {screen === 'wallet' && <WalletScreen />}
         {screen === 'replay' && <ReplayScreen />}
         {screen === 'achievements' && <AchievementsScreen />}
+        {screen === 'challenge' && <ChallengeScreen />}
       </main>
 
       {showTabBar && <TabBar active={screen} />}

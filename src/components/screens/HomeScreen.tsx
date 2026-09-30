@@ -1,10 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Trophy, Zap, X, ChevronRight, Swords, Bot, Users, Crown, Gamepad2 } from 'lucide-react';
+import { Trophy, Zap, X, ChevronRight, Swords, Bot, Users, Crown, Gamepad2, Target, Check } from 'lucide-react';
 import { useState } from 'react';
 import { useApp } from '@/store/app';
 import { useProfile, getSimulatedRankings, xpProgress } from '@/store/profile';
+import { useChallenge } from '@/store/challenge';
+import { getTodayPuzzle } from '@/lib/puzzles';
 import {
   GameButton,
   GameCard,
@@ -94,6 +96,8 @@ export function HomeScreen() {
 
       {/* CTAs principais: JOGAR ONLINE / JOGAR OFFLINE */}
       <div className="grid grid-cols-1 gap-3">
+        {/* Desafio Diário */}
+        <DailyChallengeCard />
         <GameButton
           variant="p1"
           className="h-auto py-4 justify-start"
@@ -223,5 +227,46 @@ function Stat({ label, value, color }: { label: string; value: number; color: st
       <div className={`font-display text-2xl ${color}`}>{value}</div>
       <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</div>
     </div>
+  );
+}
+
+function DailyChallengeCard() {
+  const navigate = useApp((s) => s.navigate);
+  const isSolved = useChallenge((s) => s.isSolved);
+  const puzzle = getTodayPuzzle();
+  const solved = isSolved(puzzle.id);
+
+  return (
+    <button
+      type="button"
+      onClick={() => navigate('challenge')}
+      className="w-full text-left rounded-2xl overflow-hidden bg-gradient-to-r from-gold/20 via-p1/15 to-gold/20 border-2 border-gold/40 p-4 hover:border-gold/60 transition-all group"
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-xl bg-gold/20 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+          <Target className="w-6 h-6 text-gold" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="text-[10px] uppercase tracking-wider text-gold font-semibold">
+              Desafio Diário
+            </span>
+            {solved && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-p1/20 text-p1 font-semibold uppercase flex items-center gap-1">
+                <Check className="w-2.5 h-2.5" />
+                Resolvido
+              </span>
+            )}
+          </div>
+          <h3 className="font-display text-lg leading-tight">{puzzle.title}</h3>
+          <p className="text-[10px] text-muted-foreground">
+            {puzzle.difficulty} • +200 KZ • {solved ? 'Já resolvido' : 'Por resolver'}
+          </p>
+        </div>
+        <div className="w-8 h-8 rounded-full bg-gold/15 flex items-center justify-center group-hover:bg-gold/30 transition-colors">
+          <ChevronRight className="w-4 h-4 text-gold" />
+        </div>
+      </div>
+    </button>
   );
 }

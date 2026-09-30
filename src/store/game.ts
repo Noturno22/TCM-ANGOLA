@@ -18,6 +18,7 @@ import {
 } from '@/lib/engine';
 import { chooseMove, type Difficulty } from '@/lib/ai';
 import { useProfile, type MatchRecord } from './profile';
+import { playSound } from '@/lib/sound';
 
 export type GameMode = 'pvp' | 'pve' | 'cvc';
 
@@ -93,6 +94,7 @@ export const useGame = create<GameStore>((set, get) => ({
       currentThreats: getThreats(state, state.currentPlayer === 'P1' ? 'P2' : 'P1'),
       showThreats,
     });
+    playSound('start');
     // Se a IA joga primeiro (cvc, ou pve com humanSide=P2)
     if (mode === 'cvc' || (mode === 'pve' && humanSide === 'P2')) {
       setTimeout(() => get().aiMove(), 500);
@@ -112,6 +114,7 @@ export const useGame = create<GameStore>((set, get) => ({
       .filter((m) => m.from === sq)
       .map((m) => m.to);
     set({ selectedSquare: sq, validTargets: targets });
+    playSound('select');
   },
 
   attemptMove: (to) => {
@@ -137,6 +140,15 @@ export const useGame = create<GameStore>((set, get) => ({
         stateHistory: [...get().stateHistory, newState],
         currentThreats: threats,
       });
+      playSound('move');
+      // Sons de fim de jogo / ameaça
+      if (isGameOver(newState)) {
+        if (newState.winner) playSound('win');
+        else playSound('draw');
+        recordCurrentMatch(get(), newState);
+      } else if (threats.length > 0) {
+        playSound('threat');
+      }
       // Se o jogo continua e é a vez da IA
       if (!isGameOver(newState)) {
         if (mode === 'pve' && newState.currentPlayer !== humanSide) {
@@ -145,11 +157,9 @@ export const useGame = create<GameStore>((set, get) => ({
         } else if (mode === 'cvc') {
           setTimeout(() => get().aiMove(), 400);
         }
-      } else {
-        // Registar partida no perfil
-        recordCurrentMatch(get(), newState);
       }
     } catch (e) {
+      playSound('error');
       console.warn('Movimento inválido:', e);
     }
   },
@@ -190,6 +200,14 @@ export const useGame = create<GameStore>((set, get) => ({
       stateHistory: [...get().stateHistory, newState],
       currentThreats: threats,
     });
+    playSound('move');
+    if (isGameOver(newState)) {
+      if (newState.winner) playSound('win');
+      else playSound('draw');
+      recordCurrentMatch(get(), newState);
+    } else if (threats.length > 0) {
+      playSound('threat');
+    }
     if (!isGameOver(newState)) {
       if (mode === 'cvc') {
         setTimeout(() => get().aiMove(), 500);
@@ -197,8 +215,6 @@ export const useGame = create<GameStore>((set, get) => ({
         set({ isAiThinking: true });
         setTimeout(() => get().aiMove(), 500 + Math.random() * 400);
       }
-    } else {
-      recordCurrentMatch(get(), newState);
     }
   },
 

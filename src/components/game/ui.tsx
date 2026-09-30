@@ -5,6 +5,7 @@ import { Button as ShadButton } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Crown, Coins } from 'lucide-react';
+import { playSound } from '@/lib/sound';
 
 // ============ Botões com variante de cor do jogo ============
 type GameVariant = 'p1' | 'p2' | 'gold' | 'orange' | 'outline' | 'ghost';
@@ -26,6 +27,7 @@ export function GameButton({
   variant = 'outline',
   className,
   children,
+  onClick,
   ...props
 }: GameButtonProps) {
   return (
@@ -37,6 +39,10 @@ export function GameButton({
         variantClasses[variant],
         className,
       )}
+      onClick={(e) => {
+        if (!props.disabled) playSound('click');
+        onClick?.(e);
+      }}
       {...props}
     >
       {children}

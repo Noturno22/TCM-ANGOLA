@@ -15,6 +15,7 @@ const SCREEN_TITLES: Record<string, string> = {
   wallet: 'Carteira',
   replay: 'Replay',
   achievements: 'Conquistas',
+  challenge: 'Desafio Diário',
 };
 
 export function AppHeader() {

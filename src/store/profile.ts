@@ -9,6 +9,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Difficulty } from '@/lib/ai';
 import type { Move } from '@/lib/engine';
+import { playSound } from '@/lib/sound';
 
 export interface MatchRecord {
   id: string;
@@ -178,17 +179,22 @@ export const useProfile = create<ProfileStore>()(
       addXp: (amount) =>
         set((s) => ({ xp: s.xp + amount, level: levelFromXp(s.xp + amount) })),
 
-      addCoins: (amount) =>
-        set((s) => ({ coins: Math.max(0, s.coins + amount) })),
+      addCoins: (amount) => {
+        if (amount > 0) playSound('bonus');
+        set((s) => ({ coins: Math.max(0, s.coins + amount) }));
+      },
 
-      unlockAchievement: (id) =>
+      unlockAchievement: (id) => {
+        const prev = get().achievements.find((a) => a.id === id)?.unlockedAt;
         set((s) => ({
           achievements: s.achievements.map((a) =>
             a.id === id && !a.unlockedAt
               ? { ...a, unlockedAt: new Date().toISOString() }
               : a,
           ),
-        })),
+        }));
+        if (!prev) playSound('achievement');
+      },
 
       resetProfile: () =>
         set({ ...INITIAL_STATS, matches: [], achievements: ACHIEVEMENTS.map((a) => ({ ...a })) }),
