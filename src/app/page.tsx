@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '@/store/app';
 import { useSettings } from '@/store/settings';
 import { SplashScreen } from '@/components/screens/SplashScreen';
@@ -87,23 +88,33 @@ export default function Home() {
       {showHeader && <AppHeader />}
 
       <main className="flex-1 relative z-10 w-full max-w-2xl mx-auto px-4 pb-24 pt-4">
-        {screen === 'splash' && <SplashScreen />}
-        {screen === 'welcome' && <WelcomeScreen />}
-        {screen === 'home' && <HomeScreen />}
-        {screen === 'offline-select' && <OfflineSelectScreen />}
-        {screen === 'game' && <GameScreen />}
-        {screen === 'tutorial' && <TutorialScreen />}
-        {screen === 'how-to-play' && <HowToPlayScreen />}
-        {screen === 'about' && <AboutScreen />}
-        {screen === 'profile' && <ProfileScreen />}
-        {screen === 'rankings' && <RankingsScreen />}
-        {screen === 'settings' && <SettingsScreen />}
-        {screen === 'rooms' && <RoomsScreen />}
-        {screen === 'wallet' && <WalletScreen />}
-        {screen === 'replay' && <ReplayScreen />}
-        {screen === 'achievements' && <AchievementsScreen />}
-        {screen === 'challenge' && <ChallengeScreen />}
-        {screen === 'stats' && <StatsScreen />}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={screen}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+          >
+            {screen === 'splash' && <SplashScreen />}
+            {screen === 'welcome' && <WelcomeScreen />}
+            {screen === 'home' && <HomeScreen />}
+            {screen === 'offline-select' && <OfflineSelectScreen />}
+            {screen === 'game' && <GameScreen />}
+            {screen === 'tutorial' && <TutorialScreen />}
+            {screen === 'how-to-play' && <HowToPlayScreen />}
+            {screen === 'about' && <AboutScreen />}
+            {screen === 'profile' && <ProfileScreen />}
+            {screen === 'rankings' && <RankingsScreen />}
+            {screen === 'settings' && <SettingsScreen />}
+            {screen === 'rooms' && <RoomsScreen />}
+            {screen === 'wallet' && <WalletScreen />}
+            {screen === 'replay' && <ReplayScreen />}
+            {screen === 'achievements' && <AchievementsScreen />}
+            {screen === 'challenge' && <ChallengeScreen />}
+            {screen === 'stats' && <StatsScreen />}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {showTabBar && <TabBar active={screen} />}

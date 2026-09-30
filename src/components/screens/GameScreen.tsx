@@ -17,7 +17,7 @@ import {
 import { useApp } from '@/store/app';
 import { useGame } from '@/store/game';
 import { useSettings } from '@/store/settings';
-import { isGameOver, type Square } from '@/lib/engine';
+import { isGameOver, getLegalMoves, type Square } from '@/lib/engine';
 import { Board } from '@/components/game/Board';
 import { GameButton, GameCard, LevelAvatar } from '@/components/game/ui';
 import {
@@ -50,6 +50,7 @@ export function GameScreen() {
     moveCount,
     currentThreats,
     showThreats,
+    timePerTurn,
     selectSquare,
     attemptMove,
     resign,
@@ -58,13 +59,14 @@ export function GameScreen() {
     toggleThreats,
   } = useGame();
 
-  const [p1Time, setP1Time] = useState(45);
-  const [p2Time, setP2Time] = useState(45);
+  const [p1Time, setP1Time] = useState(timePerTurn);
+  const [p2Time, setP2Time] = useState(timePerTurn);
   const reduceMotion = useSettings((s) => s.reduceMotion);
+  const hasClock = timePerTurn > 0;
 
-  // Relógio por turno (45s, spec §7.4)
+  // Relógio por turno (configurável: 45s normal, 15s rápido, 0 sem relógio)
   useEffect(() => {
-    if (isGameOver(state)) return;
+    if (!hasClock || isGameOver(state)) return;
     const interval = setInterval(() => {
       if (state.currentPlayer === 'P1') {
         setP1Time((t) => Math.max(0, t - 1));
@@ -73,16 +75,29 @@ export function GameScreen() {
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [state.currentPlayer, state.status]);
+  }, [state.currentPlayer, state.status, hasClock]);
 
   // Reset relógio quando muda o turno — padrão "adjust state during render"
-  // (evita setState síncrono dentro de useEffect, que causaria renders em cascata)
   const [lastPlayer, setLastPlayer] = useState(state.currentPlayer);
-  if (lastPlayer !== state.currentPlayer) {
+  if (hasClock && lastPlayer !== state.currentPlayer) {
     setLastPlayer(state.currentPlayer);
-    if (state.currentPlayer === 'P1') setP1Time(45);
-    else setP2Time(45);
+    if (state.currentPlayer === 'P1') setP1Time(timePerTurn);
+    else setP2Time(timePerTurn);
   }
+
+  // Timeout: jogada legal aleatória se o tempo acabar
+  useEffect(() => {
+    if (!hasClock || isGameOver(state) || mode === 'cvc') return;
+    const isHumanTurn = mode === 'pve' ? state.currentPlayer === humanSide : true;
+    const timeLeft = state.currentPlayer === 'P1' ? p1Time : p2Time;
+    if (timeLeft === 0 && isHumanTurn) {
+      const legal = getLegalMoves(state, state.currentPlayer);
+      if (legal.length > 0) {
+        const random = legal[Math.floor(Math.random() * legal.length)];
+        attemptMove(random.to);
+      }
+    }
+  }, [p1Time, p2Time, hasClock, state, mode, humanSide, attemptMove]);
 
   const handleSquareClick = useCallback(
     (sq: Square) => {
@@ -173,6 +188,7 @@ export function GameScreen() {
             emoji="🟢"
             active={p1Active}
             time={p1Time}
+            showClock={hasClock}
             isHuman={mode === 'pve' ? humanSide === 'P1' : mode !== 'cvc'}
             isP1
           />
@@ -184,6 +200,7 @@ export function GameScreen() {
             emoji="🔴"
             active={p2Active}
             time={p2Time}
+            showClock={hasClock}
             isHuman={mode === 'pve' ? humanSide === 'P2' : mode !== 'cvc'}
             isP1={false}
           />
@@ -364,6 +381,7 @@ function PlayerCard({
   emoji,
   active,
   time,
+  showClock,
   isHuman,
   isP1,
 }: {
@@ -371,6 +389,7 @@ function PlayerCard({
   emoji: string;
   active: boolean;
   time: number;
+  showClock: boolean;
   isHuman: boolean;
   isP1: boolean;
 }) {
@@ -402,23 +421,34 @@ function PlayerCard({
           </span>
         )}
       </div>
-      <div className="flex items-center gap-1">
-        <Clock className={cn('w-3 h-3', lowTime ? 'text-p2' : 'text-muted-foreground')} />
-        <span
-          className={cn(
-            'font-display text-lg leading-none',
-            lowTime ? 'text-p2' : active ? 'text-foreground' : 'text-muted-foreground',
-          )}
-        >
-          {String(Math.floor(time / 60)).padStart(2, '0')}:
-          {String(time % 60).padStart(2, '0')}
-        </span>
-        {active && (
-          <span className="text-[9px] text-muted-foreground ml-auto uppercase">
-            {isHuman ? 'Sua vez' : 'A pensar…'}
+      {showClock ? (
+        <div className="flex items-center gap-1">
+          <Clock className={cn('w-3 h-3', lowTime ? 'text-p2' : 'text-muted-foreground')} />
+          <span
+            className={cn(
+              'font-display text-lg leading-none',
+              lowTime ? 'text-p2' : active ? 'text-foreground' : 'text-muted-foreground',
+            )}
+          >
+            {String(Math.floor(time / 60)).padStart(2, '0')}:
+            {String(time % 60).padStart(2, '0')}
           </span>
-        )}
-      </div>
+          {active && (
+            <span className="text-[9px] text-muted-foreground ml-auto uppercase">
+              {isHuman ? 'Sua vez' : 'A pensar…'}
+            </span>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] text-muted-foreground italic">Sem relógio</span>
+          {active && (
+            <span className="text-[9px] text-muted-foreground ml-auto uppercase">
+              {isHuman ? 'Sua vez' : 'A pensar…'}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

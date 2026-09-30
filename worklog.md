@@ -191,3 +191,32 @@ Unresolved issues / próximas fases:
 - i18n: ainda só PT.
 - Modo online: ainda simulado.
 - Próxima ronda recomendada: gráfico temporal de partidas/dia, mais variedade musical, e talvez um modo "Partida Rápida" com relógio mais curto (15s).
+
+---
+Task ID: cron-round-3
+Agent: QA + Features (webDevReview cron)
+Task: Modo Partida Rápida (relógio 15s), gráfico temporal de atividade, polish de transições
+
+Work Log:
+- QA inicial: app estável, lint limpo, 30/30 testes passam.
+- **Modo Partida Rápida** — adicionei `timePerTurn` configurável ao game store (45s normal, 15s rápido, 0 sem relógio). O OfflineSelectScreen tem agora um seletor visual de 3 opções (🕐 Normal 45s, ⚡ Rápida 15s, 🧘 Sem relógio) com emojis e descrições. O GameScreen respeita `hasClock`: quando `timePerTurn === 0`, os relógios não são mostrados (mostra "Sem relógio" italic). Quando o tempo acaba, é feita uma jogada legal aleatória automaticamente (timeout handling). O `restart()` preserva `timePerTurn`.
+- **Gráfico temporal de atividade** (`StatsScreen.tsx`): novo componente `DailyChart` que mostra barras empilhadas (vitórias verde / empates cinza / derrotas vermelho) dos últimos 7 dias, com labels de dia (Dom-Sáb), contagem no topo de cada barra, e destaque dourado para "hoje". Animações Framer Motion (cada barra cresce com delay escalonado). Cálculo de `activeDays` (dias com ≥1 partida) e `currentStreakDays` (dias consecutivos com partida até hoje). Legenda visual abaixo do gráfico.
+- **Polish de transições e tab bar**:
+  - `page.tsx`: cada ecrã está agora envolvido em `<AnimatePresence mode="wait">` com `motion.div` (fade + slide y de 8px, duração 250ms) — transições suaves entre ecrãs.
+  - `TabBar.tsx` reescrito: indicador de fundo ativo com `layoutId` (desliza entre tabs), ponto dourado no topo da tab ativa, ícone com `scale: 1.1` e `y: -1` na tab ativa, `drop-shadow` dourado. Spring animations.
+- Verificação: Quick Match (15s) testado — relógio mostra 15s, jogo funciona. Gráfico temporal testado com VLM — renderiza corretamente com 7 dias e barras empilhadas.
+
+Stage Summary:
+- **Modo Partida Rápida**: 3 opções de tempo (45s/15s/0), auto-jogada em timeout, relógio opcional.
+- **Gráfico de atividade diária**: barras empilhadas SVG dos últimos 7 dias com animações, dias ativos e streak.
+- **Polish**: transições de ecrã suaves (fade+slide), tab bar com indicador deslizante e micro-interações.
+- **Lint**: 0 erros. **Testes**: 30/30 passam.
+- **QA visual**: todos os gráficos renderizam, tab bar animada, transições suaves.
+
+Unresolved issues / próximas fases:
+- i18n: ainda só PT (EN preparado mas desativado).
+- Modo online: ainda simulado (salas redirecionam para offline).
+- Partilha de partidas: não implementado (poderia adicionar código curto de partilha/exportar replay).
+- Música: ainda uma só progressão (Am-F-C-G); poderia adicionar variação dinâmica conforme o estado do jogo (calma vs tensão).
+- Heatmap de atividade mensal: poderia adicionar vista de calendário.
+- Próxima ronda recomendada: partilha de partidas (código curto), variação musical dinâmica, e talvez um modo "Treino Livre" sem registo de estatísticas.

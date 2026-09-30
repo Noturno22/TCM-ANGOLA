@@ -27,6 +27,8 @@ interface GameStore {
   mode: GameMode;
   difficulty: Difficulty;
   humanSide: PlayerId; // em pve, que lado o humano controla
+  /** Tempo por turno em segundos (45 = normal, 15 = rápido, 0 = sem relógio) */
+  timePerTurn: number;
   selectedSquare: Square | null;
   validTargets: Square[];
   lastMove: Move | null;
@@ -46,6 +48,7 @@ interface GameStore {
     difficulty?: Difficulty;
     humanSide?: PlayerId;
     showThreats?: boolean;
+    timePerTurn?: number;
   }) => void;
   selectSquare: (sq: Square) => void;
   attemptMove: (to: Square) => void;
@@ -63,6 +66,7 @@ export const useGame = create<GameStore>((set, get) => ({
   mode: 'pve',
   difficulty: 'medium',
   humanSide: 'P1',
+  timePerTurn: 45,
   selectedSquare: null,
   validTargets: [],
   lastMove: null,
@@ -75,13 +79,14 @@ export const useGame = create<GameStore>((set, get) => ({
   currentThreats: emptyThreats,
   showThreats: false,
 
-  startGame: ({ mode, difficulty = 'medium', humanSide = 'P1', showThreats = false }) => {
+  startGame: ({ mode, difficulty = 'medium', humanSide = 'P1', showThreats = false, timePerTurn = 45 }) => {
     const state = createGame();
     set({
       state,
       mode,
       difficulty,
       humanSide,
+      timePerTurn,
       selectedSquare: null,
       validTargets: [],
       lastMove: null,
@@ -234,8 +239,8 @@ export const useGame = create<GameStore>((set, get) => ({
   },
 
   restart: () => {
-    const { mode, difficulty, humanSide, showThreats } = get();
-    get().startGame({ mode, difficulty, humanSide, showThreats });
+    const { mode, difficulty, humanSide, showThreats, timePerTurn } = get();
+    get().startGame({ mode, difficulty, humanSide, showThreats, timePerTurn });
   },
 
   undo: () => {

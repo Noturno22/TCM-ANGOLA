@@ -25,14 +25,22 @@ export function OfflineSelectScreen() {
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [side, setSide] = useState<PlayerId>('P1');
   const [showThreats, setShowThreats] = useState(false);
+  const [timeMode, setTimeMode] = useState<'normal' | 'quick' | 'none'>('normal');
+
+  const TIME_OPTIONS: { id: 'normal' | 'quick' | 'none'; label: string; desc: string; seconds: number; emoji: string }[] = [
+    { id: 'normal', label: 'Normal', desc: '45s por jogada', seconds: 45, emoji: '🕐' },
+    { id: 'quick', label: 'Rápida', desc: '15s por jogada — adrenalina!', seconds: 15, emoji: '⚡' },
+    { id: 'none', label: 'Sem relógio', desc: 'Pensa com calma, sem pressão', seconds: 0, emoji: '🧘' },
+  ];
 
   const handleStart = () => {
+    const timePerTurn = TIME_OPTIONS.find((t) => t.id === timeMode)?.seconds ?? 45;
     if (mode === 'pvp') {
-      startGame({ mode: 'pvp', showThreats });
+      startGame({ mode: 'pvp', showThreats, timePerTurn });
     } else if (mode === 'pve') {
-      startGame({ mode: 'pve', difficulty, humanSide: side, showThreats });
+      startGame({ mode: 'pve', difficulty, humanSide: side, showThreats, timePerTurn });
     } else if (mode === 'cvc') {
-      startGame({ mode: 'cvc', difficulty, humanSide: 'P1', showThreats });
+      startGame({ mode: 'cvc', difficulty, humanSide: 'P1', showThreats, timePerTurn });
     }
     navigate('game');
   };
@@ -172,6 +180,42 @@ export function OfflineSelectScreen() {
               className="w-5 h-5 accent-gold"
             />
           </label>
+        </GameCard>
+      )}
+
+      {/* Seletor de tempo por turno (todas as modalidades exceto CvC) */}
+      {mode && mode !== 'cvc' && (
+        <GameCard className="p-4">
+          <h3 className="font-display text-lg mb-3">Tempo por jogada</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {TIME_OPTIONS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTimeMode(t.id)}
+                className={cn(
+                  'p-3 rounded-xl border text-center transition-all',
+                  timeMode === t.id
+                    ? 'border-gold bg-gold/10'
+                    : 'border-border/40 bg-surface/40 hover:border-border',
+                )}
+              >
+                <div className="text-xl mb-1">{t.emoji}</div>
+                <div className={cn(
+                  'font-semibold text-xs',
+                  timeMode === t.id ? 'text-gold' : 'text-foreground',
+                )}>
+                  {t.label}
+                </div>
+                <div className="text-[9px] text-muted-foreground leading-tight mt-0.5">{t.desc}</div>
+              </button>
+            ))}
+          </div>
+          {timeMode === 'quick' && (
+            <p className="text-[11px] text-orange mt-2 text-center animate-fade-in">
+              ⚡ Modo Rápido: pensa rápido ou perde!
+            </p>
+          )}
         </GameCard>
       )}
 

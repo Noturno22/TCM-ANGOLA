@@ -90,6 +90,25 @@ export function StatsScreen() {
         </div>
       </GameCard>
 
+      {/* Atividade — últimos 7 dias */}
+      <GameCard className="p-4">
+        <SectionTitle
+          title="Atividade (7 dias)"
+          action={
+            <div className="flex gap-3 text-[10px]">
+              <span className="text-p1">{stats.activeDays} dias ativos</span>
+              <span className="text-gold">🔥 {stats.currentStreakDays}d streak</span>
+            </div>
+          }
+        />
+        <DailyChart data={stats.last7Days} />
+        <div className="flex justify-center gap-4 text-[10px] text-muted-foreground mt-3">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-p1" /> Vitórias</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-muted-foreground" /> Empates</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-p2" /> Derrotas</span>
+        </div>
+      </GameCard>
+
       {/* Tempo de jogo */}
       <div className="grid grid-cols-2 gap-3">
         <GameCard className="p-4 text-center">
@@ -364,6 +383,112 @@ function RecoreRow({ icon, label, value }: { icon: React.ReactNode; label: strin
   );
 }
 
+// ============ Gráfico de atividade diária (barras empilhadas) ============
+function DailyChart({ data }: { data: { date: string; label: string; total: number; wins: number; losses: number; draws: number }[] }) {
+  const W = 300;
+  const H = 100;
+  const pad = 14;
+  const barWidth = (W - pad * 2) / data.length * 0.6;
+  const gap = (W - pad * 2) / data.length;
+  const maxTotal = Math.max(1, ...data.map((d) => d.total));
+  const chartH = H - pad * 2;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-32" role="img" aria-label="Gráfico de atividade dos últimos 7 dias">
+      {/* Linhas de grade */}
+      {[0.5, 1].map((f) => (
+        <line
+          key={f}
+          x1={pad}
+          y1={pad + (1 - f) * chartH}
+          x2={W - pad}
+          y2={pad + (1 - f) * chartH}
+          stroke="var(--border)"
+          strokeWidth="0.5"
+          strokeDasharray="2 2"
+        />
+      ))}
+      {data.map((d, i) => {
+        const x = pad + i * gap + (gap - barWidth) / 2;
+        const totalH = (d.total / maxTotal) * chartH;
+        const winsH = d.total > 0 ? (d.wins / d.total) * totalH : 0;
+        const drawsH = d.total > 0 ? (d.draws / d.total) * totalH : 0;
+        const lossesH = d.total > 0 ? (d.losses / d.total) * totalH : 0;
+        const baseY = pad + chartH;
+        const isToday = i === data.length - 1;
+        return (
+          <g key={d.date}>
+            {/* Vitórias (verde, base) */}
+            {winsH > 0 && (
+              <motion.rect
+                x={x}
+                y={baseY - winsH}
+                width={barWidth}
+                height={winsH}
+                fill="var(--p1)"
+                rx={2}
+                initial={{ height: 0, y: baseY }}
+                animate={{ height: winsH, y: baseY - winsH }}
+                transition={{ duration: 0.5, delay: i * 0.05 }}
+              />
+            )}
+            {/* Empates (cinza, meio) */}
+            {drawsH > 0 && (
+              <motion.rect
+                x={x}
+                y={baseY - winsH - drawsH}
+                width={barWidth}
+                height={drawsH}
+                fill="var(--muted-foreground)"
+                rx={2}
+                initial={{ height: 0, y: baseY - winsH }}
+                animate={{ height: drawsH, y: baseY - winsH - drawsH }}
+                transition={{ duration: 0.5, delay: i * 0.05 + 0.1 }}
+              />
+            )}
+            {/* Derrotas (vermelho, topo) */}
+            {lossesH > 0 && (
+              <motion.rect
+                x={x}
+                y={baseY - winsH - drawsH - lossesH}
+                width={barWidth}
+                height={lossesH}
+                fill="var(--p2)"
+                rx={2}
+                initial={{ height: 0, y: baseY - winsH - drawsH }}
+                animate={{ height: lossesH, y: baseY - winsH - drawsH - lossesH }}
+                transition={{ duration: 0.5, delay: i * 0.05 + 0.2 }}
+              />
+            )}
+            {/* Label do dia */}
+            <text
+              x={x + barWidth / 2}
+              y={H - 2}
+              textAnchor="middle"
+              fontSize="9"
+              className={isToday ? 'fill-gold font-semibold' : 'fill-muted-foreground'}
+            >
+              {d.label}
+            </text>
+            {/* Contagem (se > 0) */}
+            {d.total > 0 && (
+              <text
+                x={x + barWidth / 2}
+                y={baseY - totalH - 4}
+                textAnchor="middle"
+                fontSize="9"
+                className="fill-foreground font-semibold"
+              >
+                {d.total}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 // ============ Cálculos ============
 interface ComputedStats {
   winRate: number;
@@ -373,6 +498,9 @@ interface ComputedStats {
   fastestMatch: number | null;
   fewestMovesWin: number | null;
   byDifficulty: { difficulty: string; total: number; wins: number; losses: number; draws: number }[];
+  last7Days: { date: string; label: string; total: number; wins: number; losses: number; draws: number }[];
+  activeDays: number;
+  currentStreakDays: number;
 }
 
 function computeStats(matches: MatchRecord[]): ComputedStats {
@@ -415,6 +543,46 @@ function computeStats(matches: MatchRecord[]): ComputedStats {
     { difficulty: 'Perfeito', ...(diffMap.get('Perfeito') ?? { total: 0, wins: 0, losses: 0, draws: 0 }) },
   ];
 
+  // Partidas por dia (últimos 7 dias)
+  const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const last7Days: ComputedStats['last7Days'] = [];
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    d.setHours(0, 0, 0, 0);
+    const dateStr = d.toISOString().slice(0, 10);
+    const dayMatches = matches.filter((m) => m.date.slice(0, 10) === dateStr);
+    const human = dayMatches.filter((m) => m.playerSide);
+    const dayWins = human.filter((m) => m.result === m.playerSide).length;
+    const dayDraws = human.filter((m) => m.result === 'DRAW').length;
+    const dayLosses = human.length - dayWins - dayDraws;
+    last7Days.push({
+      date: dateStr,
+      label: dayLabels[d.getDay()],
+      total: human.length,
+      wins: dayWins,
+      losses: dayLosses,
+      draws: dayDraws,
+    });
+  }
+
+  // Dias ativos (com pelo menos 1 partida) e streak atual de dias consecutivos
+  const activeDays = new Set(humanMatches.map((m) => m.date.slice(0, 10))).size;
+  let currentStreakDays = 0;
+  const streakCursor = new Date(today);
+  streakCursor.setHours(0, 0, 0, 0);
+  while (true) {
+    const dateStr = streakCursor.toISOString().slice(0, 10);
+    const hasMatch = humanMatches.some((m) => m.date.slice(0, 10) === dateStr);
+    if (hasMatch) {
+      currentStreakDays++;
+      streakCursor.setDate(streakCursor.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
   return {
     winRate,
     xpCurve,
@@ -423,6 +591,9 @@ function computeStats(matches: MatchRecord[]): ComputedStats {
     fastestMatch,
     fewestMovesWin: fewestMovesWin === Infinity ? null : fewestMovesWin,
     byDifficulty,
+    last7Days,
+    activeDays,
+    currentStreakDays,
   };
 }
 
