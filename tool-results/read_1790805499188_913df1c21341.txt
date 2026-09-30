@@ -1,0 +1,413 @@
+     1→     1→# PROMPT MESTRE — TIRA O COCÓ DO MEIO
+     2→     2→### Desenvolvimento completo (motor, IA, app mobile, web e backend online)
+     3→     3→
+     4→     4→> **Como usar este ficheiro:** o **Bloco 0 a 9** é contexto comum — todos os agents leem antes de começar. O **Bloco 10** contém o prompt individual de cada agent (A1 a A4). O **Bloco 11** é a definição de pronto. Comece sempre pelo **Bloco 1 (Primeiros passos)**.
+     5→     5→
+     6→     6→---
+     7→     7→
+     8→     8→## 0. MISSÃO
+     9→     9→
+    10→    10→Constrói o jogo **Tira o Cocó do Meio**: jogo de estratégia abstrata para 2 jogadores, inspirado na cultura angolana, com modo **offline (contra a IA e 2 jogadores no mesmo dispositivo)** e modo **online (salas, partidas em tempo real, chat, torneios, rankings, apostas com moeda virtual)**, em **app mobile (Expo)** e **web (Next.js)**.
+    11→    11→
+    12→    12→Qualidade esperada: produto de loja de apps — fiel ao mockup, sem bugs de regras, rápido, acessível, em português.
+    13→    13→
+    14→    14→**Idioma:** todo o UI, mensagens, documentação e comentários de produto em **português**. Identificadores de código em inglês.
+    15→    15→
+    16→    16→---
+    17→    17→
+    18→    18→## 1. PRIMEIROS PASSOS (obrigatório, por esta ordem)
+    19→    19→
+    20→    20→1. Criar o monorepo (estrutura no Bloco 4).
+    21→    21→2. Copiar os dois ficheiros de referência para dentro do repo:
+    22→    22→   - `Tira_o_Coco_do_Meio_Especificacao_Completa.md` → `docs/spec/especificacao.md` (**fonte de verdade das regras**)
+    23→    23→   - `ChatGPT_Image_30_09_2026__05_13_34.png` → `docs/design/mockups.png` (**fonte de verdade do visual e da estrutura de ecrãs**)
+    24→    24→3. Criar `docs/DECISIONS.md` (registo de decisões) e `docs/PROGRESS.md` (estado por fase).
+    25→    25→4. O **A1** publica o contrato do motor (tipos + assinaturas, Bloco 5) **antes** dos restantes agents escreverem código que dependa dele.
+    26→    26→5. Só depois avançar pelas fases do Bloco 9.
+    27→    27→
+    28→    28→---
+    29→    29→
+    30→    30→## 2. FONTES DE VERDADE E PRECEDÊNCIA
+    31→    31→
+    32→    32→| Assunto | Fonte de verdade |
+    33→    33→|---|---|
+    34→    34→| Regras do jogo, IA, testes do motor, arquitetura do motor | `docs/spec/especificacao.md` + **Bloco 3 deste prompt** (que a complementa e, em caso de ambiguidade, prevalece) |
+    35→    35→| Visual, layout, cores, hierarquia, fluxo de ecrãs, textos de interface | `docs/design/mockups.png` |
+    36→    36→| Funcionalidades online/economia/progressão | Bloco 7 deste prompt |
+    37→    37→
+    38→    38→**Não alterar regras sem autorização explícita.** Se achares que uma regra está errada, regista em `docs/DECISIONS.md` como “PROPOSTA”, implementa o comportamento atual e segue em frente.
+    39→    39→
+    40→    40→### Incoerências conhecidas entre mockup e especificação (já resolvidas — não voltar a discutir)
+    41→    41→
+    42→    42→1. **O mockup da partida mostra 8 peças (4 verdes e 4 vermelhas).** É ilustrativo e está errado face às regras. **Regra: 3 peças por jogador.** Reproduzir o *estilo* do tabuleiro (moldura dourada, bolas brilhantes, alvo no centro), nunca a disposição das peças.
+    43→    43→2. **Diferenciação por cor apenas:** o mockup usa só verde/vermelho; a spec (§27) exige que as peças **não se distingam só pela cor**. → gravar em relevo, discretamente, **▲ na peça P1 (verde)** e **● na peça P2 (vermelha)**; opção em Configurações “Símbolos nas peças” (ligada por omissão).
+    44→    44→3. **Cores dos jogadores:** P1 = verde (casas 1-2-3, topo), P2 = vermelho (casas 7-8-9, base). No ecrã do jogador, **as suas peças aparecem sempre em baixo** (ver 6.3).
+    45→    45→4. **Tratamento:** o mockup usa “tu” (“Joga, desafia, ganha!”, “Escreve uma mensagem…”). Onde o mockup tem texto, usar **literalmente**; onde só a spec tem texto, usar a spec adaptada ao tratamento por “tu”.
+    46→    46→5. **Nome:** “Tira o Cocó do Meio” (com acento, como na spec e no logótipo).
+    47→    47→
+    48→    48→---
+    49→    49→
+    50→    50→## 3. REGRAS DO JOGO — VERSÃO EXECUTÁVEL (complementa a spec)
+    51→    51→
+    52→    52→### 3.1 Numeração do tabuleiro
+    53→    53→```
+    54→    54→1 ─ 2 ─ 3
+    55→    55→4 ─ 5 ─ 6      (5 = centro, “o cocó do meio”)
+    56→    56→7 ─ 8 ─ 9
+    57→    57→```
+    58→    58→Internamente: `board[0..8]` ↔ casas `1..9`. A API pública usa **casas 1–9**.
+    59→    59→
+    60→    60→### 3.2 Linhas vencedoras (8)
+    61→    61→`[1,2,3] [4,5,6] [7,8,9] [1,4,7] [2,5,8] [3,6,9] [1,5,9] [3,5,7]`
+    62→    62→
+    63→    63→### 3.3 Posição inicial e turnos
+    64→    64→`P1: 1,2,3 · P2: 7,8,9 · vazias: 4,5,6`. **P1 joga sempre primeiro.** Um movimento de **uma** peça por turno, **obrigatório** (não há passar a vez).
+    65→    65→
+    66→    66→### 3.4 Movimento — decisão D1 (interpretação por omissão: `free-blocked`)
+    67→    67→A spec diz “qualquer casa livre, sem saltar peças”. Interpretação fixada:
+    68→    68→
+    69→    69→- O **destino** tem de estar **vazio**.
+    70→    70→- Se **origem e destino estão na mesma reta do tabuleiro** (linha, coluna ou diagonal pelo centro), **todas as casas entre elas têm de estar vazias**. Ex.: `1→9` exige `5` vazia; `1→3` exige `2` vazia; `2→8` exige `5` vazia.
+    71→    71→- Se **não estão na mesma reta** (ex.: `1→6`, `2→4`, `1→8`), **não existe caminho a atravessar** e o movimento é **permitido** se o destino estiver vazio.
+    72→    72→- Sem capturas. Sem substituir peças.
+    73→    73→
+    74→    74→> Implementar como `RulesConfig.movementMode`: `'free-blocked'` (omissão) | `'lines-only'` (só movimentos ao longo de retas, com caminho livre) | `'adjacent-only'`. **Só `free-blocked` vai para produção** — os outros existem para a decisão do Sama (Bloco 12) e para testes.
+    75→    75→
+    76→    76→### 3.5 Verificação de vitória — **ARMADILHA CRÍTICA (decisão D2)**
+    77→    77→**Na posição inicial, P1 já ocupa a linha `1-2-3` e P2 já ocupa `7-8-9`.**
+    78→    78→Se o motor verificar “todas as linhas, para qualquer jogador” após cada movimento, **P2 ganha logo após a primeira jogada de P1** (porque `7-8-9` continua intacta). Isto é um bug.
+    79→    79→
+    80→    80→**Regra:** depois de cada movimento, verificar **apenas as peças do jogador que acabou de mover**. Só esse jogador pode ter completado uma linha nesse movimento (as peças do adversário não mudaram). A posição inicial **não** é vitória para ninguém (o jogo começa em `READY`/`PLAYER_1_TURN`, sem verificação).
+    81→    81→Consequência legítima: um jogador pode **sair** da sua linha de casa e **voltar** a ela mais tarde para ganhar — isto é jogável e está dentro das regras.
+    82→    82→
+    83→    83→### 3.6 Empate — decisão D3
+    84→    84→Terceira ocorrência da **mesma posição completa + mesmo jogador a jogar** ⇒ `DRAW`. A posição inicial conta como 1.ª ocorrência. Chave: `"<casas P1 ordenadas>|<casas P2 ordenadas>|<jogador>"`. Opcional (config, desligado por omissão): `maxPlies`.
+    85→    85→
+    86→    86→### 3.7 Sem movimentos legais — decisão D4
+    87→    87→Em `free-blocked` **é impossível** (provado por pesquisa exaustiva nos 3 360 estados — o teste exaustivo tem de confirmar). Nos outros modos existem estados sem movimentos. Comportamento configurável `noMovesOutcome`: `'lose'` (omissão) | `'draw'`. O motor nunca pode lançar exceção nem ficar bloqueado.
+    88→    88→
+    89→    89→### 3.8 Fim de jogo
+    90→    90→Depois de `WIN_P1 | WIN_P2 | DRAW` nenhum movimento é aceite. Desistência e timeout online são resultados **de partida** (camada de match), não do motor de regras.
+    91→    91→
+    92→    92→---
+    93→    93→
+    94→    94→## 4. STACK E ARQUITETURA
+    95→    95→
+    96→    96→**Stack (preferir soluções autocontidas, poucas dependências externas):**
+    97→    97→- Monorepo **pnpm + Turborepo**, **TypeScript estrito** (`strict`, sem `any`).
+    98→    98→- **Mobile:** Expo (**Dev Client**), Expo Router, React Native Reanimated 3, `react-native-svg`, `expo-haptics`, `expo-audio`/`expo-av`. Build com **EAS Build**.
+    99→    99→- **Web:** **Next.js** (App Router), CSS/Tailwind + SVG para o tabuleiro, Framer Motion (ou CSS) para animação. Deploy **Vercel**.
+   100→   100→- **Backend:** **Supabase** (Auth, Postgres + RLS, Realtime, Edge Functions, `pg_cron`).
+   101→   101→- **Testes:** Vitest (packages), React Native Testing Library (mobile), Playwright (web e2e), `fast-check` (propriedades), pgTAP ou testes SQL (RLS/RPC).
+   102→   102→- **Fontes:** self-hosted (sem CDN). Títulos: condensada pesada (Bebas Neue/Anton); corpo: Inter.
+   103→   103→
+   104→   104→**Estrutura:**
+   105→   105→```
+   106→   106→tira-o-coco-do-meio/
+   107→   107→├─ apps/
+   108→   108→│  ├─ web/                 Next.js
+   109→   109→│  └─ mobile/              Expo Dev Client
+   110→   110→├─ packages/
+   111→   111→│  ├─ engine/              TS puro, ZERO dependências — regras (Bloco 5)
+   112→   112→│  ├─ ai/                  TS puro, depende só de engine (Bloco 6)
+   113→   113→│  ├─ design-tokens/       cores, tipografia, espaçamentos, raios, sombras
+   114→   114→│  ├─ game-client/         hooks/stores partilhados (useGame, useMatch, i18n, clientes supabase)
+   115→   115→│  └─ config/              tsconfig, eslint, prettier
+   116→   116→├─ supabase/               migrations, functions, seed, tests
+   117→   117→├─ tools/solver/           resolvedor do jogo (gera a tabela da IA “Perfeita” + relatório)
+   118→   118→└─ docs/                   spec/, design/, DECISIONS.md, PROGRESS.md, balance-report.md
+   119→   119→```
+   120→   120→**Regra de ouro (spec §36–37):** **uma única fonte de verdade para as regras** = `packages/engine`. UI, IA, replay, tutorial, testes **e servidor (Edge Function)** usam exatamente o mesmo código. Proibido reimplementar regras em qualquer outro sítio. Lógica e estado partilhados; a UI pode ser nativa por plataforma para manter fidelidade visual.
+   121→   121→
+   122→   122→---
+   123→   123→
+   124→   124→## 5. CONTRATO DO MOTOR (`packages/engine`) — A1 publica primeiro
+   125→   125→
+   126→   126→```ts
+   127→   127→export type PlayerId = 'P1' | 'P2';
+   128→   128→export type Square = 1|2|3|4|5|6|7|8|9;
+   129→   129→export type Cell = PlayerId | null;
+   130→   130→export type Line = readonly [Square, Square, Square];
+   131→   131→export type GameStatus = 'READY'|'PLAYER_1_TURN'|'PLAYER_2_TURN'|'WIN_P1'|'WIN_P2'|'DRAW';
+   132→   132→
+   133→   133→export interface Move { from: Square; to: Square }
+   134→   134→
+   135→   135→export interface RulesConfig {
+   136→   136→  movementMode: 'free-blocked' | 'lines-only' | 'adjacent-only'; // omissão: 'free-blocked'
+   137→   137→  firstPlayer: PlayerId;            // omissão: 'P1'
+   138→   138→  homeLineCounts: boolean;          // omissão: true  (ver Bloco 12 / D5)
+   139→   139→  repetitionLimit: number;          // omissão: 3
+   140→   140→  maxPlies: number | null;          // omissão: null
+   141→   141→  noMovesOutcome: 'lose' | 'draw';  // omissão: 'lose'
+   142→   142→}
+   143→   143→
+   144→   144→export interface GameState {
+   145→   145→  board: readonly Cell[];           // length 9, index = casa-1
+   146→   146→  currentPlayer: PlayerId;
+   147→   147→  status: GameStatus;
+   148→   148→  winner: PlayerId | null;
+   149→   149→  winningLine: Line | null;
+   150→   150→  moveCount: number;
+   151→   151→  history: readonly Move[];
+   152→   152→  positionCounts: Readonly<Record<string, number>>;
+   153→   153→  config: RulesConfig;
+   154→   154→}
+   155→   155→
+   156→   156→export type MoveErrorCode =
+   157→   157→  'GAME_OVER'|'NOT_YOUR_TURN'|'INVALID_SQUARE'|'SAME_SQUARE'|
+   158→   158→  'NOT_YOUR_PIECE'|'DESTINATION_OCCUPIED'|'PATH_BLOCKED';
+   159→   159→
+   160→   160→export type ValidationResult =
+   161→   161→  | { ok: true }
+   162→   162→  | { ok: false; code: MoveErrorCode; message: string }; // message em PT (Bloco 8.4)
+   163→   163→
+   164→   164→export function createGame(config?: Partial<RulesConfig>): GameState;
+   165→   165→export function getLegalMoves(state: GameState, player?: PlayerId): Move[];
+   166→   166→export function validateMove(state: GameState, move: Move, player?: PlayerId): ValidationResult;
+   167→   167→export function applyMove(state: GameState, move: Move): { state: GameState; events: GameEvent[] }; // imutável
+   168→   168→export function getWinningMoves(state: GameState, player: PlayerId): Move[];   // vitória imediata possível
+   169→   169→export function getThreats(state: GameState, player: PlayerId): Threat[];       // destinos que completam linha
+   170→   170→export function positionKey(state: GameState): string;
+   171→   171→export function replayFrom(moves: Move[], config?: Partial<RulesConfig>): GameState[]; // estados 0..n
+   172→   172→export function serialize(state: GameState): string; export function deserialize(s: string): GameState;
+   173→   173→```
+   174→   174→`GameEvent`: `MOVE_APPLIED | TURN_CHANGED | THREAT_CREATED | WIN | DRAW_BY_REPETITION | NO_MOVES`.
+   175→   175→O motor é **puro e determinístico**: sem `Date`, sem `Math.random`, sem I/O.
+   176→   176→
+   177→   177→> **Atenção a bloqueios:** defender-se de uma ameaça pode ser feito **ocupando o destino** *ou* **ocupando uma casa do caminho** do atacante (no modo `free-blocked`). Por isso nenhuma parte do sistema pode assumir “bloquear = ocupar a casa vazia da linha”; deve perguntar ao motor (`getWinningMoves`, `getLegalMoves`).
+   178→   178→
+   179→   179→---
+   180→   180→
+   181→   181→## 6. IA (`packages/ai`)
+   182→   182→
+   183→   183→### 6.1 Níveis (spec §21–22)
+   184→   184→| Nível | Comportamento |
+   185→   185→|---|---|
+   186→   186→| **Fácil** | ~30% jogadas aleatórias legais; caso contrário: ganha se puder, bloqueia ameaça imediata simples |
+   187→   187→| **Médio** | Minimax profundidade 3–4 + avaliação (centro, ameaças, linhas abertas, mobilidade); evita repetição |
+   188→   188→| **Difícil** | Minimax + poda Alpha-Beta (profundidade ≥ 8), deteta ciclos, ordenação de jogadas |
+   189→   189→| **Perfeito** | Tabela pré-calculada por **análise retrógrada** dos 3 360 estados (ver 6.2): joga o caminho mais rápido para ganhar / mais lento para perder; em empate, evita repetições desnecessárias |
+   190→   190→
+   191→   191→Ordem de decisão base (spec §21): ganhar → impedir derrota imediata → criar ameaça dupla → impedir ameaça dupla → melhorar posição → centro → evitar repetição.
+   192→   192→A IA **só** usa `getLegalMoves/applyMove/getWinningMoves` do motor. **Atraso de “pensamento” na UI:** 400–900 ms, configurável.
+   193→   193→Todas as funções da IA são **puras** e aceitam uma `seed` para RNG reprodutível.
+   194→   194→
+   195→   195→### 6.2 Solver e relatório de equilíbrio (`tools/solver`) — **entregável obrigatório**
+   196→   196→Espaço de estados = C(9,3)·C(6,3)·2 = **3 360**. Gerar a tabela retrógrada (vitória/derrota/empate + distância em jogadas) e escrever `docs/balance-report.md`.
+   197→   197→
+   198→   198→**Valores de referência já calculados por um resolvedor independente (a tua implementação TEM de os reproduzir — se não reproduzir, há bug no motor ou no solver):**
+   199→   199→
+   200→   200→- Modo **`free-blocked`** (omissão), regras por omissão: 3 360 estados; **0** estados sem movimentos; do ponto de vista de quem joga: **2 416 vitórias / 288 derrotas / 656 empates**.
+   201→   201→- **Posição inicial = vitória forçada de P1 em 3 jogadas (plies: P1, P2, P1).**
+   202→   202→  Exemplo: P1 joga `1→5` (ou `2→5`, ou `3→5`). Todas as 8 respostas legais de P2 perdem. Com `1→5`:
+   203→   203→  `7→1` ⇒ P1 `2→7` · `7→4` ou `7→6` ⇒ P1 `2→7` ou `5→1` · `8→1` ⇒ P1 `3→8` · `8→4` ou `8→6` ⇒ P1 `3→8` ou `5→1` · `9→4` ou `9→6` ⇒ P1 `5→1`. (`9→1` é ilegal: passa por `5`.)
+   204→   204→  Mecanismo: P1 sai da linha de casa e ameaça **voltar**; P2 só pode impedir ocupando a casa vazia, o que abre outra linha.
+   205→   205→- Modo `lines-only`: 16 estados sem movimentos; posição inicial também vitória de P1 em 3 plies.
+   206→   206→- Variante “linha de casa não conta” (`homeLineCounts:false`): `free-blocked` ⇒ P1 ainda ganha, em 9 plies; `lines-only` ⇒ **empate**.
+   207→   207→
+   208→   208→Converter os pontos acima em **testes de regressão**. **Não alterar as regras por omissão** por causa disto — o relatório serve para o Sama decidir (Bloco 12). A IA “Perfeita” deve refletir o resultado real (como P1 nunca perde; como P2 perde sempre contra jogo perfeito).
+   209→   209→
+   210→   210→---
+   211→   211→
+   212→   212→## 7. PRODUTO ONLINE, ECONOMIA E PROGRESSÃO
+   213→   213→
+   214→   214→### 7.1 ⚠️ Moeda e apostas — decisão D6 (limite legal/ético)
+   215→   215→- Todas as “apostas” usam **moeda virtual (KZ virtual / moedas)**. **Não implementar** depósitos, levantamentos, gateways de pagamento nem conversão para dinheiro real.
+   216→   216→- Flag `REAL_MONEY_ENABLED=false` (server + client), sem qualquer caminho de código ativo atrás dela.
+   217→   217→- **Salas com aposta** e **Apostas ao Vivo**: confirmação de maioridade (18+) antes da 1.ª entrada, guardada no perfil.
+   218→   218→- Mostrar aviso de jogo responsável (texto curto) nas Apostas e em Termos.
+   219→   219→- O botão “+” junto ao saldo abre a **Carteira**: bónus diário, missões, histórico; compra de moedas fica como placeholder **desativado** (“Em breve”).
+   220→   220→
+   221→   221→### 7.2 Carteira / Ledger
+   222→   222→Tabela `ledger_entries` (append-only, nunca `UPDATE/DELETE`): `id, user_id, delta, reason(enum), ref_type, ref_id, balance_after, created_at`. Saldo = soma/coluna derivada mantida por trigger. Operações sempre por **RPC/Edge Function** transacional; o cliente nunca escreve saldo.
+   223→   223→Motivos: `WELCOME_BONUS, DAILY_BONUS, MATCH_STAKE_LOCK, MATCH_PAYOUT, MATCH_REFUND, BET_PLACED, BET_PAYOUT, TOURNAMENT_ENTRY, TOURNAMENT_PRIZE, ADMIN_ADJUST`.
+   224→   224→Bónus de boas-vindas (banner do mockup: “ATÉ 5.000 KZ”): valor configurável; omissão: 5 000.
+   225→   225→
+   226→   226→### 7.3 Salas (ecrãs “Salas” e “Sala X”)
+   227→   227→Sala = lobby com chat, lista de jogadores online, **aposta fixa por partida** (0 = grátis), capacidade (ex.: 24/50). Salas do mockup: **Luanda 100 KZ · Benguela 50 KZ · Huambo 25 KZ · Cabinda 10 KZ · Global 0 KZ (Free, cap. 100)** + **Angola** (destaque na Home). Filtros: **Todas · Online · Apostas · Amigos**.
+   228→   228→Fluxo: Entrar na sala → ver jogadores/chat → **“Jogar”** (matchmaking na sala: fila por sala+aposta, par por `SKIP LOCKED`, preferir Elo próximo) ou desafiar jogador específico.
+   229→   229→Mensagens de sistema tipo **Anúncio** (bolha verde, ícone “Anúncio”) geridas por admin.
+   230→   230→
+   231→   231→### 7.4 Partida online
+   232→   232→- **Servidor autoritativo:** o cliente envia `{matchId, from, to}` para a Edge Function `submit-move`, que carrega o estado, valida com `@tira/engine`, grava em `match_moves`, atualiza a partida e devolve/emite o novo estado. O cliente só faz **atualização otimista** reversível.
+   233→   233→- Realtime por canal `match:{id}` (+ fonte de verdade em DB para reconexão).
+   234→   234→- **Relógio por turno:** 45 s (configurável). Mockup mostra contadores por jogador (“00:28 A sua vez” / “00:45 Adversário”). Timeout ⇒ jogada legal aleatória; **3 timeouts seguidos ⇒ derrota**. Prazo guardado como `turn_deadline` (o cliente só desenha a contagem; o servidor decide).
+   235→   235→- **Desistir** (botão vermelho) e **Sair** (durante jogo = desistência) pedem confirmação.
+   236→   236→- Reconexão: voltar à partida em curso; abandono > 60 s sem ligação ⇒ derrota.
+   237→   237→- Fim de partida: Elo, XP, pagamento do prémio (pote = 2×aposta − taxa; `RAKE_PERCENT` omissão 0), histórico.
+   238→   238→- Estados da partida: `WAITING → ACTIVE → FINISHED` com `result ∈ {P1,P2,DRAW}` e `reason ∈ {LINE, REPETITION, RESIGN, TIMEOUT, DISCONNECT, NO_MOVES}`.
+   239→   239→
+   240→   240→### 7.5 Progressão
+   241→   241→- **Elo** inicial 1000, K=32 (omissão). **Rankings:** Semanal · Global · Amigos; pódio top-3 + lista.
+   242→   242→- **XP/Nível** (perfil: “Nível 12 · 1.250 / 2.000 XP”): XP por resultado — vitória +30, empate +10, derrota +5 (tabela configurável); XP necessário por nível em tabela configurável (no mockup, o nível 12 pede 2.000 XP); barra de XP.
+   243→   243→- **Estatísticas de perfil:** Vitórias, Derrotas, % Vitória = `vitórias / total de partidas` (empates contam no total).
+   244→   244→- **Conquistas** (mín. 12): Primeira Vitória, Série de 5, Dominador do Centro (ganhar com linha pelo 5), Mestre do Bloqueio, Virada (ganhar após ameaça dupla do adversário), Noite de Torneio, etc.
+   245→   245→- **Amigos:** pedido/aceitar/remover por username; convidar para partida; estado online.
+   246→   246→
+   247→   247→### 7.6 Torneios
+   248→   248→Torneio semanal (banner “PRÉMIO: 50.000 KZ”): inscrição (grátis ou com taxa), janela de inscrição, **eliminatória simples** com byes, partidas de 1 jogo, avanço automático, prémio em moeda virtual. Criação por admin (seed/painel Supabase). Ecrã de torneio com estado, chave e “PARTICIPE AGORA”.
+   249→   249→
+   250→   250→### 7.7 Apostas ao Vivo (ecrã “Apostas”)
+   251→   251→Separadores **Ao Vivo · Em Breve · Histórico**. Lista de partidas (“KwanzaMaster vs JJ_Manuel · Aposta: 100 KZ · **1.85x** · [Apostar]”). Odds de resultado calculadas por probabilidade Elo com margem (omissão 5%, mínimo 1.05x). Apostas fecham após a **2.ª jogada**. Pagamento via ledger. Limites por aposta e diário configuráveis. Tudo com moeda virtual (7.1).
+   252→   252→
+   253→   253→### 7.8 Chat e moderação
+   254→   254→Chat por sala + chat da partida. Rate-limit (ex.: 1 msg/s), limite de 280 caracteres, filtro de palavrões em PT, **denunciar** e **bloquear** utilizador, silenciar notificações. Mensagens persistidas (últimas N) com Realtime.
+   255→   255→
+   256→   256→### 7.9 Autenticação
+   257→   257→Criar conta (email + palavra-passe; preparar telefone/OTP como extensão), Entrar, **Continuar como convidado** (conta anónima Supabase, pode jogar offline e salas grátis; converter para conta conserva progresso). Username único, avatar (conjunto de avatares incluído).
+   258→   258→
+   259→   259→### 7.10 Notificações
+   260→   260→Push (Expo) para: desafio recebido, vez de jogar, torneio a começar, pedido de amizade. Preferência em Configurações.
+   261→   261→
+   262→   262→---
+   263→   263→
+   264→   264→## 8. PRODUTO — ECRÃS, DESIGN E UX
+   265→   265→
+   266→   266→### 8.1 Navegação
+   267→   267→**Tab bar (5):** Início · Salas · Chat · Rankings · Perfil (ícone + rótulo; tab ativa em dourado). Ecrãs fora da tab bar: Splash, Boas-vindas/Login, Partida, Apostas, Configurações, Torneios, Amigos, Carteira, Tutorial, Replay, Sobre.
+   268→   268→
+   269→   269→### 8.2 Ecrãs (reproduzir o mockup)
+   270→   270→1. **Splash** — logótipo (tabuleiro 3×3 com alvo no centro + “TIRA O COCÓ DO MEIO”), “ESTRATÉGIA · MOVIMENTO · CONQUISTA”, barra de progresso, “A JOGAR COM ANGOLA”, padrões geométricos angolanos nos cantos (vermelho/preto/verde).
+   271→   271→2. **Boas-vindas** — “Joga, desafia, ganha!”, “O clássico jogo de estratégia angolano. Agora online, com pessoas reais!”, 3 benefícios (“Joga Online ou Offline”, “Salas e Torneios”, “Apostas e Gratuito”), **CRIAR CONTA** (vermelho), **ENTRAR** (contorno), “Continuar como convidado”.
+   272→   272→3. **Início** — cabeçalho com logótipo, saldo em pílula dourada com “+”, sino; cartão do utilizador (avatar, nome, Nível, ponto verde online, barra XP); banner **TORNEIO SEMANAL** (fechável, troféu, “PARTICIPE AGORA”); CTAs **JOGAR ONLINE** (verde, “Encontre jogadores em tempo real”) e **JOGAR OFFLINE** (laranja, “Contra a IA”); atalhos SALAS · TORNEIOS · APOSTAS · AMIGOS; “Jogos em Destaque” (“Ver todos”) com cartões de sala e ocupação.
+   273→   273→4. **Salas** — chips de filtro + lista (imagem da cidade, “Jogadores: 24/50”, “Aposta: 100 KZ” em dourado, botão **Entrar** verde).
+   274→   274→5. **Sala X** — cabeçalho com imagem, “Jogadores: 24/50 | Aposta: 100 KZ”, **Entrar na Sala**, “Jogadores Online” (avatares + nível), bolha de **Anúncio**, mensagens, campo “Escreve uma mensagem…” + enviar.
+   275→   275→6. **Partida** — barra superior (avatar/nome/nível dos dois + “Sala Luanda · Aposta: 100 KZ”), tabuleiro com moldura dourada, **centro marcado com alvo**, relógios laterais (“A sua vez” / “Adversário”), rodapé **Desistir** (vermelho) · **Chat** · **Sair**.
+   276→   276→7. **Chat da Sala** — cabeçalho da sala (badge Entrar, sino), bolhas com nome colorido, hora, anúncio em verde.
+   277→   277→8. **Perfil** — avatar com coroa (se top), Nível, barra XP “1.250 / 2.000 XP”, Vitórias/Derrotas/% Vitória, separadores **Histórico · Conquistas · Amigos**, lista de resultados (Vitória/Derrota/Empate, adversário, hora), “Ver mais”.
+   278→   278→9. **Apostas** — ver 7.7, banner “BÓNUS DE BOAS-VINDAS ATÉ 5.000 KZ”, saldo no topo.
+   279→   279→10. **Configurações** — Conta · Notificações (toggle) · Som e Música (toggle) · Idioma (Português) · Modo Escuro (toggle) · Ajuda · Termos e Privacidade · Sair · “Versão 1.0”. Acrescentar: Símbolos nas peças, Reduzir animações, Vibração, Modo daltonismo.
+   280→   280→11. **Rankings** (não está no mockup — desenhar na mesma linguagem): separadores Semanal/Global/Amigos, pódio top-3, lista com posição, avatar, nome, Elo, variação.
+   281→   281→12. **Modo offline** (spec §20, §30–33): seleção **2 JOGADORES · CONTRA COMPUTADOR (Fácil/Médio/Difícil/Perfeito, escolher lado) · COMPUTADOR VS COMPUTADOR (demo)**; **Tutorial** (10 passos da spec §26); **Replay** (spec §24); **Como jogar**; **Sobre**; ecrã de **Vitória/Empate** (spec §33) com “Jogar novamente” e “Sair”.
+   282→   282→
+   283→   283→### 8.3 Sistema de design (`packages/design-tokens`)
+   284→   284→Extrair as cores **do PNG com conta-gotas** e fixar em tokens; valores orientadores: fundo quase preto esverdeado (`~#050A08`), superfícies verde-escuro (`~#0B1A14`), **verde esmeralda** (ação/P1, `~#10B25A`), **vermelho** (CTA/P2, `~#D7141B`), **dourado** (saldo, tab ativa, moldura, preços, `~#F2B01E`), **laranja** (Jogar Offline, `~#E8830C`). Raios generosos (14–20), contornos finos translúcidos nos cartões, brilho suave nas ações primárias.
+   285→   285→**Peças:** esferas brilhantes com realce especular e sombra de contacto; **casa central** com emblema de alvo (anéis concêntricos) quando vazia; moldura dourada/bronze do tabuleiro. **Tema claro** também obrigatório (toggle “Modo Escuro”), mantendo a identidade.
+   286→   286→Imagens das salas/cidades do mockup **não podem ser usadas** (geradas/sem licença): criar **placeholders** (gradiente + silhueta SVG da cidade) em `assets/rooms/*` com slots fáceis de substituir.
+   287→   287→Identidade cultural (spec §29): geometria contemporânea inspirada em padrões angolanos; **sem estereótipos nem decoração genérica de “África”**.
+   288→   288→
+   289→   289→### 8.4 Mensagens (PT, mapeadas a `MoveErrorCode` e eventos)
+   290→   290→| Evento | Texto |
+   291→   291→|---|---|
+   292→   292→| Início da vez | “A sua vez. Escolhe uma peça.” |
+   293→   293→| Peça selecionada | “Escolhe uma casa livre.” |
+   294→   294→| `DESTINATION_OCCUPIED` | “Essa casa está ocupada.” |
+   295→   295→| `PATH_BLOCKED` | “Não podes saltar uma peça.” |
+   296→   296→| `NOT_YOUR_TURN` | “Ainda não é a tua vez.” |
+   297→   297→| `NOT_YOUR_PIECE` | “Essa peça não é tua.” |
+   298→   298→| Vitória | “Jogador 1 venceu!” / “Venceste!” (online) |
+   299→   299→| Empate | “Empate! A posição repetiu-se.” |
+   300→   300→Todas as cadeias em ficheiros i18n (`pt` completo; estrutura pronta para `en`).
+   301→   301→
+   302→   302→### 8.5 Interação do tabuleiro (spec §16–19)
+   303→   303→Tocar peça ⇒ realce da peça + **realce das casas de destino válidas** (vindas de `getLegalMoves`); tocar destino ⇒ animar deslocação (150–250 ms); mover → verificar vitória/empate → mudar vez. Indicador permanente de quem joga. Vitória: realçar as 3 peças + linha vencedora, bloquear input, “Jogar novamente”. **Modo tutorial:** realçar ameaças imediatas do adversário (`getThreats`).
+   304→   304→**Perspetiva:** online e vs IA, **as peças do utilizador ficam sempre em baixo** (rodar a vista; os índices lógicos não mudam).
+   305→   305→Alvos de toque ≥ 48 dp, contraste AA, leitura por ecrã (rótulos: “Casa 5, centro, vazia”), suporte a teclado na web (setas + Enter), animações desligáveis, sons opcionais.
+   306→   306→
+   307→   307→### 8.6 Som e háptico (spec §28)
+   308→   308→Eventos: seleção, movimento, erro, ameaça, vitória, empate, início. SFX curtos e discretos (placeholders sintetizados, prontos a substituir); música opcional e desligável; háptico leve no mobile.
+   309→   309→
+   310→   310→---
+   311→   311→
+   312→   312→## 9. FASES E ORDEM DE EXECUÇÃO
+   313→   313→
+   314→   314→| Fase | Conteúdo | Agents | Gate para avançar |
+   315→   315→|---|---|---|---|
+   316→   316→| **F0** | Monorepo, CI, tokens base, contrato do motor (tipos/stubs) | A1 A2 A3 | `pnpm typecheck && pnpm test` verdes |
+   317→   317→| **F1** | Motor completo + testes + solver + relatório | A1 | Bloco 11 §A completo; valores de referência reproduzidos |
+   318→   318→| **F2** | IA (4 níveis) + testes | A1 | IA nunca faz jogada ilegal; Perfeita = tabela; Médio/Difícil batem Fácil |
+   319→   319→| **F3** | Design system + ecrãs com dados simulados (web + mobile) + jogo offline completo | A2 | Jogo offline jogável de ponta a ponta em web e mobile |
+   320→   320→| **F4** | Backend: schema, RLS, auth, salas, matchmaking, `submit-move`, ledger | A3 | Partida online entre 2 clientes com validação no servidor |
+   321→   321→| **F5** | Chat, amigos, rankings, XP/Elo, conquistas, torneios, apostas (virtuais), notificações | A2 A3 | Todas as funcionalidades do Bloco 7 |
+   322→   322→| **F6** | Tutorial, replay, som, háptico, acessibilidade, i18n, polimento | A2 A4 | Checklist de acessibilidade + fidelidade visual |
+   323→   323→| **F7** | QA final, e2e, performance, builds (EAS/Vercel), documentação | A4 | Bloco 11 completo |
+   324→   324→
+   325→   325→Paralelismo: A2 e A3 arrancam em F0 contra o **contrato** do motor; A4 escreve testes e2e à medida que os ecrãs aparecem.
+   326→   326→
+   327→   327→---
+   328→   328→
+   329→   329→## 10. PROMPTS INDIVIDUAIS POR AGENT
+   330→   330→
+   331→   331→### 🧠 A1 — Motor, IA e Solver
+   332→   332→**Responsabilidade:** `packages/engine`, `packages/ai`, `tools/solver`, `docs/balance-report.md`.
+   333→   333→1. Publicar **primeiro** os tipos e assinaturas do Bloco 5 (com `throw new Error('TODO')`), commit e registo no `PROGRESS.md`.
+   334→   334→2. Implementar o motor seguindo **exatamente** o Bloco 3 (atenção a D1 e à **armadilha D2**).
+   335→   335→3. Testes (Vitest + `fast-check`), no mínimo: inicialização; 8 linhas vencedoras; ocupação; salto/caminho bloqueado (colineares) e caminho inexistente (não colineares); alternância de turnos; nenhum movimento após fim; repetição 3× com mesma posição+jogador; **a posição inicial não é vitória; após a 1.ª jogada de P1 o jogo continua**; sair e voltar à linha de casa ⇒ vitória; **teste exaustivo** dos 3 360 estados (nenhum sem movimentos em `free-blocked`; `applyMove` preserva 3+3 peças; imutabilidade; `serialize/deserialize` idempotente); propriedade: `getLegalMoves` ⇔ `validateMove.ok`.
+   336→   336→4. Implementar IA (Bloco 6) e o solver; gerar tabela da IA Perfeita (ficheiro compacto versionado + script de regeneração); reproduzir **os valores de referência do 6.2** como testes de regressão.
+   337→   337→5. Escrever `docs/balance-report.md` (resultados por modo, estados, distâncias, exemplos).
+   338→   338→**Critérios de pronto:** cobertura do motor ≥ 95%; zero dependências runtime; IA nunca ilegal em 10 000 partidas IA-vs-IA com seeds diferentes; partidas Perfeito-vs-Perfeito terminam em ≤ 3 plies (P1 ganha) com regras por omissão.
+   339→   339→
+   340→   340→### 🎨 A2 — Design System e Apps (mobile + web)
+   341→   341→**Responsabilidade:** `packages/design-tokens`, `packages/game-client` (em conjunto com A3 para a parte online), `apps/mobile`, `apps/web`.
+   342→   342→1. Tokens (8.3) e componentes base: Button (primário verde, perigo vermelho, contorno, offline laranja), Card, Chip, Pill de saldo, ProgressBar XP, Avatar + badge de nível, Toggle, Tab bar, Toast, Modal de confirmação, Skeletons.
+   343→   343→2. **Componente `Board`** (SVG) com peças animadas, realce de seleção/destinos, casa central com alvo, linha vencedora, perspetiva invertível, acessível.
+   344→   344→3. Implementar **todos os ecrãs do 8.2** com dados simulados primeiro, depois ligados ao `game-client`. Comparar **lado a lado com o mockup** (screenshot vs PNG) e corrigir até ficar fiel a espaçamentos, tamanhos, cores e hierarquia.
+   345→   345→4. **Jogo offline completo** (PvP local, vs IA 4 níveis, CvC) usando o motor e a IA; guardar histórico local; replay e tutorial.
+   346→   346→5. Tema escuro/claro, i18n (`pt`), reduzir animações, símbolos nas peças, teclado na web.
+   347→   347→**Critérios de pronto:** fidelidade visual validada ecrã a ecrã (lista no `PROGRESS.md` com capturas); 60 fps nas animações do tabuleiro; nenhuma regra de jogo reimplementada na UI.
+   348→   348→
+   349→   349→### 🌐 A3 — Backend, Realtime e Economia
+   350→   350→**Responsabilidade:** `supabase/` e a parte online do `packages/game-client`.
+   351→   351→1. **Schema** (migrations versionadas): `profiles, rooms, room_members, matches, match_moves, matchmaking_queue, ledger_entries, bets, tournaments, tournament_entries, messages, friendships, achievements, user_achievements, notifications, reports, blocks`. **RLS em todas as tabelas**, princípio do menor privilégio; escrita sensível só por RPC/Edge Function.
+   352→   352→2. Auth (email, anónimo/convidado, conversão de conta), perfil + username único + 18+.
+   353→   353→3. **Edge Functions:** `submit-move` (valida com `@tira/engine`), `find-match`, `resign`, `timeout-tick` (cron), `settle-match` (Elo+XP+payout transacional), `place-bet`, `settle-bets`, `join-tournament`, `advance-tournament`, `daily-bonus`.
+   354→   354→4. Realtime: canais por sala e por partida; presença (“jogadores online”); reconexão.
+   355→   355→5. Seed: salas do mockup, conquistas, torneio semanal de exemplo, contas de teste.
+   356→   356→6. Segurança: validação de entrada (zod), rate-limit, sem segredos no cliente, `.env.example`, `REAL_MONEY_ENABLED=false`.
+   357→   357→**Critérios de pronto:** duas sessões jogam uma partida completa com validação no servidor; tentativa de jogada ilegal/fora de turno/forjada é rejeitada; ledger nunca dessincroniza (teste de invariantes); testes de RLS a provar que um utilizador não lê/escreve dados alheios.
+   358→   358→
+   359→   359→### ✅ A4 — Qualidade, Acessibilidade, Áudio e Release
+   360→   360→**Responsabilidade:** testes e2e, acessibilidade, som/háptico, performance, CI/CD, documentação.
+   361→   361→1. CI (GitHub Actions): lint, typecheck, testes unitários, e2e web (Playwright), build web; perfis EAS (`development`, `preview`, `production`).
+   362→   362→2. Testes e2e: partida offline completa (vitória, empate por repetição, tentativa de salto), fluxo de conta, sala → partida online (2 contextos), desistência, timeout.
+   363→   363→3. Acessibilidade: auditoria WCAG AA, tamanhos de toque, rótulos de leitor de ecrã, daltonismo, teclado, reduzir animações.
+   364→   364→4. Áudio/háptico (8.6), com estrutura para trocar os assets.
+   365→   365→5. Performance: arranque mobile < 2,5 s em dispositivo médio, bundle web com orçamento, sem *jank* no tabuleiro.
+   366→   366→6. Documentação: `README` (setup em 10 min), `docs/ARCHITECTURE.md`, `docs/RELEASE.md`, `docs/DECISIONS.md` atualizado.
+   367→   367→**Critérios de pronto:** Bloco 11 integralmente cumprido e evidenciado.
+   368→   368→
+   369→   369→---
+   370→   370→
+   371→   371→## 11. DEFINIÇÃO DE PRONTO
+   372→   372→
+   373→   373→### A) Regras (spec §35, todos obrigatórios)
+   374→   374→- [ ] 9 casas; 3 peças por jogador; posição inicial fixa; P1 começa
+   375→   375→- [ ] Destino ocupado inválido; saltos impedidos; sem capturas
+   376→   376→- [ ] 8 linhas verificadas, **só para o jogador que moveu**; posição inicial não é vitória
+   377→   377→- [ ] Vitória termina a partida; empate por repetição (3×) detetado; turnos alternam
+   378→   378→- [ ] Movimentos inválidos rejeitados com mensagem clara; nada joga depois do fim
+   379→   379→- [ ] PvP, PvE e CvC funcionam; a IA respeita o motor; replay reproduz exatamente os movimentos
+   380→   380→- [ ] Valores de referência do solver (6.2) reproduzidos
+   381→   381→
+   382→   382→### B) Produto
+   383→   383→- [ ] Todos os ecrãs do 8.2 implementados, fiéis ao mockup, em escuro e claro
+   384→   384→- [ ] Offline completo; online completo (salas, partida, chat, amigos, rankings, torneios, apostas virtuais)
+   385→   385→- [ ] Servidor autoritativo; RLS verificada; ledger consistente
+   386→   386→- [ ] Sem dinheiro real em qualquer caminho de código; gate 18+ nas salas com aposta
+   387→   387→- [ ] Acessibilidade (peças não só por cor, toque ≥ 48 dp, contraste AA, animações desligáveis)
+   388→   388→- [ ] `pnpm lint && pnpm typecheck && pnpm test && pnpm e2e` verdes; builds EAS e Vercel a funcionar
+   389→   389→
+   390→   390→---
+   391→   391→
+   392→   392→## 12. DECISÕES QUE SÓ O SAMA PODE ALTERAR (não mudar sozinho)
+   393→   393→
+   394→   394→| # | Tema | Por omissão (implementado) | Alternativa (já suportada por flag) |
+   395→   395→|---|---|---|---|
+   396→   396→| D1 | Interpretação do “caminho livre” | `free-blocked` | `lines-only`, `adjacent-only` |
+   397→   397→| D5 | **Equilíbrio:** com as regras da spec, P1 ganha sempre em 3 jogadas | Manter a spec tal como está | `homeLineCounts:false` (a linha de casa não conta), ou `firstPlayer` alternado por partida |
+   398→   398→| D6 | Dinheiro real | **Desativado** (moeda virtual) | Só após parecer jurídico/licenciamento e integração de pagamentos |
+   399→   399→| — | Taxa da casa nas partidas com aposta | 0% | `RAKE_PERCENT` |
+   400→   400→
+   401→   401→---
+   402→   402→
+   403→   403→## 13. REGRAS DE TRABALHO PARA TODOS OS AGENTS
+   404→   404→
+   405→   405→1. **Autonomia:** não pares para pedir permissão. Se bloqueado, regista a dúvida em `docs/DECISIONS.md`, escolhe a opção mais segura/reversível e continua.
+   406→   406→2. **Commits pequenos e frequentes** (Conventional Commits). Cada tarefa termina com testes verdes.
+   407→   407→3. **Nunca enfraqueças um teste** para o fazer passar. Se o teste estiver errado, explica no `DECISIONS.md`.
+   408→   408→4. Atualiza `docs/PROGRESS.md` no fim de cada tarefa (feito / em curso / bloqueado / próximo).
+   409→   409→5. **Sem duplicação de regras.** Se precisares de lógica de jogo, importa-a de `@tira/engine`.
+   410→   410→6. Sem `any`, sem `console.log` esquecido, sem segredos no repositório, sem dependências desnecessárias (justifica cada uma).
+   411→   411→7. Fidelidade ao mockup é requisito, não opinião: compara sempre com `docs/design/mockups.png`.
+   412→   412→8. No fim, entrega um **relatório final**: o que foi feito, o que ficou fora, riscos, como correr tudo, e links/instruções de deploy.
+   413→   413→

@@ -1,0 +1,312 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-bebas);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-p1: var(--p1);
+  --color-p2: var(--p2);
+  --color-gold: var(--gold);
+  --color-orange: var(--orange);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* ============ TEMA ESCURO (padrão — fiel ao mockup) ============ */
+:root,
+.dark {
+  --radius: 0.875rem;
+
+  /* Fundo quase preto esverdeado (mockup) */
+  --background: oklch(0.16 0.015 165);
+  --foreground: oklch(0.97 0.005 120);
+
+  /* Superfícies verde-escuro */
+  --surface: oklch(0.21 0.018 165);
+  --surface-2: oklch(0.25 0.02 165);
+  --card: oklch(0.21 0.018 165);
+  --card-foreground: oklch(0.97 0.005 120);
+  --popover: oklch(0.21 0.018 165);
+  --popover-foreground: oklch(0.97 0.005 120);
+
+  /* Verde esmeralda — ação / P1 */
+  --p1: oklch(0.68 0.18 152);
+  --p1-soft: oklch(0.68 0.18 152 / 0.15);
+
+  /* Vermelho — CTA / P2 */
+  --p2: oklch(0.6 0.22 27);
+  --p2-soft: oklch(0.6 0.22 27 / 0.15);
+
+  /* Dourado — saldo, tab ativa, moldura, preços */
+  --gold: oklch(0.82 0.15 80);
+  --gold-soft: oklch(0.82 0.15 80 / 0.15);
+
+  /* Laranja — Jogar Offline */
+  --orange: oklch(0.7 0.17 55);
+  --orange-soft: oklch(0.7 0.17 55 / 0.15);
+
+  --primary: oklch(0.68 0.18 152);
+  --primary-foreground: oklch(0.16 0.015 165);
+  --secondary: oklch(0.28 0.02 165);
+  --secondary-foreground: oklch(0.97 0.005 120);
+  --muted: oklch(0.26 0.015 165);
+  --muted-foreground: oklch(0.7 0.012 120);
+  --accent: oklch(0.3 0.02 165);
+  --accent-foreground: oklch(0.97 0.005 120);
+  --destructive: oklch(0.62 0.23 27);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.68 0.18 152);
+  --chart-1: oklch(0.68 0.18 152);
+  --chart-2: oklch(0.6 0.22 27);
+  --chart-3: oklch(0.82 0.15 80);
+  --chart-4: oklch(0.7 0.17 55);
+  --chart-5: oklch(0.6 0.12 200);
+  --sidebar: oklch(0.19 0.015 165);
+  --sidebar-foreground: oklch(0.97 0.005 120);
+  --sidebar-primary: oklch(0.68 0.18 152);
+  --sidebar-primary-foreground: oklch(0.16 0.015 165);
+  --sidebar-accent: oklch(0.26 0.015 165);
+  --sidebar-accent-foreground: oklch(0.97 0.005 120);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.68 0.18 152);
+}
+
+/* ============ TEMA CLARO (toggle obrigatório — spec §8.3) ============ */
+.light {
+  --background: oklch(0.97 0.008 95);
+  --foreground: oklch(0.2 0.02 165);
+
+  --surface: oklch(0.99 0.005 95);
+  --surface-2: oklch(0.94 0.01 95);
+  --card: oklch(0.99 0.005 95);
+  --card-foreground: oklch(0.2 0.02 165);
+  --popover: oklch(0.99 0.005 95);
+  --popover-foreground: oklch(0.2 0.02 165);
+
+  --p1: oklch(0.55 0.16 152);
+  --p1-soft: oklch(0.55 0.16 152 / 0.12);
+  --p2: oklch(0.52 0.2 27);
+  --p2-soft: oklch(0.52 0.2 27 / 0.12);
+  --gold: oklch(0.72 0.16 75);
+  --gold-soft: oklch(0.72 0.16 75 / 0.15);
+  --orange: oklch(0.62 0.17 55);
+  --orange-soft: oklch(0.62 0.17 55 / 0.15);
+
+  --primary: oklch(0.55 0.16 152);
+  --primary-foreground: oklch(0.99 0.005 95);
+  --secondary: oklch(0.92 0.01 95);
+  --secondary-foreground: oklch(0.2 0.02 165);
+  --muted: oklch(0.94 0.008 95);
+  --muted-foreground: oklch(0.45 0.015 120);
+  --accent: oklch(0.9 0.02 95);
+  --accent-foreground: oklch(0.2 0.02 165);
+  --destructive: oklch(0.55 0.22 27);
+  --border: oklch(0.2 0.02 165 / 12%);
+  --input: oklch(0.2 0.02 165 / 10%);
+  --ring: oklch(0.55 0.16 152);
+  --sidebar: oklch(0.97 0.008 95);
+  --sidebar-foreground: oklch(0.2 0.02 165);
+  --sidebar-primary: oklch(0.55 0.16 152);
+  --sidebar-primary-foreground: oklch(0.99 0.005 95);
+  --sidebar-accent: oklch(0.92 0.01 95);
+  --sidebar-accent-foreground: oklch(0.2 0.02 165);
+  --sidebar-border: oklch(0.2 0.02 165 / 12%);
+  --sidebar-ring: oklch(0.55 0.16 152);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  /* Tipografia de títulos com fonte display (Bebas Neue) */
+  .font-display {
+    font-family: var(--font-display), system-ui, sans-serif;
+    letter-spacing: 0.02em;
+  }
+}
+
+/* ============ Padrões geométricos angolanos (spec §29) ============ */
+.angolan-pattern {
+  background-image:
+    linear-gradient(45deg, transparent 25%, var(--p1) 25%, var(--p1) 50%, transparent 50%, transparent 75%, var(--p1) 75%),
+    linear-gradient(-45deg, transparent 25%, var(--p2) 25%, var(--p2) 50%, transparent 50%, transparent 75%, var(--p2) 75%);
+  background-size: 28px 28px;
+  background-position: 0 0, 0 14px;
+  opacity: 0.08;
+}
+
+.angolan-border {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      var(--p2) 0 8px,
+      var(--gold) 8px 16px,
+      var(--p1) 16px 24px,
+      transparent 24px 32px
+    );
+}
+
+.angolan-diamond {
+  background-image:
+    linear-gradient(135deg, var(--p1) 25%, transparent 25%),
+    linear-gradient(225deg, var(--p1) 25%, transparent 25%),
+    linear-gradient(45deg, var(--p2) 25%, transparent 25%),
+    linear-gradient(315deg, var(--p2) 25%, transparent 25%);
+  background-size: 20px 20px;
+  background-position: 10px 0, 10px 0, 0 0, 0 0;
+  opacity: 0.15;
+}
+
+/* ============ Brilhos e efeitos ============ */
+.piece-glow-p1 {
+  box-shadow:
+    0 0 12px oklch(0.68 0.18 152 / 0.6),
+    0 0 24px oklch(0.68 0.18 152 / 0.3),
+    inset 0 -3px 6px oklch(0.4 0.1 152),
+    inset 0 3px 6px oklch(0.85 0.15 152);
+}
+.piece-glow-p2 {
+  box-shadow:
+    0 0 12px oklch(0.6 0.22 27 / 0.6),
+    0 0 24px oklch(0.6 0.22 27 / 0.3),
+    inset 0 -3px 6px oklch(0.35 0.1 27),
+    inset 0 3px 6px oklch(0.8 0.15 27);
+}
+.gold-frame {
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 0 16px oklch(0.82 0.15 80 / 0.4),
+    0 8px 32px oklch(0 0 0 / 0.5);
+}
+.text-glow-gold {
+  text-shadow: 0 0 12px oklch(0.82 0.15 80 / 0.5);
+}
+.text-glow-p1 {
+  text-shadow: 0 0 10px oklch(0.68 0.18 152 / 0.5);
+}
+.text-glow-p2 {
+  text-shadow: 0 0 10px oklch(0.6 0.22 27 / 0.5);
+}
+
+/* ============ Scrollbar customizada ============ */
+.scrollbar-custom::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 3px;
+}
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* ============ Animações ============ */
+@keyframes piece-place {
+  0% { transform: scale(0.5) translateY(-20px); opacity: 0; }
+  60% { transform: scale(1.1) translateY(0); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.animate-piece-place {
+  animation: piece-place 0.3s ease-out;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.animate-pulse-glow {
+  animation: pulse-glow 1.6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(1 0 0 / 0.08) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+/* Reduzir animações (acessibilidade) */
+.reduce-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* Modo daltonismo — alto contraste de forma */
+.colorblind .piece-p1 {
+  filter: saturate(0.4) brightness(1.1);
+}
+.colorblind .piece-p2 {
+  filter: saturate(0.4) brightness(0.9);
+}

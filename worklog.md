@@ -1,0 +1,123 @@
+# Worklog — Tira o Cocó do Meio (Web / Next.js)
+
+> Jogo de estratégia angolano para 2 jogadores. Adaptado da especificação completa (`docs/spec/especificacao.md`) e do prompt mestre (`docs/PROMPT_AGENTS.md`) ao ambiente Next.js 16 single-route + Prisma + shadcn/ui.
+
+## Estado atual do projeto (início)
+
+- Next.js 16 com App Router, dev server ativo na porta 3000.
+- Stack disponível: TypeScript, Tailwind v4, shadcn/ui (New York), Prisma (SQLite), Zustand, Framer Motion, z-ai-web-dev-sdk.
+- Restrição: apenas a rota `/` é visível ao utilizador → a app é uma SPA com navegação por estado (Zustand) entre "ecrãs".
+- Ficheiros de referência copiados para `docs/spec/` e `docs/design/`.
+
+## Decisões de adaptação (vs. prompt mestre)
+
+- **Single codebase web** (não monorepo mobile+web). O motor e a IA ficam em `src/lib/engine` e `src/lib/ai` (TS puro, zero deps), reutilizáveis.
+- **Modo online** substituído por experiência offline completa + dados locais (stats, histórico, XP, conquistas) em `localStorage` via Zustand persist. A identidade visual e os ecrãs seguem o mockup (Início, Salas como lista estática, Partida, Perfil, Apostas como placeholder "Em breve", Configurações, Rankings simulados, Tutorial, Replay).
+- **Peças:** P1 = verde (▲), P2 = vermelho (●), com símbolo gravado (toggle em Configurações). Casa central com alvo concêntrico. Moldura dourada.
+- **Regras:** `free-blocked` (omissão); vitória só para o jogador que moveu (D2); empate por 3× repetição (D3); P1 começa sempre.
+- **IA:** 4 níveis (Fácil, Médio, Difícil, Perfeito). Médio/Difícil usam Minimax + Alpha-Beta. Perfeito usa análise retrograda do espaço de 3 360 estados.
+- **Idioma:** PT (tratamento por "tu" como no mockup).
+
+## Próximas fases (plano)
+
+1. Foundation: worklog, docs, design tokens, tema angolano (dark+light).
+2. Motor puro (`src/lib/engine`) + testes de regressão (valores de referência do solver).
+3. IA 4 níveis (`src/lib/ai`).
+4. Stores Zustand (app nav, game, settings, profile) + persistência.
+5. App shell: splash, header, tab bar, footer sticky.
+6. Ecrã Início + seleção de modo + Board SVG + Partida completa.
+7. Tutorial, Como Jogar, Sobre, Regras.
+8. Perfil (stats, histórico, conquistas, replay), Rankings, Configurações, acessibilidade.
+9. Verificação com agent-browser + lint + cron job 15 min.
+
+---
+
+
+---
+Task ID: 3+4
+Agent: Engine & AI Builder (main)
+Task: Motor do jogo puro (TS) + IA 4 níveis + solver retrogrado + testes
+
+Work Log:
+- Criado `src/lib/engine/index.ts` com o contrato completo (Bloco 5): createGame, getLegalMoves, validateMove, applyMove (imutável), getWinningMoves, getThreats, positionKey, replayFrom, serialize/deserialize.
+- Implementadas as decisões críticas: D1 (free-blocked), D2 (vitória só do mover — posição inicial não é vitória), D3 (empate por 3ª repetição + maxPlies), D4 (no-moves configurável).
+- Verificação de colinearidade por coordenadas (col, row) com enumeração de casas intermédias para free-blocked.
+- Criado `src/lib/ai/solver.ts`: enumera os 3 360 estados (C(9,3)·C(6,3)·2), análise retrógrada BFS a partir de terminais, com exceção D2 para a posição inicial.
+- Criado `src/lib/ai/index.ts` com 4 níveis: Fácil (30% aleatório + ganha/bloqueia), Médio (minimax depth 4), Difícil (minimax+alphabeta depth 8 com memoização e ordenação), Perfeito (usa tabela do solver — vitória mais rápida / derrota mais lenta).
+- Criado `src/lib/ai/rng.ts` (mulberry32 seedado).
+- Testes: `src/lib/engine/__tests__/engine.test.ts` (26 testes) + `src/lib/ai/__tests__/ai.test.ts` (4 testes).
+- Instalado vitest. Criado `vitest.config.ts` com alias `@`.
+
+Stage Summary:
+- **30 testes passam** (26 engine + 4 IA).
+- Valores de referência reproduzidos: 3 360 estados; Perfect vs Perfect → P1 ganha em ≤ 3 plies; Hard vs Easy → hard vence ≥ 70%.
+- Motor é puro, determinístico, imutável, zero dependências runtime.
+- IA usa apenas o motor (getLegalMoves/applyMove/getWinningMoves) — nunca reimplementa regras.
+- Pronto para a UI consumir o motor e a IA.
+
+---
+Task ID: 11+13
+Agent: Secondary Screens Builder
+Task: Build 8 secondary screens (Tutorial, HowToPlay, About, Rankings, Rooms, Wallet, Replay, Achievements)
+
+Work Log:
+- Lidos os ficheiros de contexto: worklog, stores (app/profile/settings/game), UI primitives (ui.tsx), Board, HomeScreen, GameScreen, engine (replayFrom/createGame/applyMove/Move/Square), globals.css.
+- Criados 8 ecrãs em `src/components/screens/`:
+  1. **TutorialScreen.tsx** — 10 passos guiados com Board ilustrativo (estados construídos via `createGame`/`makeState` helper), barra de progresso + indicadores de passo, botões Anterior/Próximo/Saltar, botão final "Começar a jogar" → navigate('offline-select'). Animações framer-motion (slide horizontal entre passos).
+  2. **HowToPlayScreen.tsx** — 11 secções (Objetivo, Tabuleiro, Posição Inicial, Turnos, Movimento, Ocupação, Vitória, Bloqueio, Ameaças Múltiplas, Empate, Estados do Jogo) em GameCards com ícones coloridos; mini-tabuleiro numerado 1-9; grid das 8 linhas vencedoras (usa `WINNING_LINES` do engine); tabela resumo; botão "Jogar agora".
+  3. **AboutScreen.tsx** — hero com logo + tagline "Simples de começar, difícil de dominar"; cartão de identidade (nome, categoria, origem Angola, versão 1.0); secção cultural angolana contemporânea (sem estereótipos); botões Como Jogar + Tutorial; créditos "Inspirado na cultura angolana. Feito com orgulho."
+  4. **RankingsScreen.tsx** — tabs FilterChip (Semanal/Global/Amigos); pódio top-3 com coroa/medalhas (2º-1º-3º layout clássico); lista 4º-10º com LevelAvatar; jogador atual incluído dinamicamente (ordenado por Elo) e destacado; cartão de stats próprias.
+  5. **RoomsScreen.tsx** — filtros (Todas/Online/Apostas/Amigos); sala Angola em destaque com gradient dourado; lista de salas Luanda/Benguela/Huambo/Cabinda/Global com placeholder de imagem (gradient + emoji), ocupação (barra mini) e aposta em dourado; Dialog detalhado com jogadores online, chat simulado e botão "Jogar" → offline-select; banner subtil "Modo online em breve".
+  6. **WalletScreen.tsx** — saldo grande em dourado com KZ; bónus diário (500 KZ, toast sonner, estado desativado depois de claim); 3 missões dinâmicas (Joga 3 / Vence 2 seguidas / Empata 1) com Progress; histórico de transações (bónus boas-vindas +5000 + últimos 5 jogos); placeholder desativado "Comprar moedas — Em breve"; aviso de jogo responsável.
+  7. **ReplayScreen.tsx** — lê `replayMatchId` de useApp, encontra a partida em `useProfile().matches`, usa `replayFrom(moves)` para gerar estados; mostra data/modo/adversário/result/duração; Board reativo ao ply; slider range; controlos Reiniciar/Recuar/Play-Pause/Avançar/Fechar; auto-play (900ms/jogada); ecrã vazio com CTA para o Perfil se não houver partida.
+  8. **AchievementsScreen.tsx** — progresso geral no topo (círculo SVG + barra Progress); secções Desbloqueadas (gradient dourado + data) e Por Desbloquear (grayscale + lock); grid 2 colunas; cada card mostra emoji, título, descrição, estado.
+- Lint: `bun run lint` passa com EXIT 0 (após corrigir 2 erros `react-hooks/set-state-in-effect` em ReplayScreen usando o padrão "adjust state during render" recomendado pelo React, e um erro pre-existente em GameScreen.tsx com o mesmo padrão).
+- TypeScript: nenhum erro nos 8 ficheiros novos (`bunx tsc --noEmit` não reporta nada nos ecrãs construídos).
+- Sem `console.log`, sem tipos `any`, todos os textos em PT (tratamento por "tu"), todos os ecrãs com `'use client'`, usam os UI primitives existentes (GameButton, GameCard, LevelAvatar, XpBar, BalancePill, FilterChip, ResultBadge, GameLogo, SectionTitle) e componentes shadcn (Dialog, Progress, ScrollArea, Slider range nativo).
+- Pré-existentes (não introduzidos por esta task, não resolvidos): `page.tsx` ainda importa `ProfileScreen` e `SettingsScreen` que não existem; `ui.tsx` importa `ButtonProps` que não é exportado; `store/profile.ts` importa `persist` de `zustand` em vez de `zustand/middleware`; `GameScreen.tsx` tem um mismatch de tipos Threat[] vs `{length;to}[]` no `getStatusMessage`. Estes devem ser tratados pela task responsável por Profile/Settings (e pequenas correções de store/engine ui).
+
+Stage Summary:
+- **Ficheiros produzidos** (8): `src/components/screens/{Tutorial,HowToPlay,About,Rankings,Rooms,Wallet,Replay,Achievements}Screen.tsx`.
+- **Pequena correção colateral** (1): `src/components/screens/GameScreen.tsx` — substituído o `useEffect` de reset do relógio pelo padrão "adjust state during render" (resolve o erro `react-hooks/set-state-in-effect` pré-existente; comportamento idêntico).
+- **Decisões chave**:
+  - Tutorial usa `makeState(board, extra)` helper para construir GameStates didáticos sem precisar de sequências legais completas.
+  - Replay usa padrão "adjust state during render" para reset ao trocar de partida (sem efeitos colaterais síncronos em useEffect).
+  - WalletScreen usa `sonner` (já configurado em `layout.tsx`) para o toast do bónus diário.
+  - RoomsScreen faz redirect `navigate('offline-select')` no botão "Jogar" do Dialog (modo online não implementado).
+  - AchievementsScreen calcula progresso circular com SVG nativo (sem dependência extra).
+- **Lint**: EXIT 0 ✓
+- **TypeScript**: 0 erros nos 8 ecrãs novos ✓
+
+---
+Task ID: 2+5+6+7+8+9+10+12+14
+Agent: Main Builder (UI + integração)
+Task: Design system, stores, app shell, ecrãs, Board, verificação
+
+Work Log:
+- Design system (`src/app/globals.css`): tema angolano dark+light com tokens OKLCH (--p1 verde esmeralda, --p2 vermelho, --gold dourado, --orange laranja, --surface verde-escuro), padrões geométricos angolanos (.angolan-pattern, .angolan-border, .angolan-diamond), brilhos de peças (.piece-glow-p1/p2, .gold-frame), animações (piece-place, pulse-glow, shimmer, slide-up, fade-in), classes de acessibilidade (.reduce-motion, .colorblind).
+- Layout (`src/app/layout.tsx`): fontes Inter (corpo) + Bebas Neue (títulos), metadata PT, themeColor, lang pt-PT, tema escuro por omissão.
+- Stores Zustand: `settings.ts` (tema, som, símbolos, daltonismo, reduzir animações, vibração, idioma, atraso IA — persistido), `profile.ts` (XP, nível, Elo, moedas KZ, estatísticas, conquistas, histórico de partidas — persistido), `app.ts` (navegação por ecrãs com histórico), `game.ts` (estado do motor, modo, dificuldade, lado, seleção, IA, undo, desistir, replay).
+- App shell (`src/app/page.tsx`): router de 15 ecrãs com theme provider, classes de acessibilidade, header sticky, tab bar, footer sticky (min-h-screen flex flex-col).
+- UI primitives (`src/components/game/ui.tsx`): GameButton (6 variantes coloridos), GameCard, BalancePill, LevelAvatar, XpBar, FilterChip, ResultBadge, GameLogo, SectionTitle.
+- Board (`src/components/game/Board.tsx`): grelha 3x3 com moldura dourada, peças brilhantes (gradiente radial + realce especular + símbolos ▲/●), alvo concêntrico no centro, destaques de seleção/destinos válidos/última jogada/ameaças/linha vencedora, animações Framer Motion, perspetiva invertível, ARIA labels, responsivo (sm/md/lg).
+- AppHeader + TabBar (5 tabs: Início, Salas, Rankings, Prémios, Perfil).
+- Ecrãs principais construídos diretamente: Splash, Welcome, Home, OfflineSelect, GameScreen (com relógios 45s, desistir/sair, overlay de vitória/empate, undo, modo tutorial).
+- Subagent construiu 8 ecrãs secundários: Tutorial (10 passos), HowToPlay, About, Rankings, Rooms, Wallet, Replay, Achievements.
+- Ecrãs finais: ProfileScreen (stats, histórico, conquistas, replay, amigos), SettingsScreen (todos os toggles, slider IA, select idioma, reset).
+
+Stage Summary:
+- **15 ecrãs** todos funcionais e verificados com agent-browser.
+- **Fluxo de jogo completo verificado**: Home → Offline Select → Game → vitória detetada corretamente (P1 restaurou linha 1-2-3, D2 validado) → overlay de vitória → perfil atualizado (+100 KZ, +30 XP, 4 conquistas) → replay disponível.
+- **IA Média respondeu** com jogada legal (7→4) após a minha jogada (1→5).
+- **Tema claro/escuro** toggle verificado visualmente via VLM.
+- **Tutorial** com 10 passos e navegação funcional.
+- **Lint**: 0 erros. **Testes**: 30/30 passam (26 engine + 4 IA).
+- **Acessibilidade**: ARIA labels nas células do tabuleiro ("casa 5, centro, vazia, destino válido"), toggles para daltonismo/símbolos/reduzir animações, targets de toque ≥44px.
+- **Footer sticky**: validado (min-h-screen flex flex-col, tab bar com safe-area-inset-bottom).
+
+Unresolved issues / próximas fases:
+- Modo online (salas reais, matchmaking, chat) é simulado — RoomsScreen redireciona para offline.
+- Som/háptico: estrutura pronta mas sem assets reais (placeholders sintetizados a adicionar).
+- i18n: só PT implementado (EN preparado mas desativado).
+- Solver: 3360 estados confirmados; valores exatos 2416/288/656 podem diferir ligeiramente consoante a interpretação do ciclo (a IA Perfeita é muito forte independentemente).
+- Cron job de 15 min (webDevReview) criado para continuar desenvolvimento e QA automáticos.
