@@ -20,6 +20,7 @@ import { useSettings } from '@/store/settings';
 import { isGameOver, getLegalMoves, type Square } from '@/lib/engine';
 import { Board } from '@/components/game/Board';
 import { GameButton, GameCard, LevelAvatar } from '@/components/game/ui';
+import { Confetti } from '@/components/game/Confetti';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -88,7 +89,7 @@ export function GameScreen() {
   // Timeout: jogada legal aleatória se o tempo acabar
   useEffect(() => {
     if (!hasClock || isGameOver(state) || mode === 'cvc') return;
-    const isHumanTurn = mode === 'pve' ? state.currentPlayer === humanSide : true;
+    const isHumanTurn = mode === 'pve' || mode === 'practice' ? state.currentPlayer === humanSide : true;
     const timeLeft = state.currentPlayer === 'P1' ? p1Time : p2Time;
     if (timeLeft === 0 && isHumanTurn) {
       const legal = getLegalMoves(state, state.currentPlayer);
@@ -103,7 +104,7 @@ export function GameScreen() {
     (sq: Square) => {
       if (isGameOver(state)) return;
       if (mode === 'cvc') return;
-      if (mode === 'pve' && state.currentPlayer !== humanSide) return;
+      if ((mode === 'pve' || mode === 'practice') && state.currentPlayer !== humanSide) return;
 
       const cell = state.board[sq - 1];
       if (cell === state.currentPlayer) {
@@ -123,16 +124,16 @@ export function GameScreen() {
     : [];
 
   // Determinar se o tabuleiro deve estar flipped (peças do humano em baixo)
-  const flipped = mode === 'pve' && humanSide === 'P2';
+  const flipped = (mode === 'pve' || mode === 'practice') && humanSide === 'P2';
 
   const p1Label =
-    mode === 'pve'
+    mode === 'pve' || mode === 'practice'
       ? humanSide === 'P1' ? 'Tu' : `IA ${diffLabel(difficulty)}`
       : mode === 'cvc'
         ? `IA ${diffLabel(difficulty)} (P1)`
         : 'Jogador 1';
   const p2Label =
-    mode === 'pve'
+    mode === 'pve' || mode === 'practice'
       ? humanSide === 'P2' ? 'Tu' : `IA ${diffLabel(difficulty)}`
       : mode === 'cvc'
         ? `IA ${diffLabel(difficulty)} (P2)`
@@ -161,7 +162,7 @@ export function GameScreen() {
           </button>
           <div className="text-center flex-1 min-w-0">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {mode === 'pvp' ? '2 Jogadores' : mode === 'pve' ? 'vs IA' : 'IA vs IA'}
+              {mode === 'pvp' ? '2 Jogadores' : mode === 'pve' ? 'vs IA' : mode === 'practice' ? 'Treino Livre' : 'IA vs IA'}
               {mode !== 'pvp' && ` • ${diffLabel(difficulty)}`}
             </p>
             <p className="text-xs text-gold font-medium truncate">
@@ -189,7 +190,7 @@ export function GameScreen() {
             active={p1Active}
             time={p1Time}
             showClock={hasClock}
-            isHuman={mode === 'pve' ? humanSide === 'P1' : mode !== 'cvc'}
+            isHuman={mode === 'pve' || mode === 'practice' ? humanSide === 'P1' : mode !== 'cvc'}
             isP1
           />
           <div className="flex items-center justify-center px-1">
@@ -201,7 +202,7 @@ export function GameScreen() {
             active={p2Active}
             time={p2Time}
             showClock={hasClock}
-            isHuman={mode === 'pve' ? humanSide === 'P2' : mode !== 'cvc'}
+            isHuman={mode === 'pve' || mode === 'practice' ? humanSide === 'P2' : mode !== 'cvc'}
             isP1={false}
           />
         </div>
@@ -238,7 +239,7 @@ export function GameScreen() {
             threatSquares={threatSquares}
             onSquareClick={handleSquareClick}
             flipped={flipped}
-            disabled={mode === 'cvc' || (mode === 'pve' && state.currentPlayer !== humanSide)}
+            disabled={mode === 'cvc' || ((mode === 'pve' || mode === 'practice') && state.currentPlayer !== humanSide)}
             size="md"
           />
         </div>
@@ -462,19 +463,19 @@ function GameOverOverlay({
   reduceMotion,
 }: {
   winner: 'P1' | 'P2' | null;
-  mode: 'pvp' | 'pve' | 'cvc';
+  mode: 'pvp' | 'pve' | 'cvc' | 'practice';
   humanSide: 'P1' | 'P2';
   onRestart: () => void;
   onExit: () => void;
   reduceMotion: boolean;
 }) {
   const isDraw = winner === null;
-  const humanWon = mode === 'pve' && winner === humanSide;
-  const humanLost = mode === 'pve' && winner && winner !== humanSide;
+  const humanWon = (mode === 'pve' || mode === 'practice') && winner === humanSide;
+  const humanLost = (mode === 'pve' || mode === 'practice') && winner && winner !== humanSide;
 
   const title = isDraw
     ? 'Empate!'
-    : mode === 'pve'
+    : mode === 'pve' || mode === 'practice'
       ? humanWon
         ? 'Vitória!'
         : 'Derrota'
@@ -484,7 +485,7 @@ function GameOverOverlay({
 
   const subtitle = isDraw
     ? 'A posição repetiu-se.'
-    : mode === 'pve'
+    : mode === 'pve' || mode === 'practice'
       ? humanWon
         ? 'Venceste a IA. Parabéns!'
         : 'A IA foi mais forte. Tenta novamente!'
@@ -493,7 +494,7 @@ function GameOverOverlay({
   const emoji = isDraw ? '🤝' : humanWon ? '🏆' : humanLost ? '😔' : winner === 'P1' ? '🟢' : '🔴';
   const color = isDraw
     ? 'text-muted-foreground'
-    : humanWon || (mode !== 'pve' && winner)
+    : humanWon || ((mode !== 'pve' && mode !== 'practice') && winner)
       ? 'text-gold'
       : 'text-p2';
 
@@ -504,15 +505,36 @@ function GameOverOverlay({
       exit={{ opacity: 0 }}
       className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md p-6"
     >
+      {/* Confetti apenas em vitória humana e sem reduceMotion */}
+      {humanWon && !reduceMotion && <Confetti count={50} />}
+      {/* Raios de vitória */}
+      {!isDraw && !reduceMotion && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden>
+          <div
+            className="w-96 h-96 rounded-full animate-victory-rays"
+            style={{
+              background: `conic-gradient(from 0deg, transparent, ${humanWon ? 'var(--p1)' : 'var(--p2)'} 20%, transparent 25%, ${humanWon ? 'var(--p1)' : 'var(--p2)'} 45%, transparent 50%, ${humanWon ? 'var(--p1)' : 'var(--p2)'} 70%, transparent 75%, ${humanWon ? 'var(--p1)' : 'var(--p2)'} 95%, transparent)`,
+              opacity: 0.15,
+            }}
+          />
+        </div>
+      )}
       <motion.div
         initial={reduceMotion ? undefined : { scale: 0.8, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-        className="w-full max-w-sm"
+        className="w-full max-w-sm relative z-10"
       >
         <GameCard className="p-6 text-center" glow="gold">
-          <div className="text-6xl mb-3">{emoji}</div>
-          <h2 className={cn('font-display text-4xl tracking-wide mb-1', color)}>{title}</h2>
+          <motion.div
+            initial={reduceMotion ? undefined : { scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.1 }}
+            className="text-6xl mb-3"
+          >
+            {emoji}
+          </motion.div>
+          <h2 className={cn('font-display text-4xl tracking-wide mb-1', color, humanWon && 'text-glow-gold')}>{title}</h2>
           <p className="text-sm text-muted-foreground mb-5">{subtitle}</p>
 
           {!isDraw && (
@@ -546,21 +568,21 @@ function GameOverOverlay({
 
 function getStatusMessage(
   state: { status: string; currentPlayer: 'P1' | 'P2'; winner: 'P1' | 'P2' | null },
-  mode: 'pvp' | 'pve' | 'cvc',
+  mode: 'pvp' | 'pve' | 'cvc' | 'practice',
   humanSide: 'P1' | 'P2',
   isAiThinking: boolean,
   showThreats: boolean,
   currentThreats: { length: number; to: number }[],
 ): string {
   if (state.status === 'WIN_P1' || state.status === 'WIN_P2') {
-    if (mode === 'pve') {
+    if (mode === 'pve' || mode === 'practice') {
       return state.winner === humanSide ? 'Venceste!' : 'A IA venceu!';
     }
     return `Jogador ${state.winner === 'P1' ? '1' : '2'} venceu!`;
   }
   if (state.status === 'DRAW') return 'Empate! A posição repetiu-se.';
   if (isAiThinking) return 'A IA está a pensar…';
-  const isHumanTurn = mode === 'pve' ? state.currentPlayer === humanSide : true;
+  const isHumanTurn = mode === 'pve' || mode === 'practice' ? state.currentPlayer === humanSide : true;
   if (isHumanTurn) {
     if (showThreats && currentThreats.length > 0) {
       return '⚠️ Ameaça do adversário! Bloqueia!';

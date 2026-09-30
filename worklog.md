@@ -256,3 +256,42 @@ Unresolved issues / próximas fases:
 - Heatmap de atividade mensal (vista de calendário): recomendado.
 - Notificações push: não implementado.
 - Próxima ronda recomendada: modo Treino Livre, heatmap mensal, e talvez um modo "Desafio Relâmpago" com 5 puzzles cronometrados.
+
+---
+Task ID: cron-round-5
+Agent: QA + Features (webDevReview cron)
+Task: Modo Treino Livre, heatmap mensal, confetti de vitória
+
+Work Log:
+- QA inicial: app estável, lint limpo, 30/30 testes passam.
+- **Modo Treino Livre** (`practice`): novo GameMode adicionado ao store.
+  - Sem relógio (timePerTurn=0), sem registo de estatísticas (recordCurrentMatch skipa practice), undo 1-ply (controlo total vs 2-ply em pve).
+  - OfflineSelectScreen: 4ª opção "Treino Livre" (Sparkles icon, variante gold) com seletor de dificuldade + lado + card informativo "Joga sem pressão: sem relógio, sem estatísticas, sem conquistas".
+  - GameScreen atualizado: labels, isHuman flags, disabled state, status messages, GameOverOverlay todos suportam practice.
+  - Store: startGame, selectSquare, attemptMove, aiMove, undo todos tratam practice como pve (IA responde) mas sem gravar match.
+- **Heatmap de atividade mensal** (`StatsScreen.tsx`): novo componente `ActivityHeatmap` que mostra um grid tipo GitHub de 12 semanas × 7 dias (Seg-Dom).
+  - Cada quadrado é um dia, colorido por intensidade de partidas (4 níveis: vazio/cinza → verde escuro → verde médio → verde brilhante).
+  - Labels de meses no topo (Jan-Dez), labels de dias à esquerda (Seg, Qua, Sex, Dom).
+  - Animação Framer Motion (cada quadrado aparece com delay escalonado).
+  - Tooltip nativo (title) com data e contagem. Legenda "Menos → Mais" no fundo.
+  - Scroll horizontal em ecrãs pequenos.
+- **Confetti de vitória + polish** (`Confetti.tsx` + `GameScreen.tsx` + `globals.css`):
+  - Componente `Confetti`: 50 peças coloridas (verde/vermelho/dourado/laranja/branco) que caem do topo com rotação e duração aleatórias.
+  - CSS: keyframes `confetti-fall` (translateY de -100vh a 100vh + rotate 720deg + fade), `victory-rays` (conic-gradient rotativo), `pop-in` (cubic-bezier bounce).
+  - GameOverOverlay: confetti + raios de vitória (conic-gradient) apenas em vitória humana e sem reduceMotion. Emoji com pop-in animation. Título com text-glow-gold.
+  - Corrigido bug: shorthand `animation: confetti-fall linear forwards` não aplicava duration; separado em animation-name/timing-function/fill-mode explícitos.
+
+Stage Summary:
+- **Modo Treino Livre**: 4º modo de jogo, sem pressão, para experimentar estratégias. Undo ilimitado, sem stats.
+- **Heatmap mensal**: vista de calendário tipo GitHub com 12 semanas, 4 níveis de intensidade, animações.
+- **Confetti de vitória**: 50 peças + raios rotativos + pop-in do emoji, respeitando reduceMotion.
+- **Lint**: 0 erros. **Testes**: 30/30 passam.
+- **QA**: Treino Livre testado (sem relógio, IA responde, vitória detetada), confetti confirmado no DOM (50 peças com animationName=confetti-fall).
+
+Unresolved issues / próximas fases:
+- i18n: ainda só PT.
+- Modo online: ainda simulado.
+- Desafio Relâmpago (5 puzzles cronometrados): recomendado para próxima ronda.
+- Notificações push: não implementado.
+- Confetti: visível no DOM mas difícil de capturar em screenshot (animação rápida). Funciona em tempo real.
+- Próxima ronda recomendada: Desafio Relâmpago cronometrado, sons de conquista com variação, e talvez um modo "Assistir" (replay de partidas CvC com comentário).

@@ -296,6 +296,47 @@
   animation: fade-in 0.5s ease-out;
 }
 
+/* ============ Confetti de vitória ============ */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+.confetti-piece {
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  top: -20px;
+  animation-name: confetti-fall;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+/* ============ Brilho de vitória (ray burst) ============ */
+@keyframes victory-rays {
+  0% { transform: scale(0.5) rotate(0deg); opacity: 0; }
+  50% { opacity: 0.6; }
+  100% { transform: scale(1.5) rotate(180deg); opacity: 0; }
+}
+.animate-victory-rays {
+  animation: victory-rays 1.2s ease-out forwards;
+}
+
+/* ============ Pop in (para badges e conquistas) ============ */
+@keyframes pop-in {
+  0% { transform: scale(0) rotate(-10deg); }
+  60% { transform: scale(1.15) rotate(2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+.animate-pop-in {
+  animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
 /* Reduzir animações (acessibilidade) */
 .reduce-motion * {
   animation-duration: 0.01ms !important;

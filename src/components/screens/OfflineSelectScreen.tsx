@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Bot, Cpu, ChevronRight, ArrowLeft, BookOpen, Info, HelpCircle } from 'lucide-react';
+import { Users, Bot, Cpu, ChevronRight, ArrowLeft, BookOpen, Info, HelpCircle, Sparkles } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useGame } from '@/store/game';
 import type { Difficulty } from '@/lib/ai';
@@ -21,7 +21,7 @@ export function OfflineSelectScreen() {
   const navigate = useApp((s) => s.navigate);
   const startGame = useGame((s) => s.startGame);
 
-  const [mode, setMode] = useState<'pvp' | 'pve' | 'cvc' | null>(null);
+  const [mode, setMode] = useState<'pvp' | 'pve' | 'cvc' | 'practice' | null>(null);
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [side, setSide] = useState<PlayerId>('P1');
   const [showThreats, setShowThreats] = useState(false);
@@ -41,6 +41,9 @@ export function OfflineSelectScreen() {
       startGame({ mode: 'pve', difficulty, humanSide: side, showThreats, timePerTurn });
     } else if (mode === 'cvc') {
       startGame({ mode: 'cvc', difficulty, humanSide: 'P1', showThreats, timePerTurn });
+    } else if (mode === 'practice') {
+      // Treino Livre: sem relógio (0s), sem estatísticas, vs IA
+      startGame({ mode: 'practice', difficulty, humanSide: side, showThreats, timePerTurn: 0 });
     }
     navigate('game');
   };
@@ -76,6 +79,14 @@ export function OfflineSelectScreen() {
           desc="Modo demonstração. Observa a IA a jogar."
           active={mode === 'cvc'}
           onClick={() => setMode('cvc')}
+          variant="gold"
+        />
+        <ModeOption
+          icon={<Sparkles className="w-5 h-5" />}
+          title="Treino Livre"
+          desc="Sem relógio, sem estatísticas. Undo ilimitado."
+          active={mode === 'practice'}
+          onClick={() => setMode('practice')}
           variant="gold"
         />
       </div>
@@ -160,6 +171,74 @@ export function OfflineSelectScreen() {
                   <span className="text-sm font-semibold">{d.label}</span>
                 </button>
               ))}
+            </div>
+          </GameCard>
+        </motion.div>
+      )}
+
+      {/* Configurações de Treino Livre */}
+      {mode === 'practice' && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="space-y-4 overflow-hidden"
+        >
+          <GameCard className="p-4">
+            <h3 className="font-display text-lg mb-3">Dificuldade da IA</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {DIFFICULTIES.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setDifficulty(d.id)}
+                  className={cn(
+                    'p-3 rounded-xl border text-left transition-all',
+                    difficulty === d.id
+                      ? 'border-gold bg-gold/10'
+                      : 'border-border/40 bg-surface/40 hover:border-border',
+                  )}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg">{d.emoji}</span>
+                    <span className={cn('font-semibold text-sm', d.color)}>{d.label}</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-tight">{d.desc}</p>
+                </button>
+              ))}
+            </div>
+          </GameCard>
+
+          <GameCard className="p-4">
+            <h3 className="font-display text-lg mb-3">Que lado treinamos?</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <SideOption
+                side="P1"
+                label="Jogador 1 (verde)"
+                desc="Jogas primeiro"
+                active={side === 'P1'}
+                onClick={() => setSide('P1')}
+              />
+              <SideOption
+                side="P2"
+                label="Jogador 2 (vermelho)"
+                desc="A IA joga primeiro"
+                active={side === 'P2'}
+                onClick={() => setSide('P2')}
+              />
+            </div>
+          </GameCard>
+
+          {/* Aviso de modo treino */}
+          <GameCard className="p-4 bg-gold/5 border-gold/30">
+            <div className="flex gap-3">
+              <Sparkles className="w-5 h-5 text-gold shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold mb-1">Modo Treino Livre</p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Joga sem pressão: sem relógio, sem estatísticas, sem conquistas.
+                  Podes anular jogadas ilimitadamente para experimentar estratégias.
+                </p>
+              </div>
             </div>
           </GameCard>
         </motion.div>

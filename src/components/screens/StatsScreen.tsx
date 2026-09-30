@@ -109,6 +109,15 @@ export function StatsScreen() {
         </div>
       </GameCard>
 
+      {/* Heatmap de atividade mensal (últimas 12 semanas) */}
+      <GameCard className="p-4">
+        <SectionTitle title="Atividade (12 semanas)" />
+        <p className="text-[10px] text-muted-foreground mb-3">
+          Cada quadrado é um dia. Mais escuro = mais partidas.
+        </p>
+        <ActivityHeatmap matches={profile.matches} />
+      </GameCard>
+
       {/* Tempo de jogo */}
       <div className="grid grid-cols-2 gap-3">
         <GameCard className="p-4 text-center">
@@ -379,6 +388,126 @@ function RecoreRow({ icon, label, value }: { icon: React.ReactNode; label: strin
       <span className="text-muted-foreground">{icon}</span>
       <span className="text-sm flex-1">{label}</span>
       <span className="text-sm font-semibold text-gold">{value}</span>
+    </div>
+  );
+}
+
+// ============ Heatmap de atividade (12 semanas tipo GitHub) ============
+function ActivityHeatmap({ matches }: { matches: MatchRecord[] }) {
+  const WEEKS = 12;
+  const DAYS = 7; // Seg-Dom
+  // Construir grid de datas: 12 semanas × 7 dias, começando há 11 semanas (segunda-feira)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  // Encontrar a segunda-feira mais recente
+  const dayOfWeek = (today.getDay() + 6) % 7; // 0 = segunda, 6 = domingo
+  const startMonday = new Date(today);
+  startMonday.setDate(today.getDate() - dayOfWeek - (WEEKS - 1) * 7);
+
+  // Contar partidas por dia
+  const dayMap = new Map<string, number>();
+  for (const m of matches) {
+    const dateStr = m.date.slice(0, 10);
+    dayMap.set(dateStr, (dayMap.get(dateStr) ?? 0) + 1);
+  }
+
+  // Construir grid: semanas como colunas, dias como linhas
+  const grid: { date: string; count: number }[][] = [];
+  for (let d = 0; d < DAYS; d++) {
+    grid[d] = [];
+    for (let w = 0; w < WEEKS; w++) {
+      const date = new Date(startMonday);
+      date.setDate(startMonday.getDate() + w * 7 + d);
+      const dateStr = date.toISOString().slice(0, 10);
+      grid[d][w] = { date: dateStr, count: dayMap.get(dateStr) ?? 0 };
+    }
+  }
+
+  const dayLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+  const monthLabels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+  // Encontrar o máximo para escala de cor
+  const maxCount = Math.max(1, ...grid.flat().map((c) => c.count));
+
+  // Labels dos meses (uma vez por coluna onde o mês muda)
+  const monthCols: { col: number; label: string }[] = [];
+  let lastMonth = -1;
+  for (let w = 0; w < WEEKS; w++) {
+    const date = new Date(startMonday);
+    date.setDate(startMonday.getDate() + w * 7);
+    const month = date.getMonth();
+    if (month !== lastMonth) {
+      monthCols.push({ col: w, label: monthLabels[month] });
+      lastMonth = month;
+    }
+  }
+
+  return (
+    <div className="overflow-x-auto scrollbar-custom">
+      <div className="min-w-[280px]">
+        {/* Labels dos meses */}
+        <div className="flex gap-[3px] mb-1 ml-7">
+          {Array.from({ length: WEEKS }).map((_, w) => {
+            const ml = monthCols.find((m) => m.col === w);
+            return (
+              <div key={w} className="w-[10px] text-[8px] text-muted-foreground">
+                {ml ? ml.label : ''}
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex gap-1">
+          {/* Labels dos dias */}
+          <div className="flex flex-col gap-[3px] mr-1">
+            {dayLabels.map((label, d) => (
+              <div key={d} className="h-[10px] text-[8px] text-muted-foreground leading-[10px]">
+                {d % 2 === 0 ? label : ''}
+              </div>
+            ))}
+          </div>
+          {/* Grid de quadrados */}
+          <div className="flex gap-[3px]">
+            {Array.from({ length: WEEKS }).map((_, w) => (
+              <div key={w} className="flex flex-col gap-[3px]">
+                {Array.from({ length: DAYS }).map((_, d) => {
+                  const cell = grid[d][w];
+                  const intensity = cell.count / maxCount;
+                  return (
+                    <motion.div
+                      key={d}
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: (w * 7 + d) * 0.005, duration: 0.2 }}
+                      className="w-[10px] h-[10px] rounded-sm"
+                      style={{
+                        backgroundColor: cell.count === 0
+                          ? 'var(--surface-2)'
+                          : intensity > 0.66
+                            ? 'var(--p1)'
+                            : intensity > 0.33
+                              ? 'oklch(0.55 0.14 152)'
+                              : 'oklch(0.4 0.1 152)',
+                      }}
+                      title={`${cell.date}: ${cell.count} partida(s)`}
+                      role="img"
+                      aria-label={`${cell.date}: ${cell.count} partidas`}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Legenda */}
+        <div className="flex items-center justify-end gap-1 mt-2 text-[8px] text-muted-foreground">
+          <span>Menos</span>
+          <div className="w-[10px] h-[10px] rounded-sm bg-surface-2" />
+          <div className="w-[10px] h-[10px] rounded-sm" style={{ backgroundColor: 'oklch(0.4 0.1 152)' }} />
+          <div className="w-[10px] h-[10px] rounded-sm" style={{ backgroundColor: 'oklch(0.55 0.14 152)' }} />
+          <div className="w-[10px] h-[10px] rounded-sm bg-p1" />
+          <span>Mais</span>
+        </div>
+      </div>
     </div>
   );
 }

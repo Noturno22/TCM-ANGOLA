@@ -21,7 +21,7 @@ import { useProfile, type MatchRecord } from './profile';
 import { playSound } from '@/lib/sound';
 import { setMusicIntensity } from '@/lib/sound';
 
-export type GameMode = 'pvp' | 'pve' | 'cvc';
+export type GameMode = 'pvp' | 'pve' | 'cvc' | 'practice';
 
 interface GameStore {
   state: GameState;
@@ -103,7 +103,7 @@ export const useGame = create<GameStore>((set, get) => ({
     playSound('start');
     setMusicIntensity('calm');
     // Se a IA joga primeiro (cvc, ou pve com humanSide=P2)
-    if (mode === 'cvc' || (mode === 'pve' && humanSide === 'P2')) {
+    if (mode === 'cvc' || ((mode === 'pve' || mode === 'practice') && humanSide === 'P2')) {
       setTimeout(() => get().aiMove(), 500);
     }
   },
@@ -112,7 +112,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const { state, mode, humanSide } = get();
     // Só permite selecionar em modo humano
     if (mode === 'cvc') return;
-    if (mode === 'pve' && state.currentPlayer !== humanSide) return;
+    if ((mode === 'pve' || mode === 'practice') && state.currentPlayer !== humanSide) return;
     if (isGameOver(state)) return;
     const piece = state.board[sq - 1];
     if (piece !== state.currentPlayer) return;
@@ -128,7 +128,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const { state, selectedSquare, mode, humanSide } = get();
     if (!selectedSquare) return;
     if (mode === 'cvc') return;
-    if (mode === 'pve' && state.currentPlayer !== humanSide) return;
+    if ((mode === 'pve' || mode === 'practice') && state.currentPlayer !== humanSide) return;
     if (isGameOver(state)) return;
     const move: Move = { from: selectedSquare, to };
     try {
@@ -166,7 +166,7 @@ export const useGame = create<GameStore>((set, get) => ({
       }
       // Se o jogo continua e é a vez da IA
       if (!isGameOver(newState)) {
-        if (mode === 'pve' && newState.currentPlayer !== humanSide) {
+        if ((mode === 'pve' || mode === 'practice') && newState.currentPlayer !== humanSide) {
           set({ isAiThinking: true });
           setTimeout(() => get().aiMove(), 500 + Math.random() * 400);
         } else if (mode === 'cvc') {
@@ -188,7 +188,7 @@ export const useGame = create<GameStore>((set, get) => ({
     // Determinar se é a vez da IA
     const aiTurn =
       mode === 'cvc' ||
-      (mode === 'pve' && state.currentPlayer !== humanSide);
+      ((mode === 'pve' || mode === 'practice') && state.currentPlayer !== humanSide);
     if (!aiTurn) {
       set({ isAiThinking: false });
       return;
@@ -234,7 +234,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (!isGameOver(newState)) {
       if (mode === 'cvc') {
         setTimeout(() => get().aiMove(), 500);
-      } else if (mode === 'pve' && newState.currentPlayer !== humanSide) {
+      } else if ((mode === 'pve' || mode === 'practice') && newState.currentPlayer !== humanSide) {
         set({ isAiThinking: true });
         setTimeout(() => get().aiMove(), 500 + Math.random() * 400);
       }
@@ -263,10 +263,13 @@ export const useGame = create<GameStore>((set, get) => ({
 
   undo: () => {
     const { stateHistory, mode } = get();
-    // Undo só em pvp ou pve (desfaz 2 plies: humano + IA)
+    // Undo só em pvp, pve ou practice (desfaz 2 plies: humano + IA)
     if (mode === 'cvc') return;
     if (stateHistory.length < 2) return;
-    const steps = mode === 'pve' && stateHistory.length >= 3 ? 2 : 1;
+    // Em modo Treino Livre, undo desfaz 1 ply de cada vez (controlo total)
+    const steps = mode === 'practice'
+      ? 1
+      : mode === 'pve' && stateHistory.length >= 3 ? 2 : 1;
     const newHistory = stateHistory.slice(0, stateHistory.length - steps);
     const restored = newHistory[newHistory.length - 1];
     set({
@@ -292,6 +295,8 @@ function recordCurrentMatch(
   reason?: MatchRecord['reason'],
 ) {
   const { mode, difficulty, humanSide, startTime } = store;
+  // Modo Treino Livre: não regista no perfil nem afeta estatísticas
+  if (mode === 'practice') return;
   const profile = useProfile.getState();
   const opponent =
     mode === 'pve'
