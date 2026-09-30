@@ -17,17 +17,20 @@ import {
   Handshake,
   X,
   Info,
+  Share2,
 } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useProfile, type MatchRecord } from '@/store/profile';
 import { Board } from '@/components/game/Board';
 import { GameButton, GameCard, ResultBadge } from '@/components/game/ui';
 import { replayFrom } from '@/lib/engine';
+import { decodeMatch } from '@/lib/share';
 import { cn } from '@/lib/utils';
 
 export function ReplayScreen() {
   const navigate = useApp((s) => s.navigate);
   const replayMatchId = useApp((s) => s.replayMatchId);
+  const shareCode = useApp((s) => s.shareCode);
   const matches = useProfile((s) => s.matches);
 
   const match = useMemo(
@@ -35,6 +38,32 @@ export function ReplayScreen() {
     [matches, replayMatchId],
   );
 
+  // Se há um share code, descodificar e mostrar como MatchRecord virtual
+  const sharedMatch = useMemo(() => {
+    if (!shareCode) return null;
+    const decoded = decodeMatch(shareCode);
+    if (!decoded) return null;
+    // Construir um MatchRecord virtual
+    const states = replayFrom(decoded.moves);
+    const final = states[states.length - 1];
+    return {
+      id: 'shared',
+      date: new Date().toISOString(),
+      mode: decoded.mode,
+      difficulty: decoded.difficulty,
+      result: (final.winner ?? 'DRAW') as 'P1' | 'P2' | 'DRAW',
+      playerSide: decoded.humanSide,
+      opponent: 'Partida partilhada',
+      moves: decoded.moves,
+      moveCount: decoded.moves.length,
+      durationSec: 0,
+    } as MatchRecord;
+  }, [shareCode]);
+
+  // Prioridade: share code > match do histórico
+  if (sharedMatch) {
+    return <ReplayView match={sharedMatch} isShared />;
+  }
   if (!match) {
     return <EmptyReplay onGoToProfile={() => navigate('profile')} />;
   }
@@ -64,7 +93,7 @@ function EmptyReplay({ onGoToProfile }: { onGoToProfile: () => void }) {
   );
 }
 
-function ReplayView({ match }: { match: MatchRecord }) {
+function ReplayView({ match, isShared = false }: { match: MatchRecord; isShared?: boolean }) {
   const navigate = useApp((s) => s.navigate);
   const setReplayMatchId = useApp((s) => s.setReplayMatchId);
 

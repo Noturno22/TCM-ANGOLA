@@ -21,6 +21,7 @@ import { ReplayScreen } from '@/components/screens/ReplayScreen';
 import { AchievementsScreen } from '@/components/screens/AchievementsScreen';
 import { ChallengeScreen } from '@/components/screens/ChallengeScreen';
 import { StatsScreen } from '@/components/screens/StatsScreen';
+import { ShareScreen } from '@/components/screens/ShareScreen';
 import { AppHeader } from '@/components/game/AppHeader';
 import { TabBar } from '@/components/game/TabBar';
 import { useMusicSync, useSound, startMusic } from '@/lib/sound';
@@ -113,6 +114,8 @@ export default function Home() {
             {screen === 'achievements' && <AchievementsScreen />}
             {screen === 'challenge' && <ChallengeScreen />}
             {screen === 'stats' && <StatsScreen />}
+            {screen === 'share' && <ShareScreen />}
+            {screen === 'import-match' && <ShareScreen />}
           </motion.div>
         </AnimatePresence>
       </main>

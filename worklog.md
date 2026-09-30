@@ -220,3 +220,39 @@ Unresolved issues / próximas fases:
 - Música: ainda uma só progressão (Am-F-C-G); poderia adicionar variação dinâmica conforme o estado do jogo (calma vs tensão).
 - Heatmap de atividade mensal: poderia adicionar vista de calendário.
 - Próxima ronda recomendada: partilha de partidas (código curto), variação musical dinâmica, e talvez um modo "Treino Livre" sem registo de estatísticas.
+
+---
+Task ID: cron-round-4
+Agent: QA + Features (webDevReview cron)
+Task: Partilha de partidas (código curto), música dinâmica por intensidade
+
+Work Log:
+- QA inicial: app estável, lint limpo, 30/30 testes passam.
+- **Partilha de partidas** (`src/lib/share.ts`): codec compacto que codifica/descodifica partidas em códigos curtos base36. Formato: versão (1) + modo (P/V/C) + dificuldade (F/M/D/P/_) + lado humano (1/2/_) + nº jogadas (2 chars) + movimentos (2 chars cada, from/to). Verificado com testes: encodeMatch/decodeMatch round-trip funciona, replayFrom gera estados corretos.
+- **ShareScreen** (`src/components/screens/ShareScreen.tsx`): ecrã dual Exportar/Importar com toggle visual.
+  - **Exportar**: mostra a partida selecionada (do histórico), código gerado num bloco monoespaçado dourado, botão "Copiar código" (usa clipboard API + toast sonner), botão "Ver replay", lista de outras partidas para selecionar.
+  - **Importar**: textarea para colar o código, botão "Colar da área de transferência", preview em tempo real (descodifica e mostra tabuleiro final + info da partida + botão "Ver replay completo"). Mensagem de erro se código inválido.
+  - Card informativo "Como funciona?".
+- Adicionado `shareCode` ao app store + `setShareCode`. Adicionado 'share' e 'import-match' ao tipo Screen + AppHeader titles.
+- **ReplayScreen** atualizado: aceita `isShared` prop; se `shareCode` está definido, descodifica e mostra a partida partilhada como MatchRecord virtual.
+- Adicionado botão "Partilhar" (Share2 icon) em cada linha do histórico no Perfil + atalho "Partilhar" na Home.
+- **Música dinâmica por intensidade** (`src/lib/sound/index.ts`): 3 progressões de acordes conforme o estado do jogo:
+  - **calm**: Am-F-C-G (padrão, menus e jogo calmo)
+  - **tension**: Am-G-Em-F (menos resolução, durante ameaças — volume ligeiramente mais alto)
+  - **victory**: C-G-Am-F (resolutiva, mais animada — arpejo mais denso com 6 notas)
+  - Função `setMusicIntensity(intensity)` chamada no game store: 'calm' no start, 'tension' quando há ameaças, 'victory' em vitória, 'calm' em empate.
+- Verificação completa com agent-browser: código partilhado gerado (`1VM103048540` para 3 jogadas), colado no Import, preview apareceu, replay abriu com tabuleiro correto. Sem erros de runtime.
+
+Stage Summary:
+- **Partilha de partidas**: codec compacto + ecrã Exportar/Importar completo com preview, clipboard, e replay integrado.
+- **Música dinâmica**: 3 intensidades (calma/tensão/vitória) que mudam conforme o estado do jogo, com progressões, volumes e densidades de arpejo diferentes.
+- **Lint**: 0 erros. **Testes**: 30/30 passam.
+- **QA visual**: fluxo de partilha completo testado (gerar → copiar → colar → preview → replay).
+
+Unresolved issues / próximas fases:
+- i18n: ainda só PT (EN preparado mas desativado).
+- Modo online: ainda simulado (salas redirecionam para offline).
+- Modo Treino Livre (sem registo de stats, undo ilimitado): recomendado para próxima ronda.
+- Heatmap de atividade mensal (vista de calendário): recomendado.
+- Notificações push: não implementado.
+- Próxima ronda recomendada: modo Treino Livre, heatmap mensal, e talvez um modo "Desafio Relâmpago" com 5 puzzles cronometrados.

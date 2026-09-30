@@ -14,6 +14,7 @@ import {
   Calendar,
   Clock,
   BarChart3,
+  Share2,
 } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useProfile, xpProgress } from '@/store/profile';
@@ -47,6 +48,11 @@ export function ProfileScreen() {
   const handleReplay = (matchId: string) => {
     setReplayMatchId(matchId);
     navigate('replay');
+  };
+
+  const handleShare = (matchId: string) => {
+    setReplayMatchId(matchId);
+    navigate('share');
   };
 
   return (
@@ -152,14 +158,24 @@ export function ProfileScreen() {
                         <span>{m.moveCount} jogadas</span>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleReplay(m.id)}
-                      className="w-8 h-8 rounded-lg bg-surface-2 hover:bg-gold/20 hover:text-gold flex items-center justify-center transition-colors"
-                      aria-label="Ver replay"
-                    >
-                      <Play className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleShare(m.id)}
+                        className="w-8 h-8 rounded-lg bg-surface-2 hover:bg-gold/20 hover:text-gold flex items-center justify-center transition-colors"
+                        aria-label="Partilhar partida"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleReplay(m.id)}
+                        className="w-8 h-8 rounded-lg bg-surface-2 hover:bg-gold/20 hover:text-gold flex items-center justify-center transition-colors"
+                        aria-label="Ver replay"
+                      >
+                        <Play className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </GameCard>
               ))}

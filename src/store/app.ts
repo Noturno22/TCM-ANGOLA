@@ -21,24 +21,31 @@ export type Screen =
   | 'replay'
   | 'achievements'
   | 'challenge'
-  | 'stats';
+  | 'stats'
+  | 'share'
+  | 'import-match'
+  | 'practice';
 
 interface AppState {
   screen: Screen;
   history: Screen[];
   /** Dados para o ecrã de replay (partida selecionada do histórico) */
   replayMatchId: string | null;
+  /** Código de partida partilhada para importar */
+  shareCode: string | null;
 
   navigate: (screen: Screen) => void;
   back: () => void;
   canGoBack: () => boolean;
   setReplayMatchId: (id: string | null) => void;
+  setShareCode: (code: string | null) => void;
 }
 
 export const useApp = create<AppState>((set, get) => ({
   screen: 'splash',
   history: [],
   replayMatchId: null,
+  shareCode: null,
 
   navigate: (screen) =>
     set((s) => ({
@@ -62,4 +69,5 @@ export const useApp = create<AppState>((set, get) => ({
   canGoBack: () => get().history.length > 0,
 
   setReplayMatchId: (id) => set({ replayMatchId: id }),
+  setShareCode: (code) => set({ shareCode: code }),
 }));

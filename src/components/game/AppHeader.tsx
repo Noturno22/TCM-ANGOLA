@@ -17,6 +17,8 @@ const SCREEN_TITLES: Record<string, string> = {
   achievements: 'Conquistas',
   challenge: 'Desafio Diário',
   stats: 'Estatísticas',
+  share: 'Partilhar',
+  'import-match': 'Importar Partida',
 };
 
 export function AppHeader() {

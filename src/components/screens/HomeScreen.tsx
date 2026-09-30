@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Trophy, Zap, X, ChevronRight, Swords, Bot, Users, Crown, Gamepad2, Target, Check } from 'lucide-react';
+import { Trophy, Zap, X, ChevronRight, Swords, Bot, Users, Crown, Gamepad2, Target, Check, Share2 } from 'lucide-react';
 import { useState } from 'react';
 import { useApp } from '@/store/app';
 import { useProfile, getSimulatedRankings, xpProgress } from '@/store/profile';
@@ -142,7 +142,7 @@ export function HomeScreen() {
         <Shortcut icon={<Users className="w-5 h-5" />} label="Salas" onClick={() => navigate('rooms')} />
         <Shortcut icon={<Trophy className="w-5 h-5" />} label="Torneios" onClick={() => navigate('rooms')} />
         <Shortcut icon={<Zap className="w-5 h-5" />} label="Apostas" onClick={() => navigate('wallet')} />
-        <Shortcut icon={<Crown className="w-5 h-5" />} label="Amigos" onClick={() => navigate('profile')} />
+        <Shortcut icon={<Share2 className="w-5 h-5" />} label="Partilhar" onClick={() => navigate('share')} />
       </div>
 
       {/* Jogos em destaque */}

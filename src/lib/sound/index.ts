@@ -199,15 +199,39 @@ let musicEnabled = false;
 let musicStep = 0;
 
 /**
- * Progressão de acordes (Am - F - C - G) em frequências (Hz).
- * Cada acorde tem 3 notas (tríade).
+ * Progressões de acordes por intensidade.
+ * - 'calm': Am-F-C-G (relaxante, menu)
+ * - 'tension': Am-G-Em-F (menos resolução, durante ameaças)
+ * - 'victory': C-G-Am-F (resolutiva, mais animada)
  */
-const CHORDS: number[][] = [
-  [220.0, 261.63, 329.63], // Am: A, C, E
-  [174.61, 220.0, 261.63], // F: F, A, C
-  [261.63, 329.63, 392.0], // C: C, E, G
-  [196.0, 246.94, 293.66], // G: G, B, D
+const CHORDS_CALM: number[][] = [
+  [220.0, 261.63, 329.63], // Am
+  [174.61, 220.0, 261.63], // F
+  [261.63, 329.63, 392.0], // C
+  [196.0, 246.94, 293.66], // G
 ];
+const CHORDS_TENSION: number[][] = [
+  [220.0, 261.63, 329.63], // Am
+  [196.0, 246.94, 293.66], // G
+  [164.81, 196.0, 246.94], // Em
+  [174.61, 220.0, 261.63], // F
+];
+const CHORDS_VICTORY: number[][] = [
+  [261.63, 329.63, 392.0], // C
+  [196.0, 246.94, 293.66], // G
+  [220.0, 261.63, 329.63], // Am
+  [174.61, 220.0, 261.63], // F
+];
+
+type MusicIntensity = 'calm' | 'tension' | 'victory';
+let musicIntensity: MusicIntensity = 'calm';
+
+/**
+ * Define a intensidade da música conforme o estado do jogo.
+ */
+export function setMusicIntensity(intensity: MusicIntensity) {
+  musicIntensity = intensity;
+}
 
 function isMusicOn(): boolean {
   if (typeof window === 'undefined') return musicEnabled;
@@ -265,12 +289,22 @@ function stepMusic() {
   if (!isMusicOn()) return;
   const c = getCtx();
   if (!c || !musicGain) return;
-  const chord = CHORDS[musicStep % CHORDS.length];
+  // Escolher a progressão conforme a intensidade
+  const chords = musicIntensity === 'tension'
+    ? CHORDS_TENSION
+    : musicIntensity === 'victory'
+      ? CHORDS_VICTORY
+      : CHORDS_CALM;
+  const chord = chords[musicStep % chords.length];
+  // Volume e velocidade do arpejo variam com a intensidade
+  const padVol = musicIntensity === 'tension' ? 0.04 : musicIntensity === 'victory' ? 0.05 : 0.03;
+  const arpVol = musicIntensity === 'tension' ? 0.02 : musicIntensity === 'victory' ? 0.025 : 0.015;
+  const arpCount = musicIntensity === 'victory' ? 6 : 4; // arpejo mais denso na vitória
   // Pad (acorde sustentado)
-  playChordPad(chord, 4.0, 0.03);
-  // Arpejo subtil (uma nota a cada 1s)
-  for (let i = 0; i < 4; i++) {
-    playArpeggioNote(chord[i % chord.length], i * 1.0, 0.015);
+  playChordPad(chord, 4.0, padVol);
+  // Arpejo subtil
+  for (let i = 0; i < arpCount; i++) {
+    playArpeggioNote(chord[i % chord.length], i * (4.0 / arpCount), arpVol);
   }
   musicStep++;
 }

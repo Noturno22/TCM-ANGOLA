@@ -19,6 +19,7 @@ import {
 import { chooseMove, type Difficulty } from '@/lib/ai';
 import { useProfile, type MatchRecord } from './profile';
 import { playSound } from '@/lib/sound';
+import { setMusicIntensity } from '@/lib/sound';
 
 export type GameMode = 'pvp' | 'pve' | 'cvc';
 
@@ -100,6 +101,7 @@ export const useGame = create<GameStore>((set, get) => ({
       showThreats,
     });
     playSound('start');
+    setMusicIntensity('calm');
     // Se a IA joga primeiro (cvc, ou pve com humanSide=P2)
     if (mode === 'cvc' || (mode === 'pve' && humanSide === 'P2')) {
       setTimeout(() => get().aiMove(), 500);
@@ -146,13 +148,21 @@ export const useGame = create<GameStore>((set, get) => ({
         currentThreats: threats,
       });
       playSound('move');
-      // Sons de fim de jogo / ameaça
+      // Sons de fim de jogo / ameaça + intensidade musical dinâmica
       if (isGameOver(newState)) {
-        if (newState.winner) playSound('win');
-        else playSound('draw');
+        if (newState.winner) {
+          playSound('win');
+          setMusicIntensity('victory');
+        } else {
+          playSound('draw');
+          setMusicIntensity('calm');
+        }
         recordCurrentMatch(get(), newState);
       } else if (threats.length > 0) {
         playSound('threat');
+        setMusicIntensity('tension');
+      } else {
+        setMusicIntensity('calm');
       }
       // Se o jogo continua e é a vez da IA
       if (!isGameOver(newState)) {
@@ -207,11 +217,19 @@ export const useGame = create<GameStore>((set, get) => ({
     });
     playSound('move');
     if (isGameOver(newState)) {
-      if (newState.winner) playSound('win');
-      else playSound('draw');
+      if (newState.winner) {
+        playSound('win');
+        setMusicIntensity('victory');
+      } else {
+        playSound('draw');
+        setMusicIntensity('calm');
+      }
       recordCurrentMatch(get(), newState);
     } else if (threats.length > 0) {
       playSound('threat');
+      setMusicIntensity('tension');
+    } else {
+      setMusicIntensity('calm');
     }
     if (!isGameOver(newState)) {
       if (mode === 'cvc') {
