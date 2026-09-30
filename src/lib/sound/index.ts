@@ -17,7 +17,10 @@ export type SoundEvent =
   | 'start'
   | 'click'
   | 'bonus'
-  | 'achievement';
+  | 'achievement'
+  | 'achievementRare'
+  | 'countdown'
+  | 'streak';
 
 let ctx: AudioContext | null = null;
 let enabled = true;
@@ -177,6 +180,30 @@ export function playSound(event: SoundEvent) {
         { freq: 988, dur: 0.1, type: 'triangle', vol: 0.14 },
         { freq: 1318, dur: 0.25, type: 'triangle', vol: 0.16 },
       ], 0.05);
+      break;
+    case 'achievementRare':
+      // Fanfarra maior para conquistas raras (beat_perfect, streak_5)
+      playSequence([
+        { freq: 523, dur: 0.08, type: 'triangle', vol: 0.14 },
+        { freq: 659, dur: 0.08, type: 'triangle', vol: 0.14 },
+        { freq: 784, dur: 0.08, type: 'triangle', vol: 0.14 },
+        { freq: 1047, dur: 0.08, type: 'triangle', vol: 0.14 },
+        { freq: 1318, dur: 0.12, type: 'triangle', vol: 0.16 },
+        { freq: 1568, dur: 0.4, type: 'triangle', vol: 0.18 },
+      ], 0.03);
+      break;
+    case 'countdown':
+      // Tick-tack para últimos segundos do relógio
+      playTone(880, 0.05, 'square', 0.08);
+      break;
+    case 'streak':
+      // Ascendente para sequência de vitórias
+      playSequence([
+        { freq: 523, dur: 0.1, type: 'sine', vol: 0.14 },
+        { freq: 659, dur: 0.1, type: 'sine', vol: 0.14 },
+        { freq: 784, dur: 0.15, type: 'sine', vol: 0.16 },
+        { freq: 1047, dur: 0.2, type: 'sine', vol: 0.18 },
+      ], 0.04);
       break;
   }
 }

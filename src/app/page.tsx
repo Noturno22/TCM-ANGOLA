@@ -22,6 +22,7 @@ import { AchievementsScreen } from '@/components/screens/AchievementsScreen';
 import { ChallengeScreen } from '@/components/screens/ChallengeScreen';
 import { StatsScreen } from '@/components/screens/StatsScreen';
 import { ShareScreen } from '@/components/screens/ShareScreen';
+import { LightningChallengeScreen } from '@/components/screens/LightningChallengeScreen';
 import { AppHeader } from '@/components/game/AppHeader';
 import { TabBar } from '@/components/game/TabBar';
 import { useMusicSync, useSound, startMusic } from '@/lib/sound';
@@ -116,6 +117,7 @@ export default function Home() {
             {screen === 'stats' && <StatsScreen />}
             {screen === 'share' && <ShareScreen />}
             {screen === 'import-match' && <ShareScreen />}
+            {screen === 'lightning' && <LightningChallengeScreen />}
           </motion.div>
         </AnimatePresence>
       </main>

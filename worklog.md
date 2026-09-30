@@ -295,3 +295,41 @@ Unresolved issues / próximas fases:
 - Notificações push: não implementado.
 - Confetti: visível no DOM mas difícil de capturar em screenshot (animação rápida). Funciona em tempo real.
 - Próxima ronda recomendada: Desafio Relâmpago cronometrado, sons de conquista com variação, e talvez um modo "Assistir" (replay de partidas CvC com comentário).
+
+---
+Task ID: cron-round-6
+Agent: QA + Features (webDevReview cron)
+Task: Desafio Relâmpago (5 puzzles cronometrados), sons variados, countdown
+
+Work Log:
+- QA inicial: app estável, lint limpo, 30/30 testes passam.
+- **Desafio Relâmpago** (`LightningChallengeScreen.tsx` + `lightning.ts`):
+  - Store persistido: bestTimeSec, bestSolved, totalRuns, history (últimas 20 tentativas).
+  - Ecrã com 3 fases: intro (recorde + regras), playing (5 puzzles cronometrados), finished (resultados + novo recorde).
+  - 5 puzzles aleatórios embaralhados dos PUZZLES existentes (mate-in-1 e mate-in-2).
+  - Cronómetro total + cronómetro por puzzle. Barra de progresso com 5 indicadores.
+  - Cada puzzle resolvido: +100 KZ, som de achievement. Completa todos: +500 KZ bónus, som de vitória.
+  - Botão "Saltar" (não conta como resolvido), botão "Dica".
+  - Feedback visual: overlay verde (correto) / vermelho (errado) no tabuleiro.
+  - Ecrã final: emoji troféu/medalha, resultados por puzzle, destaque "NOVO RECORDE" se aplicável.
+  - Botão de entrada no ecrã de Desafio Diário (gradient laranja, Zap icon).
+- **Sons variados** (`sound/index.ts`): 3 novos eventos:
+  - `achievementRare`: fanfarra maior (6 notas ascendentes até 1568Hz) para conquistas raras (beat_perfect, streak_5, beat_hard).
+  - `countdown`: tick-tack curto nos últimos 5 segundos do relógio (apenas na vez do humano).
+  - `streak`: som ascendente para sequências de 3+ vitórias (toca a cada 3 vitórias).
+- Integrado no profile store: `unlockAchievement` toca `achievementRare` para IDs raros, `recordMatch` toca `streak` em streaks de 3+.
+- Integrado no GameScreen: countdown sound nos últimos 5s do relógio do humano.
+- Verificação: Desafio Relâmpago testado end-to-end (intro → start → puzzle board renderiza corretamente, sem erros).
+
+Stage Summary:
+- **Desafio Relâmpago**: novo modo de jogo cronometrado com 5 puzzles, recompensas, recordes persistidos, e ecrã de resultados.
+- **Sons variados**: 3 novos sons (achievementRare, countdown, streak) que enriquecem o feedback sonoro.
+- **Lint**: 0 erros. **Testes**: 30/30 passam.
+- **QA**: Desafio Relâmpago testado, sem erros de runtime.
+
+Unresolved issues / próximas fases:
+- i18n: ainda só PT.
+- Modo online: ainda simulado.
+- Modo "Assistir" (CvC com comentário): recomendado para próxima ronda.
+- Notificações push: não implementado.
+- Próxima ronda recomendada: modo Assistir com comentário textual, mais variedade de puzzles (mate-in-3), e talvez um sistema de níveis/desbloqueio progressivo.

@@ -18,6 +18,7 @@ import { useApp } from '@/store/app';
 import { useGame } from '@/store/game';
 import { useSettings } from '@/store/settings';
 import { isGameOver, getLegalMoves, type Square } from '@/lib/engine';
+import { playSound } from '@/lib/sound';
 import { Board } from '@/components/game/Board';
 import { GameButton, GameCard, LevelAvatar } from '@/components/game/ui';
 import { Confetti } from '@/components/game/Confetti';
@@ -70,13 +71,26 @@ export function GameScreen() {
     if (!hasClock || isGameOver(state)) return;
     const interval = setInterval(() => {
       if (state.currentPlayer === 'P1') {
-        setP1Time((t) => Math.max(0, t - 1));
+        setP1Time((t) => {
+          const next = Math.max(0, t - 1);
+          // Som de countdown nos últimos 5 segundos (apenas vez do humano)
+          if (next <= 5 && next > 0 && (mode === 'pvp' || (mode === 'pve' && state.currentPlayer === humanSide))) {
+            playSound('countdown');
+          }
+          return next;
+        });
       } else {
-        setP2Time((t) => Math.max(0, t - 1));
+        setP2Time((t) => {
+          const next = Math.max(0, t - 1);
+          if (next <= 5 && next > 0 && (mode === 'pvp' || (mode === 'pve' && state.currentPlayer === humanSide))) {
+            playSound('countdown');
+          }
+          return next;
+        });
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [state.currentPlayer, state.status, hasClock]);
+  }, [state.currentPlayer, state.status, hasClock, mode, humanSide]);
 
   // Reset relógio quando muda o turno — padrão "adjust state during render"
   const [lastPlayer, setLastPlayer] = useState(state.currentPlayer);

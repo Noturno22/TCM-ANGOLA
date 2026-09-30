@@ -19,6 +19,7 @@ const SCREEN_TITLES: Record<string, string> = {
   stats: 'Estatísticas',
   share: 'Partilhar',
   'import-match': 'Importar Partida',
+  lightning: 'Desafio Relâmpago',
 };
 
 export function AppHeader() {

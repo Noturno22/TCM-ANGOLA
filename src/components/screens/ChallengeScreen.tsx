@@ -12,6 +12,7 @@ import {
   Target,
   ChevronRight,
   Loader2,
+  Zap,
 } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useChallenge } from '@/store/challenge';
@@ -428,6 +429,33 @@ export function ChallengeScreen() {
           </div>
         </div>
       </GameCard>
+
+      {/* Desafio Relâmpago */}
+      <button
+        type="button"
+        onClick={() => navigate('lightning')}
+        className="w-full text-left rounded-2xl overflow-hidden bg-gradient-to-r from-orange/20 via-gold/15 to-orange/20 border-2 border-orange/40 p-4 hover:border-orange/60 transition-all group"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-orange/20 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <Zap className="w-6 h-6 text-orange" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-[10px] uppercase tracking-wider text-orange font-semibold">
+                Desafio Relâmpago
+              </span>
+            </div>
+            <h3 className="font-display text-lg leading-tight">5 PUZZLES CRONOMETRADOS</h3>
+            <p className="text-[10px] text-muted-foreground">
+              Resolve 5 puzzles o mais rápido possível • +500 KZ bónus
+            </p>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-orange/15 flex items-center justify-center group-hover:bg-orange/30 transition-colors">
+            <ChevronRight className="w-4 h-4 text-orange" />
+          </div>
+        </div>
+      </button>
 
       {/* Lista de todos os puzzles */}
       <div>

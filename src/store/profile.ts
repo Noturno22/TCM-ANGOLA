@@ -173,6 +173,10 @@ export const useProfile = create<ProfileStore>()(
           // approximação: vitória com peça no centro
           get().unlockAchievement('center_master');
         }
+        // Som de streak quando atinge 3+ vitórias seguidas
+        if (humanWonRecord(record) && s.currentStreak >= 3 && s.currentStreak % 3 === 0) {
+          setTimeout(() => playSound('streak'), 600);
+        }
         return record;
       },
 
@@ -193,7 +197,11 @@ export const useProfile = create<ProfileStore>()(
               : a,
           ),
         }));
-        if (!prev) playSound('achievement');
+        if (!prev) {
+          // Som especial para conquistas raras
+          const rareIds = ['beat_perfect', 'streak_5', 'beat_hard'];
+          playSound(rareIds.includes(id) ? 'achievementRare' : 'achievement');
+        }
       },
 
       resetProfile: () =>
