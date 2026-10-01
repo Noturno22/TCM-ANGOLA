@@ -476,3 +476,40 @@ Unresolved issues / próximas fases:
 - i18n: ainda só PT.
 - Modo online: ainda simulado.
 - Próxima ronda: verificar que o dev server reiniciou e testar o CampaignPlayScreen end-to-end. Depois adicionar novas funcionalidades (mais níveis de campanha, puzzles procedurais, etc.).
+
+---
+Task ID: design-professional-1
+Agent: Designer Pro (main)
+Task: Elevar o design a nível profissional — design system, componentes, ecrãs
+
+Work Log:
+- **Design System (globals.css)** — reescrita completa:
+  - Paleta refinada com variantes brilhantes (--p1-bright, --p2-bright, --gold-bright, --orange-bright) para hover states premium.
+  - Nova --surface-3 para elevação mais profunda.
+  - Sistema de elevação profissional (5 níveis: .elevation-1 a .elevation-5) com sombras em camadas.
+  - Classes glassmorphism premium (.glass, .glass-light) com backdrop-blur e saturação.
+  - Mesh gradient subtil (.mesh-gradient) para fundos com profundidade.
+  - Padrões angolanos refinados com melhor opacidade e tamanho.
+  - Peças com brilhos melhorados (inset highlights + ring subtil).
+  - Gold-frame com sombras em camadas (3 níveis).
+  - Scrollbar minimalista e elegante.
+  - Novas animações: slide-in-right, scale-in, além das existentes.
+  - Focus-visible melhorado para acessibilidade.
+  - Seleção de texto com cor dourada.
+- **GameButton** — gradientes premium com variantes brilhantes no hover, elevação, scale ativo, estados disabled mais subtis.
+- **GameCard** — glassmorphism com backdrop-blur-xl, sistema de elevação, linha de brilho no topo, variantes glow com bordas coloridas.
+- **BalancePill** — gradiente dourado, group hover com scale, sombra dinâmica.
+- **GameLogo** — peças 3D com gradientes radiais e inset shadows, blur glow externo, alvo central refinado com anéis concêntricos.
+- **AppHeader** — glassmorphism premium com gradiente vertical, linha de gradiente no fundo.
+- **TabBar** — glassmorphism, indicador pílula arredondada com gradiente, ponto ativo com shadow glow, melhor espaçamento (48px min).
+- **SplashScreen** — mesh gradient de fundo, animações escalonadas (staggered), logo com pulse, barra de progresso premium com shine effect.
+- **Board** — container com gradiente mais profundo, brilho no topo, células com elevação em hover/seleção/vitória, melhores bordas e gradientes.
+
+Stage Summary:
+- **Design elevado a nível profissional** com sistema de elevação, glassmorphism, gradientes premium, e micro-interações refinadas.
+- **Lint**: 0 erros. **Testes**: 30/30 passam.
+- **Dev server**: ainda em baixo (precisa de restart). Código pronto e correto.
+
+Unresolved issues / próximas fases:
+- Dev server: precisa de restart.
+- Próximas melhorias: melhorar HomeScreen, GameScreen, e outros ecrãs com o novo design system. Adicionar mais micro-interações e polish.

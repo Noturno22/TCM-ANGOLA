@@ -21,17 +21,19 @@ const REAL_TABS: Tab[] = [
 
 export function TabBar({ active }: { active: string }) {
   const navigate = useApp((s) => s.navigate);
-  const activeIndex = REAL_TABS.findIndex((t) => t.id === active);
 
   return (
     <nav
-      className="sticky bottom-0 z-30 w-full max-w-2xl mx-auto bg-background/95 backdrop-blur-md border-t border-border/40"
+      className="sticky bottom-0 z-30 w-full max-w-2xl mx-auto"
       aria-label="Navegação principal"
     >
-      {/* Padrão angolano subtil no topo da tab bar */}
-      <div className="h-0.5 angolan-border opacity-60" />
+      {/* Glassmorphism premium */}
+      <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/85 to-background/70 backdrop-blur-xl" />
+      {/* Linha de gradiente no topo */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+
       <div className="relative grid grid-cols-5 px-2 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
-        {REAL_TABS.map((tab, i) => {
+        {REAL_TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = active === tab.id;
           return (
@@ -40,18 +42,18 @@ export function TabBar({ active }: { active: string }) {
               type="button"
               onClick={() => navigate(tab.id)}
               className={cn(
-                'relative flex flex-col items-center gap-1 py-1.5 rounded-lg transition-colors',
-                'min-h-[44px]',
+                'relative flex flex-col items-center gap-1 py-1.5 rounded-xl transition-all duration-300',
+                'min-h-[48px]',
                 isActive ? 'text-gold' : 'text-muted-foreground hover:text-foreground',
               )}
               aria-label={tab.label}
               aria-current={isActive ? 'page' : undefined}
             >
-              {/* Indicador de fundo ativo */}
+              {/* Indicador de fundo ativo — pílula arredondada */}
               {isActive && (
                 <motion.div
                   layoutId="tab-indicator"
-                  className="absolute inset-0 rounded-lg bg-gold/10"
+                  className="absolute inset-x-2 inset-y-1 rounded-xl bg-gradient-to-b from-gold/15 to-gold/5 border border-gold/20"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
@@ -61,18 +63,21 @@ export function TabBar({ active }: { active: string }) {
               {isActive && (
                 <motion.span
                   layoutId="tab-dot"
-                  className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-gold"
+                  className="absolute -top-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_8px_var(--gold)]"
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}
               <motion.div
-                animate={isActive ? { scale: 1.1, y: -1 } : { scale: 1, y: 0 }}
+                animate={isActive ? { scale: 1.15, y: -1 } : { scale: 1, y: 0 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                 className="relative z-10"
               >
-                <Icon className={cn('w-5 h-5', isActive && 'drop-shadow-[0_0_6px_var(--gold)]')} />
+                <Icon className={cn('w-5 h-5 transition-all', isActive && 'drop-shadow-[0_0_8px_var(--gold)]')} />
               </motion.div>
-              <span className={cn('relative z-10 text-[10px] font-medium transition-all', isActive && 'font-semibold')}>
+              <span className={cn(
+                'relative z-10 text-[10px] transition-all duration-200',
+                isActive ? 'font-semibold tracking-wide' : 'font-medium',
+              )}>
                 {tab.label}
               </span>
             </button>

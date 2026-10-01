@@ -74,19 +74,21 @@ export function Board({
     <div
       className={cn(
         'relative rounded-2xl gold-frame p-3 sm:p-4',
-        'bg-gradient-to-br from-surface to-background',
+        'bg-gradient-to-br from-surface-2 via-surface to-background',
         colorblindMode && 'colorblind',
       )}
       role="grid"
       aria-label="Tabuleiro de Tira o Cocó do Meio, 3 por 3 casas"
     >
       {/* Padrão angolano decorativo nos cantos */}
-      <div className="pointer-events-none absolute inset-0 rounded-2xl overflow-hidden opacity-20">
-        <div className="absolute -top-2 -left-2 w-10 h-10 angolan-diamond" />
-        <div className="absolute -top-2 -right-2 w-10 h-10 angolan-diamond" />
-        <div className="absolute -bottom-2 -left-2 w-10 h-10 angolan-diamond" />
-        <div className="absolute -bottom-2 -right-2 w-10 h-10 angolan-diamond" />
+      <div className="pointer-events-none absolute inset-0 rounded-2xl overflow-hidden opacity-15">
+        <div className="absolute -top-3 -left-3 w-12 h-12 angolan-diamond" />
+        <div className="absolute -top-3 -right-3 w-12 h-12 angolan-diamond" />
+        <div className="absolute -bottom-3 -left-3 w-12 h-12 angolan-diamond" />
+        <div className="absolute -bottom-3 -right-3 w-12 h-12 angolan-diamond" />
       </div>
+      {/* Brilho subtil no topo do tabuleiro */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent rounded-t-2xl" />
 
       <div className={cn('relative grid grid-cols-3 grid-rows-3 gap-1.5 sm:gap-2', sizeClasses[size])}>
         {cells.map((sq) => {
@@ -109,24 +111,24 @@ export function Board({
               onClick={() => onSquareClick(sq as Square)}
               className={cn(
                 'relative flex items-center justify-center rounded-xl',
-                'transition-all duration-200',
+                'transition-all duration-300',
                 'aspect-square',
                 'group',
-                // Fundo da casa
-                'bg-gradient-to-br from-background/60 to-surface-2/40',
-                'border border-border/40',
+                // Fundo da casa — gradiente subtil
+                'bg-gradient-to-br from-surface-2/50 via-background/40 to-surface/30',
+                'border border-border/30',
                 // Hover
-                !disabled && 'hover:border-gold/50 hover:from-surface-2/60',
+                !disabled && 'hover:border-gold/40 hover:from-surface-3/50 hover:elevation-1',
                 // Seleção
-                isSelected && 'ring-2 ring-gold ring-offset-2 ring-offset-background',
+                isSelected && 'ring-2 ring-gold ring-offset-2 ring-offset-background elevation-2',
                 // Destino válido
-                valid && 'ring-2 ring-p1/70 cursor-pointer hover:scale-[1.03]',
+                valid && 'ring-2 ring-p1/60 cursor-pointer hover:scale-[1.04] hover:ring-p1 elevation-1',
                 // Vitória
-                win && 'bg-gold/20 border-gold',
+                win && 'bg-gradient-to-br from-gold/25 to-gold/10 border-gold elevation-3',
                 // Ameaça (tutorial)
                 threat && !valid && 'ring-2 ring-p2/50 animate-pulse-glow',
                 // Última jogada
-                toLast && 'bg-p1/5',
+                toLast && 'bg-p1/5 border-p1/20',
               )}
               style={{
                 gridColumn: SQUARE_POS[flipped ? (10 - sq) : sq].col + 1,
@@ -220,31 +222,42 @@ function Piece({
   return (
     <div
       className={cn(
-        'relative rounded-full flex items-center justify-center',
+        'relative rounded-full flex items-center justify-center transition-all duration-300',
         dims[size],
-        isP1 ? 'piece-glow-p1 bg-gradient-to-br from-p1 to-emerald-700' : 'piece-glow-p2 bg-gradient-to-br from-p2 to-red-900',
+        isP1 ? 'piece-glow-p1' : 'piece-glow-p2',
         'piece-' + (isP1 ? 'p1' : 'p2'),
         selected && 'ring-2 ring-gold ring-offset-2 ring-offset-transparent scale-110',
         winning && 'scale-125',
       )}
       style={{
         background: isP1
-          ? 'radial-gradient(circle at 30% 30%, oklch(0.78 0.2 152), oklch(0.55 0.18 152) 60%, oklch(0.4 0.12 152))'
-          : 'radial-gradient(circle at 30% 30%, oklch(0.7 0.22 27), oklch(0.5 0.22 27) 60%, oklch(0.35 0.15 27))',
+          ? 'radial-gradient(circle at 32% 28%, oklch(0.82 0.19 155) 0%, oklch(0.7 0.17 155) 35%, oklch(0.5 0.15 155) 70%, oklch(0.38 0.1 152) 100%)'
+          : 'radial-gradient(circle at 32% 28%, oklch(0.72 0.22 25) 0%, oklch(0.62 0.21 25) 35%, oklch(0.45 0.19 25) 70%, oklch(0.32 0.12 25) 100%)',
       }}
     >
-      {/* Realce especular */}
+      {/* Realce especular principal */}
       <div
-        className="absolute top-1 left-1 w-1/3 h-1/3 rounded-full bg-white/50 blur-[1px]"
+        className="absolute top-[12%] left-[12%] w-[35%] h-[30%] rounded-full bg-white/40 blur-[2px]"
+        aria-hidden
+      />
+      {/* Realce secundário menor */}
+      <div
+        className="absolute top-[20%] left-[22%] w-[15%] h-[12%] rounded-full bg-white/60 blur-[0.5px]"
+        aria-hidden
+      />
+      {/* Sombra inferior interna para efeito 3D */}
+      <div
+        className="absolute bottom-[8%] right-[15%] w-[30%] h-[20%] rounded-full bg-black/20 blur-[2px]"
         aria-hidden
       />
       {/* Símbolo gravado (spec §27: peças não se distinguem só pela cor) */}
       {withSymbol && (
         <span
           className={cn(
-            'relative font-bold text-white/90 drop-shadow',
+            'relative font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]',
             size === 'sm' ? 'text-sm' : size === 'md' ? 'text-lg' : 'text-2xl',
           )}
+          style={{ color: 'rgba(255,255,255,0.92)' }}
           aria-hidden
         >
           {isP1 ? '▲' : '●'}

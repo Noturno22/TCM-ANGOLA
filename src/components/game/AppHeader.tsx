@@ -34,14 +34,18 @@ export function AppHeader() {
   const title = SCREEN_TITLES[screen] ?? '';
 
   return (
-    <header className="sticky top-0 z-30 w-full max-w-2xl mx-auto px-4 py-3 bg-background/80 backdrop-blur-md border-b border-border/40">
-      <div className="flex items-center justify-between gap-3">
+    <header className="sticky top-0 z-30 w-full max-w-2xl mx-auto">
+      {/* Glassmorphism premium com gradiente subtil */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/80 to-background/60 backdrop-blur-xl" />
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+
+      <div className="relative px-4 py-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <Button
             variant="ghost"
             size="icon"
             onClick={back}
-            className="rounded-full h-9 w-9 shrink-0"
+            className="rounded-full h-9 w-9 shrink-0 hover:bg-surface-2/60 transition-all"
             aria-label="Voltar"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -51,12 +55,12 @@ export function AppHeader() {
           ) : null}
           <h1 className="font-display text-xl tracking-wide truncate">{title}</h1>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <BalancePill coins={coins} onClick={() => navigate('wallet')} />
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-full h-9 w-9"
+            className="rounded-full h-9 w-9 hover:bg-surface-2/60 transition-all"
             aria-label="Notificações"
           >
             <Bell className="w-4 h-4" />
@@ -65,7 +69,7 @@ export function AppHeader() {
             variant="ghost"
             size="icon"
             onClick={() => navigate('settings')}
-            className="rounded-full h-9 w-9"
+            className="rounded-full h-9 w-9 hover:bg-surface-2/60 transition-all"
             aria-label="Configurações"
           >
             <SettingsIcon className="w-4 h-4" />

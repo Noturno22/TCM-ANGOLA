@@ -44,113 +44,131 @@
   --color-orange: var(--orange);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
 }
 
-/* ============ TEMA ESCURO (padrão — fiel ao mockup) ============ */
+/* ============================================================
+   TEMA ESCURO — Paleta angolana contemporânea refinada
+   Inspirada nos tons profundos da noite angolana com
+   acentos de esmeralda, rubi e ouro.
+   ============================================================ */
 :root,
 .dark {
   --radius: 0.875rem;
 
-  /* Fundo quase preto esverdeado (mockup) */
-  --background: oklch(0.16 0.015 165);
-  --foreground: oklch(0.97 0.005 120);
+  /* Fundo — preto esverdeado profundo com subtil matiz */
+  --background: oklch(0.15 0.012 165);
+  --foreground: oklch(0.97 0.004 120);
 
-  /* Superfícies verde-escuro */
-  --surface: oklch(0.21 0.018 165);
-  --surface-2: oklch(0.25 0.02 165);
-  --card: oklch(0.21 0.018 165);
-  --card-foreground: oklch(0.97 0.005 120);
-  --popover: oklch(0.21 0.018 165);
-  --popover-foreground: oklch(0.97 0.005 120);
+  /* Superfícies — elevação progressiva */
+  --surface: oklch(0.19 0.014 165);
+  --surface-2: oklch(0.23 0.016 165);
+  --surface-3: oklch(0.27 0.018 165);
+  --card: oklch(0.2 0.015 165);
+  --card-foreground: oklch(0.97 0.004 120);
+  --popover: oklch(0.22 0.016 165);
+  --popover-foreground: oklch(0.97 0.004 120);
 
   /* Verde esmeralda — ação / P1 */
-  --p1: oklch(0.68 0.18 152);
-  --p1-soft: oklch(0.68 0.18 152 / 0.15);
+  --p1: oklch(0.7 0.17 155);
+  --p1-bright: oklch(0.78 0.19 155);
+  --p1-soft: oklch(0.7 0.17 155 / 0.12);
 
-  /* Vermelho — CTA / P2 */
-  --p2: oklch(0.6 0.22 27);
-  --p2-soft: oklch(0.6 0.22 27 / 0.15);
+  /* Vermelho rubi — CTA / P2 */
+  --p2: oklch(0.62 0.21 25);
+  --p2-bright: oklch(0.7 0.22 25);
+  --p2-soft: oklch(0.62 0.21 25 / 0.12);
 
   /* Dourado — saldo, tab ativa, moldura, preços */
-  --gold: oklch(0.82 0.15 80);
-  --gold-soft: oklch(0.82 0.15 80 / 0.15);
+  --gold: oklch(0.83 0.14 82);
+  --gold-bright: oklch(0.88 0.15 82);
+  --gold-soft: oklch(0.83 0.14 82 / 0.12);
 
   /* Laranja — Jogar Offline */
-  --orange: oklch(0.7 0.17 55);
-  --orange-soft: oklch(0.7 0.17 55 / 0.15);
+  --orange: oklch(0.72 0.16 55);
+  --orange-bright: oklch(0.78 0.17 55);
+  --orange-soft: oklch(0.72 0.16 55 / 0.12);
 
-  --primary: oklch(0.68 0.18 152);
-  --primary-foreground: oklch(0.16 0.015 165);
-  --secondary: oklch(0.28 0.02 165);
-  --secondary-foreground: oklch(0.97 0.005 120);
-  --muted: oklch(0.26 0.015 165);
-  --muted-foreground: oklch(0.7 0.012 120);
-  --accent: oklch(0.3 0.02 165);
-  --accent-foreground: oklch(0.97 0.005 120);
+  --primary: oklch(0.7 0.17 155);
+  --primary-foreground: oklch(0.15 0.012 165);
+  --secondary: oklch(0.28 0.018 165);
+  --secondary-foreground: oklch(0.97 0.004 120);
+  --muted: oklch(0.25 0.012 165);
+  --muted-foreground: oklch(0.68 0.01 120);
+  --accent: oklch(0.3 0.018 165);
+  --accent-foreground: oklch(0.97 0.004 120);
   --destructive: oklch(0.62 0.23 27);
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.68 0.18 152);
-  --chart-1: oklch(0.68 0.18 152);
-  --chart-2: oklch(0.6 0.22 27);
-  --chart-3: oklch(0.82 0.15 80);
-  --chart-4: oklch(0.7 0.17 55);
+  --border: oklch(1 0 0 / 7%);
+  --input: oklch(1 0 0 / 10%);
+  --ring: oklch(0.7 0.17 155);
+  --chart-1: oklch(0.7 0.17 155);
+  --chart-2: oklch(0.62 0.21 25);
+  --chart-3: oklch(0.83 0.14 82);
+  --chart-4: oklch(0.72 0.16 55);
   --chart-5: oklch(0.6 0.12 200);
-  --sidebar: oklch(0.19 0.015 165);
-  --sidebar-foreground: oklch(0.97 0.005 120);
-  --sidebar-primary: oklch(0.68 0.18 152);
-  --sidebar-primary-foreground: oklch(0.16 0.015 165);
-  --sidebar-accent: oklch(0.26 0.015 165);
-  --sidebar-accent-foreground: oklch(0.97 0.005 120);
-  --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.68 0.18 152);
+  --sidebar: oklch(0.17 0.012 165);
+  --sidebar-foreground: oklch(0.97 0.004 120);
+  --sidebar-primary: oklch(0.7 0.17 155);
+  --sidebar-primary-foreground: oklch(0.15 0.012 165);
+  --sidebar-accent: oklch(0.25 0.012 165);
+  --sidebar-accent-foreground: oklch(0.97 0.004 120);
+  --sidebar-border: oklch(1 0 0 / 7%);
+  --sidebar-ring: oklch(0.7 0.17 155);
 }
 
-/* ============ TEMA CLARO (toggle obrigatório — spec §8.3) ============ */
+/* ============================================================
+   TEMA CLARO — Versão diurna com calor angolano
+   ============================================================ */
 .light {
-  --background: oklch(0.97 0.008 95);
-  --foreground: oklch(0.2 0.02 165);
+  --background: oklch(0.98 0.006 85);
+  --foreground: oklch(0.22 0.018 165);
 
-  --surface: oklch(0.99 0.005 95);
-  --surface-2: oklch(0.94 0.01 95);
-  --card: oklch(0.99 0.005 95);
-  --card-foreground: oklch(0.2 0.02 165);
-  --popover: oklch(0.99 0.005 95);
-  --popover-foreground: oklch(0.2 0.02 165);
+  --surface: oklch(1 0.003 85);
+  --surface-2: oklch(0.95 0.008 85);
+  --surface-3: oklch(0.9 0.012 85);
+  --card: oklch(1 0.003 85);
+  --card-foreground: oklch(0.22 0.018 165);
+  --popover: oklch(1 0.003 85);
+  --popover-foreground: oklch(0.22 0.018 165);
 
-  --p1: oklch(0.55 0.16 152);
-  --p1-soft: oklch(0.55 0.16 152 / 0.12);
-  --p2: oklch(0.52 0.2 27);
-  --p2-soft: oklch(0.52 0.2 27 / 0.12);
-  --gold: oklch(0.72 0.16 75);
-  --gold-soft: oklch(0.72 0.16 75 / 0.15);
-  --orange: oklch(0.62 0.17 55);
-  --orange-soft: oklch(0.62 0.17 55 / 0.15);
+  --p1: oklch(0.55 0.15 152);
+  --p1-bright: oklch(0.6 0.16 152);
+  --p1-soft: oklch(0.55 0.15 152 / 0.1);
+  --p2: oklch(0.52 0.19 27);
+  --p2-bright: oklch(0.58 0.2 27);
+  --p2-soft: oklch(0.52 0.19 27 / 0.1);
+  --gold: oklch(0.72 0.15 78);
+  --gold-bright: oklch(0.78 0.16 78);
+  --gold-soft: oklch(0.72 0.15 78 / 0.12);
+  --orange: oklch(0.62 0.16 55);
+  --orange-bright: oklch(0.68 0.17 55);
+  --orange-soft: oklch(0.62 0.16 55 / 0.12);
 
-  --primary: oklch(0.55 0.16 152);
-  --primary-foreground: oklch(0.99 0.005 95);
-  --secondary: oklch(0.92 0.01 95);
-  --secondary-foreground: oklch(0.2 0.02 165);
-  --muted: oklch(0.94 0.008 95);
-  --muted-foreground: oklch(0.45 0.015 120);
-  --accent: oklch(0.9 0.02 95);
-  --accent-foreground: oklch(0.2 0.02 165);
+  --primary: oklch(0.55 0.15 152);
+  --primary-foreground: oklch(0.98 0.006 85);
+  --secondary: oklch(0.92 0.008 85);
+  --secondary-foreground: oklch(0.22 0.018 165);
+  --muted: oklch(0.93 0.006 85);
+  --muted-foreground: oklch(0.45 0.012 120);
+  --accent: oklch(0.88 0.018 85);
+  --accent-foreground: oklch(0.22 0.018 165);
   --destructive: oklch(0.55 0.22 27);
-  --border: oklch(0.2 0.02 165 / 12%);
-  --input: oklch(0.2 0.02 165 / 10%);
-  --ring: oklch(0.55 0.16 152);
-  --sidebar: oklch(0.97 0.008 95);
-  --sidebar-foreground: oklch(0.2 0.02 165);
-  --sidebar-primary: oklch(0.55 0.16 152);
-  --sidebar-primary-foreground: oklch(0.99 0.005 95);
-  --sidebar-accent: oklch(0.92 0.01 95);
-  --sidebar-accent-foreground: oklch(0.2 0.02 165);
-  --sidebar-border: oklch(0.2 0.02 165 / 12%);
-  --sidebar-ring: oklch(0.55 0.16 152);
+  --border: oklch(0.22 0.018 165 / 10%);
+  --input: oklch(0.22 0.018 165 / 8%);
+  --ring: oklch(0.55 0.15 152);
+  --sidebar: oklch(0.96 0.006 85);
+  --sidebar-foreground: oklch(0.22 0.018 165);
+  --sidebar-primary: oklch(0.55 0.15 152);
+  --sidebar-primary-foreground: oklch(0.98 0.006 85);
+  --sidebar-accent: oklch(0.9 0.008 85);
+  --sidebar-accent-foreground: oklch(0.22 0.018 165);
+  --sidebar-border: oklch(0.22 0.018 165 / 10%);
+  --sidebar-ring: oklch(0.55 0.15 152);
 }
 
 @layer base {
@@ -159,33 +177,38 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1, "cv01" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
-  /* Tipografia de títulos com fonte display (Bebas Neue) */
   .font-display {
     font-family: var(--font-display), system-ui, sans-serif;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
   }
 }
 
-/* ============ Padrões geométricos angolanos (spec §29) ============ */
+/* ============================================================
+   PADRÕES GEOMÉTRICOS ANGOLANOS — refinados e contemporâneos
+   Inspirados nos têxteis tradicionais (panos) de Angola
+   ============================================================ */
 .angolan-pattern {
   background-image:
     linear-gradient(45deg, transparent 25%, var(--p1) 25%, var(--p1) 50%, transparent 50%, transparent 75%, var(--p1) 75%),
     linear-gradient(-45deg, transparent 25%, var(--p2) 25%, var(--p2) 50%, transparent 50%, transparent 75%, var(--p2) 75%);
-  background-size: 28px 28px;
-  background-position: 0 0, 0 14px;
-  opacity: 0.08;
+  background-size: 32px 32px;
+  background-position: 0 0, 0 16px;
+  opacity: 0.05;
 }
 
 .angolan-border {
   background:
     repeating-linear-gradient(
       90deg,
-      var(--p2) 0 8px,
-      var(--gold) 8px 16px,
-      var(--p1) 16px 24px,
-      transparent 24px 32px
+      var(--p2) 0 6px,
+      var(--gold) 6px 12px,
+      var(--p1) 12px 18px,
+      transparent 18px 24px
     );
 }
 
@@ -195,74 +218,146 @@
     linear-gradient(225deg, var(--p1) 25%, transparent 25%),
     linear-gradient(45deg, var(--p2) 25%, transparent 25%),
     linear-gradient(315deg, var(--p2) 25%, transparent 25%);
-  background-size: 20px 20px;
-  background-position: 10px 0, 10px 0, 0 0, 0 0;
-  opacity: 0.15;
+  background-size: 24px 24px;
+  background-position: 12px 0, 12px 0, 0 0, 0 0;
+  opacity: 0.12;
 }
 
-/* ============ Brilhos e efeitos ============ */
+/* Padrão de malha subtil para fundos */
+.mesh-gradient {
+  background-image:
+    radial-gradient(at 20% 20%, var(--p1-soft) 0%, transparent 50%),
+    radial-gradient(at 80% 80%, var(--gold-soft) 0%, transparent 50%),
+    radial-gradient(at 50% 50%, var(--p2-soft) 0%, transparent 60%);
+}
+
+/* ============================================================
+   SISTEMA DE ELEVAÇÃO — sombras profissionais em camadas
+   ============================================================ */
+.elevation-1 {
+  box-shadow:
+    0 1px 2px oklch(0 0 0 / 0.06),
+    0 1px 3px oklch(0 0 0 / 0.08);
+}
+.elevation-2 {
+  box-shadow:
+    0 2px 4px oklch(0 0 0 / 0.08),
+    0 3px 6px oklch(0 0 0 / 0.1),
+    0 1px 2px oklch(0 0 0 / 0.06);
+}
+.elevation-3 {
+  box-shadow:
+    0 4px 8px oklch(0 0 0 / 0.1),
+    0 6px 12px oklch(0 0 0 / 0.12),
+    0 2px 4px oklch(0 0 0 / 0.06);
+}
+.elevation-4 {
+  box-shadow:
+    0 8px 16px oklch(0 0 0 / 0.12),
+    0 12px 24px oklch(0 0 0 / 0.14),
+    0 4px 8px oklch(0 0 0 / 0.08);
+}
+.elevation-5 {
+  box-shadow:
+    0 16px 32px oklch(0 0 0 / 0.16),
+    0 24px 48px oklch(0 0 0 / 0.18),
+    0 8px 16px oklch(0 0 0 / 0.1);
+}
+
+/* ============================================================
+   BRILHOS E EFEITOS DE PEÇAS — mais realistas e premium
+   ============================================================ */
 .piece-glow-p1 {
   box-shadow:
-    0 0 12px oklch(0.68 0.18 152 / 0.6),
-    0 0 24px oklch(0.68 0.18 152 / 0.3),
-    inset 0 -3px 6px oklch(0.4 0.1 152),
-    inset 0 3px 6px oklch(0.85 0.15 152);
+    0 0 16px oklch(0.7 0.17 155 / 0.5),
+    0 0 32px oklch(0.7 0.17 155 / 0.25),
+    inset 0 -4px 8px oklch(0.42 0.1 152),
+    inset 0 4px 8px oklch(0.85 0.14 155),
+    inset 0 0 0 1px oklch(0.9 0.1 155 / 0.3);
 }
 .piece-glow-p2 {
   box-shadow:
-    0 0 12px oklch(0.6 0.22 27 / 0.6),
-    0 0 24px oklch(0.6 0.22 27 / 0.3),
-    inset 0 -3px 6px oklch(0.35 0.1 27),
-    inset 0 3px 6px oklch(0.8 0.15 27);
+    0 0 16px oklch(0.62 0.21 25 / 0.5),
+    0 0 32px oklch(0.62 0.21 25 / 0.25),
+    inset 0 -4px 8px oklch(0.38 0.1 25),
+    inset 0 4px 8px oklch(0.8 0.15 25),
+    inset 0 0 0 1px oklch(0.85 0.12 25 / 0.3);
 }
 .gold-frame {
   box-shadow:
-    0 0 0 2px var(--gold),
-    0 0 16px oklch(0.82 0.15 80 / 0.4),
-    0 8px 32px oklch(0 0 0 / 0.5);
+    0 0 0 1px oklch(0.83 0.14 82 / 0.6),
+    0 0 0 3px oklch(0.83 0.14 82 / 0.2),
+    0 0 24px oklch(0.83 0.14 82 / 0.3),
+    0 12px 40px oklch(0 0 0 / 0.5);
 }
 .text-glow-gold {
-  text-shadow: 0 0 12px oklch(0.82 0.15 80 / 0.5);
+  text-shadow:
+    0 0 16px oklch(0.83 0.14 82 / 0.5),
+    0 0 32px oklch(0.83 0.14 82 / 0.2);
 }
 .text-glow-p1 {
-  text-shadow: 0 0 10px oklch(0.68 0.18 152 / 0.5);
+  text-shadow:
+    0 0 12px oklch(0.7 0.17 155 / 0.5),
+    0 0 24px oklch(0.7 0.17 155 / 0.2);
 }
 .text-glow-p2 {
-  text-shadow: 0 0 10px oklch(0.6 0.22 27 / 0.5);
+  text-shadow:
+    0 0 12px oklch(0.62 0.21 25 / 0.5),
+    0 0 24px oklch(0.62 0.21 25 / 0.2);
 }
 
-/* ============ Scrollbar customizada ============ */
+/* ============================================================
+   GLASSMORPHISM — vidro fosco premium
+   ============================================================ */
+.glass {
+  background: oklch(0.2 0.015 165 / 0.6);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid oklch(1 0 0 / 0.08);
+}
+.glass-light {
+  background: oklch(0.97 0.004 120 / 0.08);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  border: 1px solid oklch(1 0 0 / 0.06);
+}
+
+/* ============================================================
+   SCROLLBAR — minimalista e elegante
+   ============================================================ */
 .scrollbar-custom::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 .scrollbar-custom::-webkit-scrollbar-track {
   background: transparent;
 }
 .scrollbar-custom::-webkit-scrollbar-thumb {
-  background: var(--muted);
-  border-radius: 3px;
+  background: oklch(0.4 0.01 165 / 0.4);
+  border-radius: 10px;
 }
 .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-  background: var(--muted-foreground);
+  background: oklch(0.5 0.01 165 / 0.6);
 }
 
-/* ============ Animações ============ */
+/* ============================================================
+   ANIMAÇÕES — suaves e profissionais
+   ============================================================ */
 @keyframes piece-place {
   0% { transform: scale(0.5) translateY(-20px); opacity: 0; }
-  60% { transform: scale(1.1) translateY(0); opacity: 1; }
+  60% { transform: scale(1.08) translateY(0); opacity: 1; }
   100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 .animate-piece-place {
-  animation: piece-place 0.3s ease-out;
+  animation: piece-place 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
 }
 .animate-pulse-glow {
-  animation: pulse-glow 1.6s ease-in-out infinite;
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
 @keyframes shimmer {
@@ -273,19 +368,27 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    oklch(1 0 0 / 0.08) 50%,
+    oklch(1 0 0 / 0.06) 50%,
     transparent 100%
   );
   background-size: 200% 100%;
-  animation: shimmer 2s linear infinite;
+  animation: shimmer 2.5s linear infinite;
 }
 
 @keyframes slide-up {
-  from { transform: translateY(20px); opacity: 0; }
+  from { transform: translateY(24px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 .animate-slide-up {
-  animation: slide-up 0.4s ease-out;
+  animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes fade-in {
@@ -293,61 +396,87 @@
   to { opacity: 1; }
 }
 .animate-fade-in {
-  animation: fade-in 0.5s ease-out;
+  animation: fade-in 0.6s ease-out;
 }
 
-/* ============ Confetti de vitória ============ */
+@keyframes scale-in {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.animate-scale-in {
+  animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================
+   CONFETTI DE VITÓRIA
+   ============================================================ */
 @keyframes confetti-fall {
-  0% {
-    transform: translateY(-100vh) rotate(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100vh) rotate(720deg);
-    opacity: 0;
-  }
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
 }
 .confetti-piece {
   position: absolute;
   width: 8px;
-  height: 12px;
+  height: 14px;
   top: -20px;
   animation-name: confetti-fall;
   animation-timing-function: linear;
   animation-fill-mode: forwards;
 }
 
-/* ============ Brilho de vitória (ray burst) ============ */
+/* ============================================================
+   EFEITOS DE VITÓRIA
+   ============================================================ */
 @keyframes victory-rays {
   0% { transform: scale(0.5) rotate(0deg); opacity: 0; }
-  50% { opacity: 0.6; }
+  50% { opacity: 0.5; }
   100% { transform: scale(1.5) rotate(180deg); opacity: 0; }
 }
 .animate-victory-rays {
-  animation: victory-rays 1.2s ease-out forwards;
+  animation: victory-rays 1.4s ease-out forwards;
 }
 
-/* ============ Pop in (para badges e conquistas) ============ */
 @keyframes pop-in {
   0% { transform: scale(0) rotate(-10deg); }
-  60% { transform: scale(1.15) rotate(2deg); }
+  60% { transform: scale(1.12) rotate(2deg); }
   100% { transform: scale(1) rotate(0deg); }
 }
 .animate-pop-in {
   animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* Reduzir animações (acessibilidade) */
+/* ============================================================
+   TRANSIÇÕES BASE — suaves em todos os elementos interativos
+   ============================================================ */
+button, a, [role="button"] {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================
+   ACESSIBILIDADE
+   ============================================================ */
 .reduce-motion * {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
 }
 
-/* Modo daltonismo — alto contraste de forma */
 .colorblind .piece-p1 {
   filter: saturate(0.4) brightness(1.1);
 }
 .colorblind .piece-p2 {
   filter: saturate(0.4) brightness(0.9);
+}
+
+/* Focus visível melhorado para acessibilidade */
+*:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Seleção de texto */
+::selection {
+  background: var(--gold-soft);
+  color: var(--foreground);
 }

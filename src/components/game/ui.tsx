@@ -11,12 +11,12 @@ import { playSound } from '@/lib/sound';
 type GameVariant = 'p1' | 'p2' | 'gold' | 'orange' | 'outline' | 'ghost';
 
 const variantClasses: Record<GameVariant, string> = {
-  p1: 'bg-p1 text-background hover:brightness-110 shadow-lg shadow-p1/20',
-  p2: 'bg-p2 text-white hover:brightness-110 shadow-lg shadow-p2/20',
-  gold: 'bg-gold text-background hover:brightness-105 shadow-lg shadow-gold/20',
-  orange: 'bg-orange text-white hover:brightness-110 shadow-lg shadow-orange/20',
-  outline: 'border border-border bg-transparent text-foreground hover:bg-accent',
-  ghost: 'bg-transparent text-foreground hover:bg-accent',
+  p1: 'bg-gradient-to-br from-p1 to-emerald-700 text-background hover:from-p1-bright hover:to-emerald-600 shadow-lg shadow-p1/25 hover:shadow-p1/40 hover:-translate-y-0.5',
+  p2: 'bg-gradient-to-br from-p2 to-red-900 text-white hover:from-p2-bright hover:to-red-800 shadow-lg shadow-p2/25 hover:shadow-p2/40 hover:-translate-y-0.5',
+  gold: 'bg-gradient-to-br from-gold to-amber-700 text-background hover:from-gold-bright hover:to-amber-600 shadow-lg shadow-gold/25 hover:shadow-gold/40 hover:-translate-y-0.5',
+  orange: 'bg-gradient-to-br from-orange to-amber-800 text-white hover:from-orange-bright hover:to-amber-700 shadow-lg shadow-orange/25 hover:shadow-orange/40 hover:-translate-y-0.5',
+  outline: 'border border-border/60 bg-surface/40 backdrop-blur-sm text-foreground hover:bg-surface-2/60 hover:border-border',
+  ghost: 'bg-transparent text-foreground hover:bg-surface/60',
 };
 
 type GameButtonProps = React.ComponentProps<'button'> & {
@@ -34,8 +34,8 @@ export function GameButton({
     <ShadButton
       variant="default"
       className={cn(
-        'h-11 px-5 rounded-xl font-semibold text-sm transition-all',
-        'active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none',
+        'h-11 px-5 rounded-xl font-semibold text-sm transition-all duration-200',
+        'active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none disabled:hover:translate-y-0',
         variantClasses[variant],
         className,
       )}
@@ -50,7 +50,7 @@ export function GameButton({
   );
 }
 
-// ============ Card com estilo do jogo ============
+// ============ Card com estilo do jogo — glassmorphism premium ============
 export function GameCard({
   className,
   children,
@@ -60,20 +60,24 @@ export function GameCard({
   return (
     <Card
       className={cn(
-        'relative rounded-2xl bg-card/80 backdrop-blur-sm border-border/60 overflow-hidden',
-        glow === 'p1' && 'shadow-lg shadow-p1/10',
-        glow === 'p2' && 'shadow-lg shadow-p2/10',
-        glow === 'gold' && 'shadow-lg shadow-gold/10',
+        'relative rounded-2xl bg-card/70 backdrop-blur-xl border-border/50 overflow-hidden',
+        'transition-all duration-300',
+        glow === 'p1' && 'shadow-xl shadow-p1/10 border-p1/20',
+        glow === 'p2' && 'shadow-xl shadow-p2/10 border-p2/20',
+        glow === 'gold' && 'shadow-xl shadow-gold/10 border-gold/20',
+        !glow && 'elevation-2 hover:elevation-3',
         className,
       )}
       {...props}
     >
+      {/* Brilho subtil no topo */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       {children}
     </Card>
   );
 }
 
-// ============ Pill de saldo (dourado com "+") ============
+// ============ Pill de saldo (dourado premium com brilho) ============
 export function BalancePill({
   coins,
   onClick,
@@ -85,15 +89,15 @@ export function BalancePill({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-2 rounded-full bg-gold/15 border border-gold/40 px-3 py-1.5 hover:bg-gold/25 transition-colors"
+      className="group flex items-center gap-2 rounded-full bg-gradient-to-r from-gold/15 to-gold/5 border border-gold/40 px-3 py-1.5 hover:from-gold/25 hover:to-gold/10 hover:border-gold/60 transition-all duration-300 hover:shadow-md hover:shadow-gold/20"
       aria-label={`Saldo: ${coins} Kwanza. Abrir carteira.`}
     >
-      <Coins className="w-4 h-4 text-gold" />
-      <span className="font-display text-base text-gold leading-none">
+      <Coins className="w-4 h-4 text-gold group-hover:scale-110 transition-transform" />
+      <span className="font-display text-base text-gold leading-none tracking-wide">
         {coins.toLocaleString('pt-PT')}
       </span>
-      <span className="text-[10px] text-gold/70 uppercase tracking-wider">KZ</span>
-      <span className="ml-1 w-5 h-5 rounded-full bg-gold text-background flex items-center justify-center text-sm font-bold leading-none">
+      <span className="text-[10px] text-gold/70 uppercase tracking-wider font-semibold">KZ</span>
+      <span className="ml-0.5 w-5 h-5 rounded-full bg-gradient-to-br from-gold to-amber-600 text-background flex items-center justify-center text-sm font-bold leading-none shadow-sm group-hover:scale-110 transition-transform">
         +
       </span>
     </button>
@@ -231,24 +235,33 @@ export function GameLogo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
     md: 'w-14 h-14',
     lg: 'w-24 h-24',
   };
+  const pieceSize = {
+    sm: 'rounded-[3px]',
+    md: 'rounded-[4px]',
+    lg: 'rounded-[6px]',
+  };
   return (
     <div className={cn('relative', dims[size])}>
-      <div className="absolute inset-0 rounded-xl gold-frame bg-gradient-to-br from-surface to-background p-1.5">
-        <div className="w-full h-full grid grid-cols-3 grid-rows-3 gap-0.5">
-          {/* P1 (verde) no topo */}
-          <div className="rounded-sm bg-gradient-to-br from-p1 to-emerald-700" />
-          <div className="rounded-sm bg-gradient-to-br from-p1 to-emerald-700" />
-          <div className="rounded-sm bg-gradient-to-br from-p1 to-emerald-700" />
+      {/* Brilho externo */}
+      <div className="absolute inset-0 rounded-xl blur-md bg-gold/20" />
+      <div className={cn('relative absolute inset-0 rounded-xl gold-frame bg-gradient-to-br from-surface-2 to-background p-1.5', pieceSize[size])}>
+        <div className="w-full h-full grid grid-cols-3 grid-rows-3 gap-[2px]">
+          {/* P1 (verde) no topo — com gradiente esférico */}
+          <div className={cn('bg-gradient-to-br from-p1-bright via-p1 to-emerald-800', pieceSize[size])} style={{ boxShadow: 'inset 0 -2px 3px oklch(0.35 0.1 152), inset 0 2px 3px oklch(0.85 0.15 155)' }} />
+          <div className={cn('bg-gradient-to-br from-p1-bright via-p1 to-emerald-800', pieceSize[size])} style={{ boxShadow: 'inset 0 -2px 3px oklch(0.35 0.1 152), inset 0 2px 3px oklch(0.85 0.15 155)' }} />
+          <div className={cn('bg-gradient-to-br from-p1-bright via-p1 to-emerald-800', pieceSize[size])} style={{ boxShadow: 'inset 0 -2px 3px oklch(0.35 0.1 152), inset 0 2px 3px oklch(0.85 0.15 155)' }} />
           {/* Vazio + alvo + vazio */}
-          <div className="rounded-sm bg-surface-2" />
-          <div className="rounded-sm bg-surface-2 flex items-center justify-center">
-            <div className="w-1/2 h-1/2 rounded-full border border-gold" />
+          <div className={cn('bg-surface-2/60', pieceSize[size])} />
+          <div className={cn('bg-surface-2/60 flex items-center justify-center', pieceSize[size])}>
+            <div className="w-2/3 h-2/3 rounded-full border border-gold/80 flex items-center justify-center">
+              <div className="w-1/3 h-1/3 rounded-full bg-gold/80" />
+            </div>
           </div>
-          <div className="rounded-sm bg-surface-2" />
-          {/* P2 (vermelho) na base */}
-          <div className="rounded-sm bg-gradient-to-br from-p2 to-red-900" />
-          <div className="rounded-sm bg-gradient-to-br from-p2 to-red-900" />
-          <div className="rounded-sm bg-gradient-to-br from-p2 to-red-900" />
+          <div className={cn('bg-surface-2/60', pieceSize[size])} />
+          {/* P2 (vermelho) na base — com gradiente esférico */}
+          <div className={cn('bg-gradient-to-br from-p2-bright via-p2 to-red-950', pieceSize[size])} style={{ boxShadow: 'inset 0 -2px 3px oklch(0.3 0.1 25), inset 0 2px 3px oklch(0.8 0.15 25)' }} />
+          <div className={cn('bg-gradient-to-br from-p2-bright via-p2 to-red-950', pieceSize[size])} style={{ boxShadow: 'inset 0 -2px 3px oklch(0.3 0.1 25), inset 0 2px 3px oklch(0.8 0.15 25)' }} />
+          <div className={cn('bg-gradient-to-br from-p2-bright via-p2 to-red-950', pieceSize[size])} style={{ boxShadow: 'inset 0 -2px 3px oklch(0.3 0.1 25), inset 0 2px 3px oklch(0.8 0.15 25)' }} />
         </div>
       </div>
     </div>
