@@ -20,6 +20,7 @@ const SCREEN_TITLES: Record<string, string> = {
   share: 'Partilhar',
   'import-match': 'Importar Partida',
   lightning: 'Desafio Relâmpago',
+  watch: 'Assistir',
 };
 
 export function AppHeader() {

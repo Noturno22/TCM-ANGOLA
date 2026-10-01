@@ -25,7 +25,8 @@ export type Screen =
   | 'share'
   | 'import-match'
   | 'practice'
-  | 'lightning';
+  | 'lightning'
+  | 'watch';
 
 interface AppState {
   screen: Screen;

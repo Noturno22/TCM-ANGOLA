@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Trophy, Zap, X, ChevronRight, Swords, Bot, Users, Crown, Gamepad2, Target, Check, Share2 } from 'lucide-react';
+import { Trophy, Zap, X, ChevronRight, Swords, Bot, Users, Crown, Gamepad2, Target, Check, Share2, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { useApp } from '@/store/app';
 import { useProfile, getSimulatedRankings, xpProgress } from '@/store/profile';
@@ -136,6 +136,33 @@ export function HomeScreen() {
           </div>
         </GameButton>
       </div>
+
+      {/* Assistir IA vs IA */}
+      <button
+        type="button"
+        onClick={() => navigate('watch')}
+        className="w-full text-left rounded-2xl overflow-hidden bg-gradient-to-r from-surface/80 to-surface-2/40 border border-border/60 p-4 hover:border-gold/40 transition-all group"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-gold/10 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <Eye className="w-6 h-6 text-gold" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-[10px] uppercase tracking-wider text-gold font-semibold">
+                Modo Espetador
+              </span>
+            </div>
+            <h3 className="font-display text-lg leading-tight">ASSISTIR IA vs IA</h3>
+            <p className="text-[10px] text-muted-foreground">
+              Observa duas IAs a competir com comentário ao vivo
+            </p>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center group-hover:bg-gold/20 transition-colors">
+            <ChevronRight className="w-4 h-4 text-gold" />
+          </div>
+        </div>
+      </button>
 
       {/* Atalhos rápidos */}
       <div className="grid grid-cols-4 gap-2">

@@ -333,3 +333,43 @@ Unresolved issues / próximas fases:
 - Modo "Assistir" (CvC com comentário): recomendado para próxima ronda.
 - Notificações push: não implementado.
 - Próxima ronda recomendada: modo Assistir com comentário textual, mais variedade de puzzles (mate-in-3), e talvez um sistema de níveis/desbloqueio progressivo.
+
+---
+Task ID: cron-round-7
+Agent: QA + Features (webDevReview cron)
+Task: Modo Assistir (CvC com comentário ao vivo), gerador de comentário textual
+
+Work Log:
+- QA inicial: app estável, lint limpo, 30/30 testes passam.
+- **Gerador de comentário** (`src/lib/commentary.ts`): analisa o estado do jogo antes/depois de cada jogada e gera comentários contextuais em PT. Tipos: neutral, good, bad, threat, win, info. Casos cobertos:
+  - Vitória (linha completa) com a linha específica
+  - Empate por repetição
+  - Ameaça dupla (2 jogadas vencedoras possíveis)
+  - Ameaça simples
+  - Ocupação do centro
+  - Saída da linha de casa (jogada de abertura)
+  - Regresso à linha de casa
+  - Bloqueio de ameaça do adversário
+  - Jogada de abertura clássica (1→5)
+  - Comentários neutros rotativos
+- **WatchScreen** (`src/components/screens/WatchScreen.tsx`): modo espetador completo.
+  - **Intro**: seletores de dificuldade para P1 e P2 (4 níveis cada), seletor de velocidade (Lenta 2s / Normal 1.2s / Rápida 0.6s), botão "COMEÇAR A ASSISTIR".
+  - **Playing**: tabuleiro + painel de comentário ao vivo lado a lado (grid 2 colunas em desktop, empilhado em mobile). Auto-play com pausa, passo-a-passo e reiniciar. Contador de jogadas, indicador de vez. Comentários com cores por tipo (dourado=vitória, vermelho=ameaça, verde=boa jogada).
+  - **Finished**: overlay com vencedor, botões "Ver outra partida" e "Mudar configuração".
+  - Sons integrados: start, move, threat, win.
+  - Chat com scroll automático (últimas 15 mensagens), animações de entrada.
+- Adicionado 'watch' ao tipo Screen + AppHeader titles.
+- Adicionado cartão "ASSISTIR IA vs IA" na Home (Eye icon, gradient subtil).
+- Verificação: Watch mode testado (intro → start → board + comentário ao vivo visíveis, partida decorre automaticamente, sem erros). VLM confirmou painel de comentário e controlos.
+
+Stage Summary:
+- **Modo Assistir**: novo modo espetador com CvC auto-play, comentário textual ao vivo gerado contextualmente, controlos de velocidade/pausa/passo, e configuração de dificuldades.
+- **Gerador de comentário**: 10+ tipos de comentário contextuais em PT que enriquecem a experiência de observação.
+- **Lint**: 0 erros. **Testes**: 30/30 passam.
+- **QA**: Watch mode testado end-to-end, sem erros de runtime.
+
+Unresolved issues / próximas fases:
+- i18n: ainda só PT.
+- Modo online: ainda simulado.
+- Notificações push: não implementado.
+- Próxima ronda recomendada: mais variedade de puzzles (mate-in-3), sistema de níveis/desbloqueio progressivo, e talvez um modo "Treino de Aberturas" com posições iniciais alternativas.
