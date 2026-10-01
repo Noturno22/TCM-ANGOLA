@@ -51,7 +51,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-PT" suppressHydrationWarning className="dark">
+    <html lang="pt-PT" suppressHydrationWarning className="light">
       <body
         className={`${inter.variable} ${bebas.variable} antialiased bg-background text-foreground min-h-screen`}
       >

@@ -27,7 +27,7 @@ interface SettingsStore extends Settings {
 }
 
 const DEFAULTS: Settings = {
-  theme: 'dark',
+  theme: 'light',
   soundEnabled: true,
   musicEnabled: false,
   symbolsOnPieces: true,

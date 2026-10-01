@@ -73,24 +73,14 @@ export function Board({
   return (
     <div
       className={cn(
-        'relative rounded-2xl gold-frame p-3 sm:p-4',
-        'bg-gradient-to-br from-surface-2 via-surface to-background',
+        'relative rounded-lg overflow-hidden board-frame p-2',
+        'bg-surface-2',
         colorblindMode && 'colorblind',
       )}
       role="grid"
       aria-label="Tabuleiro de Tira o Cocó do Meio, 3 por 3 casas"
     >
-      {/* Padrão angolano decorativo nos cantos */}
-      <div className="pointer-events-none absolute inset-0 rounded-2xl overflow-hidden opacity-15">
-        <div className="absolute -top-3 -left-3 w-12 h-12 angolan-diamond" />
-        <div className="absolute -top-3 -right-3 w-12 h-12 angolan-diamond" />
-        <div className="absolute -bottom-3 -left-3 w-12 h-12 angolan-diamond" />
-        <div className="absolute -bottom-3 -right-3 w-12 h-12 angolan-diamond" />
-      </div>
-      {/* Brilho subtil no topo do tabuleiro */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent rounded-t-2xl" />
-
-      <div className={cn('relative grid grid-cols-3 grid-rows-3 gap-1.5 sm:gap-2', sizeClasses[size])}>
+      <div className={cn('relative grid grid-cols-3 grid-rows-3 gap-1', sizeClasses[size])}>
         {cells.map((sq) => {
           const cell = board[sq - 1];
           const isSelected = selectedSquare === sq;
@@ -110,25 +100,23 @@ export function Board({
               aria-label={getCellLabel(sq, cell, isCenter, isSelected, valid)}
               onClick={() => onSquareClick(sq as Square)}
               className={cn(
-                'relative flex items-center justify-center rounded-xl',
-                'transition-all duration-300',
+                'relative flex items-center justify-center rounded-md',
+                'transition-colors duration-150',
                 'aspect-square',
-                'group',
-                // Fundo da casa — gradiente subtil
-                'bg-gradient-to-br from-surface-2/50 via-background/40 to-surface/30',
-                'border border-border/30',
+                // Fundo da casa — simples e limpo
+                'bg-surface',
                 // Hover
-                !disabled && 'hover:border-gold/40 hover:from-surface-3/50 hover:elevation-1',
+                !disabled && 'hover:bg-surface-2',
                 // Seleção
-                isSelected && 'ring-2 ring-gold ring-offset-2 ring-offset-background elevation-2',
+                isSelected && 'bg-gold/20 ring-2 ring-gold',
                 // Destino válido
-                valid && 'ring-2 ring-p1/60 cursor-pointer hover:scale-[1.04] hover:ring-p1 elevation-1',
+                valid && 'bg-p1/10 cursor-pointer hover:bg-p1/20',
                 // Vitória
-                win && 'bg-gradient-to-br from-gold/25 to-gold/10 border-gold elevation-3',
+                win && 'bg-gold/30',
                 // Ameaça (tutorial)
-                threat && !valid && 'ring-2 ring-p2/50 animate-pulse-glow',
+                threat && !valid && 'bg-p2/10 ring-1 ring-p2/40',
                 // Última jogada
-                toLast && 'bg-p1/5 border-p1/20',
+                toLast && 'bg-p1/5',
               )}
               style={{
                 gridColumn: SQUARE_POS[flipped ? (10 - sq) : sq].col + 1,
@@ -214,50 +202,29 @@ function Piece({
   winning?: boolean;
 }) {
   const dims = {
-    sm: 'w-8 h-8',
-    md: 'w-11 h-11 sm:w-12 sm:h-12',
-    lg: 'w-14 h-14 sm:w-16 sm:h-16',
+    sm: 'w-7 h-7',
+    md: 'w-10 h-10 sm:w-11 sm:h-11',
+    lg: 'w-13 h-13 sm:w-15 sm:h-15',
   };
   const isP1 = player === 'P1';
   return (
     <div
       className={cn(
-        'relative rounded-full flex items-center justify-center transition-all duration-300',
+        'relative rounded-full flex items-center justify-center transition-transform',
         dims[size],
-        isP1 ? 'piece-glow-p1' : 'piece-glow-p2',
+        isP1 ? 'piece-p1 bg-p1' : 'piece-p2 bg-p2',
         'piece-' + (isP1 ? 'p1' : 'p2'),
-        selected && 'ring-2 ring-gold ring-offset-2 ring-offset-transparent scale-110',
+        selected && 'scale-110',
         winning && 'scale-125',
       )}
-      style={{
-        background: isP1
-          ? 'radial-gradient(circle at 32% 28%, oklch(0.82 0.19 155) 0%, oklch(0.7 0.17 155) 35%, oklch(0.5 0.15 155) 70%, oklch(0.38 0.1 152) 100%)'
-          : 'radial-gradient(circle at 32% 28%, oklch(0.72 0.22 25) 0%, oklch(0.62 0.21 25) 35%, oklch(0.45 0.19 25) 70%, oklch(0.32 0.12 25) 100%)',
-      }}
     >
-      {/* Realce especular principal */}
-      <div
-        className="absolute top-[12%] left-[12%] w-[35%] h-[30%] rounded-full bg-white/40 blur-[2px]"
-        aria-hidden
-      />
-      {/* Realce secundário menor */}
-      <div
-        className="absolute top-[20%] left-[22%] w-[15%] h-[12%] rounded-full bg-white/60 blur-[0.5px]"
-        aria-hidden
-      />
-      {/* Sombra inferior interna para efeito 3D */}
-      <div
-        className="absolute bottom-[8%] right-[15%] w-[30%] h-[20%] rounded-full bg-black/20 blur-[2px]"
-        aria-hidden
-      />
       {/* Símbolo gravado (spec §27: peças não se distinguem só pela cor) */}
       {withSymbol && (
         <span
           className={cn(
-            'relative font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]',
-            size === 'sm' ? 'text-sm' : size === 'md' ? 'text-lg' : 'text-2xl',
+            'relative font-bold text-white/90',
+            size === 'sm' ? 'text-xs' : size === 'md' ? 'text-base' : 'text-xl',
           )}
-          style={{ color: 'rgba(255,255,255,0.92)' }}
           aria-hidden
         >
           {isP1 ? '▲' : '●'}

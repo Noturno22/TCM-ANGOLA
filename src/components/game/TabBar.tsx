@@ -24,15 +24,10 @@ export function TabBar({ active }: { active: string }) {
 
   return (
     <nav
-      className="sticky bottom-0 z-30 w-full max-w-2xl mx-auto"
+      className="sticky bottom-0 z-30 w-full max-w-2xl mx-auto bg-background/95 backdrop-blur-sm border-t border-border"
       aria-label="Navegação principal"
     >
-      {/* Glassmorphism premium */}
-      <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/85 to-background/70 backdrop-blur-xl" />
-      {/* Linha de gradiente no topo */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
-
-      <div className="relative grid grid-cols-5 px-2 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
+      <div className="grid grid-cols-5 px-1 py-1 pb-[max(0.25rem,env(safe-area-inset-bottom))]">
         {REAL_TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = active === tab.id;
@@ -42,41 +37,17 @@ export function TabBar({ active }: { active: string }) {
               type="button"
               onClick={() => navigate(tab.id)}
               className={cn(
-                'relative flex flex-col items-center gap-1 py-1.5 rounded-xl transition-all duration-300',
-                'min-h-[48px]',
-                isActive ? 'text-gold' : 'text-muted-foreground hover:text-foreground',
+                'relative flex flex-col items-center gap-0.5 py-2 rounded-lg transition-colors',
+                'min-h-[44px]',
+                isActive ? 'text-p1' : 'text-muted-foreground hover:text-foreground',
               )}
               aria-label={tab.label}
               aria-current={isActive ? 'page' : undefined}
             >
-              {/* Indicador de fundo ativo — pílula arredondada */}
-              {isActive && (
-                <motion.div
-                  layoutId="tab-indicator"
-                  className="absolute inset-x-2 inset-y-1 rounded-xl bg-gradient-to-b from-gold/15 to-gold/5 border border-gold/20"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                />
-              )}
-              {/* Ponto ativo no topo */}
-              {isActive && (
-                <motion.span
-                  layoutId="tab-dot"
-                  className="absolute -top-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_8px_var(--gold)]"
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                />
-              )}
-              <motion.div
-                animate={isActive ? { scale: 1.15, y: -1 } : { scale: 1, y: 0 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                className="relative z-10"
-              >
-                <Icon className={cn('w-5 h-5 transition-all', isActive && 'drop-shadow-[0_0_8px_var(--gold)]')} />
-              </motion.div>
+              <Icon className="w-5 h-5" />
               <span className={cn(
-                'relative z-10 text-[10px] transition-all duration-200',
-                isActive ? 'font-semibold tracking-wide' : 'font-medium',
+                'text-[10px] transition-all',
+                isActive ? 'font-semibold' : 'font-medium',
               )}>
                 {tab.label}
               </span>

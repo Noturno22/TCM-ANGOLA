@@ -44,131 +44,118 @@
   --color-orange: var(--orange);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
-  --color-surface-3: var(--surface-3);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
 }
 
 /* ============================================================
-   TEMA ESCURO — Paleta angolana contemporânea refinada
-   Inspirada nos tons profundos da noite angolana com
-   acentos de esmeralda, rubi e ouro.
+   TEMA CLARO (padrão — limpo como chess.com)
+   Fundo branco, cores sólidas, sombras subtis
    ============================================================ */
 :root,
-.dark {
-  --radius: 0.875rem;
+.light {
+  --radius: 0.5rem;
 
-  /* Fundo — preto esverdeado profundo com subtil matiz */
-  --background: oklch(0.15 0.012 165);
-  --foreground: oklch(0.97 0.004 120);
+  /* Fundo branco limpo */
+  --background: oklch(0.985 0.002 120);
+  --foreground: oklch(0.22 0.01 165);
 
-  /* Superfícies — elevação progressiva */
-  --surface: oklch(0.19 0.014 165);
-  --surface-2: oklch(0.23 0.016 165);
-  --surface-3: oklch(0.27 0.018 165);
-  --card: oklch(0.2 0.015 165);
-  --card-foreground: oklch(0.97 0.004 120);
-  --popover: oklch(0.22 0.016 165);
-  --popover-foreground: oklch(0.97 0.004 120);
+  /* Superfícies — branco puro e cinza muito claro */
+  --surface: oklch(1 0 0);
+  --surface-2: oklch(0.96 0.003 120);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.01 165);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.01 165);
 
-  /* Verde esmeralda — ação / P1 */
-  --p1: oklch(0.7 0.17 155);
-  --p1-bright: oklch(0.78 0.19 155);
-  --p1-soft: oklch(0.7 0.17 155 / 0.12);
+  /* Verde — P1 (peças verdes, como chess.com) */
+  --p1: oklch(0.58 0.14 150);
+  --p1-soft: oklch(0.58 0.14 150 / 0.1);
 
-  /* Vermelho rubi — CTA / P2 */
-  --p2: oklch(0.62 0.21 25);
-  --p2-bright: oklch(0.7 0.22 25);
-  --p2-soft: oklch(0.62 0.21 25 / 0.12);
+  /* Vermelho — P2 */
+  --p2: oklch(0.55 0.19 25);
+  --p2-soft: oklch(0.55 0.19 25 / 0.1);
 
-  /* Dourado — saldo, tab ativa, moldura, preços */
-  --gold: oklch(0.83 0.14 82);
-  --gold-bright: oklch(0.88 0.15 82);
-  --gold-soft: oklch(0.83 0.14 82 / 0.12);
+  /* Dourado — acentos */
+  --gold: oklch(0.7 0.15 75);
+  --gold-soft: oklch(0.7 0.15 75 / 0.1);
 
-  /* Laranja — Jogar Offline */
-  --orange: oklch(0.72 0.16 55);
-  --orange-bright: oklch(0.78 0.17 55);
-  --orange-soft: oklch(0.72 0.16 55 / 0.12);
+  /* Laranja */
+  --orange: oklch(0.65 0.16 55);
+  --orange-soft: oklch(0.65 0.16 55 / 0.1);
 
-  --primary: oklch(0.7 0.17 155);
-  --primary-foreground: oklch(0.15 0.012 165);
-  --secondary: oklch(0.28 0.018 165);
-  --secondary-foreground: oklch(0.97 0.004 120);
-  --muted: oklch(0.25 0.012 165);
-  --muted-foreground: oklch(0.68 0.01 120);
-  --accent: oklch(0.3 0.018 165);
-  --accent-foreground: oklch(0.97 0.004 120);
-  --destructive: oklch(0.62 0.23 27);
-  --border: oklch(1 0 0 / 7%);
-  --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.7 0.17 155);
-  --chart-1: oklch(0.7 0.17 155);
-  --chart-2: oklch(0.62 0.21 25);
-  --chart-3: oklch(0.83 0.14 82);
-  --chart-4: oklch(0.72 0.16 55);
-  --chart-5: oklch(0.6 0.12 200);
-  --sidebar: oklch(0.17 0.012 165);
-  --sidebar-foreground: oklch(0.97 0.004 120);
-  --sidebar-primary: oklch(0.7 0.17 155);
-  --sidebar-primary-foreground: oklch(0.15 0.012 165);
-  --sidebar-accent: oklch(0.25 0.012 165);
-  --sidebar-accent-foreground: oklch(0.97 0.004 120);
-  --sidebar-border: oklch(1 0 0 / 7%);
-  --sidebar-ring: oklch(0.7 0.17 155);
+  --primary: oklch(0.58 0.14 150);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.95 0.003 120);
+  --secondary-foreground: oklch(0.22 0.01 165);
+  --muted: oklch(0.95 0.003 120);
+  --muted-foreground: oklch(0.5 0.01 120);
+  --accent: oklch(0.95 0.003 120);
+  --accent-foreground: oklch(0.22 0.01 165);
+  --destructive: oklch(0.55 0.19 25);
+  --border: oklch(0.88 0.003 120);
+  --input: oklch(0.92 0.003 120);
+  --ring: oklch(0.58 0.14 150);
+  --chart-1: oklch(0.58 0.14 150);
+  --chart-2: oklch(0.55 0.19 25);
+  --chart-3: oklch(0.7 0.15 75);
+  --chart-4: oklch(0.65 0.16 55);
+  --chart-5: oklch(0.5 0.1 200);
+  --sidebar: oklch(0.97 0.002 120);
+  --sidebar-foreground: oklch(0.22 0.01 165);
+  --sidebar-primary: oklch(0.58 0.14 150);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.95 0.003 120);
+  --sidebar-accent-foreground: oklch(0.22 0.01 165);
+  --sidebar-border: oklch(0.88 0.003 120);
+  --sidebar-ring: oklch(0.58 0.14 150);
 }
 
 /* ============================================================
-   TEMA CLARO — Versão diurna com calor angolano
+   TEMA ESCURO (opcional)
    ============================================================ */
-.light {
-  --background: oklch(0.98 0.006 85);
-  --foreground: oklch(0.22 0.018 165);
+.dark {
+  --background: oklch(0.18 0.005 165);
+  --foreground: oklch(0.95 0.003 120);
 
-  --surface: oklch(1 0.003 85);
-  --surface-2: oklch(0.95 0.008 85);
-  --surface-3: oklch(0.9 0.012 85);
-  --card: oklch(1 0.003 85);
-  --card-foreground: oklch(0.22 0.018 165);
-  --popover: oklch(1 0.003 85);
-  --popover-foreground: oklch(0.22 0.018 165);
+  --surface: oklch(0.22 0.006 165);
+  --surface-2: oklch(0.26 0.008 165);
+  --card: oklch(0.22 0.006 165);
+  --card-foreground: oklch(0.95 0.003 120);
+  --popover: oklch(0.22 0.006 165);
+  --popover-foreground: oklch(0.95 0.003 120);
 
-  --p1: oklch(0.55 0.15 152);
-  --p1-bright: oklch(0.6 0.16 152);
-  --p1-soft: oklch(0.55 0.15 152 / 0.1);
-  --p2: oklch(0.52 0.19 27);
-  --p2-bright: oklch(0.58 0.2 27);
-  --p2-soft: oklch(0.52 0.19 27 / 0.1);
-  --gold: oklch(0.72 0.15 78);
-  --gold-bright: oklch(0.78 0.16 78);
-  --gold-soft: oklch(0.72 0.15 78 / 0.12);
-  --orange: oklch(0.62 0.16 55);
-  --orange-bright: oklch(0.68 0.17 55);
-  --orange-soft: oklch(0.62 0.16 55 / 0.12);
+  --p1: oklch(0.65 0.15 150);
+  --p1-soft: oklch(0.65 0.15 150 / 0.15);
+  --p2: oklch(0.6 0.2 25);
+  --p2-soft: oklch(0.6 0.2 25 / 0.15);
+  --gold: oklch(0.75 0.14 75);
+  --gold-soft: oklch(0.75 0.14 75 / 0.15);
+  --orange: oklch(0.68 0.16 55);
+  --orange-soft: oklch(0.68 0.16 55 / 0.15);
 
-  --primary: oklch(0.55 0.15 152);
-  --primary-foreground: oklch(0.98 0.006 85);
-  --secondary: oklch(0.92 0.008 85);
-  --secondary-foreground: oklch(0.22 0.018 165);
-  --muted: oklch(0.93 0.006 85);
-  --muted-foreground: oklch(0.45 0.012 120);
-  --accent: oklch(0.88 0.018 85);
-  --accent-foreground: oklch(0.22 0.018 165);
-  --destructive: oklch(0.55 0.22 27);
-  --border: oklch(0.22 0.018 165 / 10%);
-  --input: oklch(0.22 0.018 165 / 8%);
-  --ring: oklch(0.55 0.15 152);
-  --sidebar: oklch(0.96 0.006 85);
-  --sidebar-foreground: oklch(0.22 0.018 165);
-  --sidebar-primary: oklch(0.55 0.15 152);
-  --sidebar-primary-foreground: oklch(0.98 0.006 85);
-  --sidebar-accent: oklch(0.9 0.008 85);
-  --sidebar-accent-foreground: oklch(0.22 0.018 165);
-  --sidebar-border: oklch(0.22 0.018 165 / 10%);
-  --sidebar-ring: oklch(0.55 0.15 152);
+  --primary: oklch(0.65 0.15 150);
+  --primary-foreground: oklch(0.18 0.005 165);
+  --secondary: oklch(0.28 0.008 165);
+  --secondary-foreground: oklch(0.95 0.003 120);
+  --muted: oklch(0.26 0.008 165);
+  --muted-foreground: oklch(0.65 0.008 120);
+  --accent: oklch(0.28 0.008 165);
+  --accent-foreground: oklch(0.95 0.003 120);
+  --destructive: oklch(0.6 0.2 25);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.65 0.15 150);
+  --sidebar: oklch(0.2 0.006 165);
+  --sidebar-foreground: oklch(0.95 0.003 120);
+  --sidebar-primary: oklch(0.65 0.15 150);
+  --sidebar-primary-foreground: oklch(0.18 0.005 165);
+  --sidebar-accent: oklch(0.26 0.008 165);
+  --sidebar-accent-foreground: oklch(0.95 0.003 120);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.65 0.15 150);
 }
 
 @layer base {
@@ -177,20 +164,18 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1, "cv01" 1;
+    font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
   }
   .font-display {
     font-family: var(--font-display), system-ui, sans-serif;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.02em;
   }
 }
 
 /* ============================================================
-   PADRÕES GEOMÉTRICOS ANGOLANOS — refinados e contemporâneos
-   Inspirados nos têxteis tradicionais (panos) de Angola
+   PADRÕES GEOMÉTRICOS ANGOLANOS — subtis
    ============================================================ */
 .angolan-pattern {
   background-image:
@@ -198,18 +183,17 @@
     linear-gradient(-45deg, transparent 25%, var(--p2) 25%, var(--p2) 50%, transparent 50%, transparent 75%, var(--p2) 75%);
   background-size: 32px 32px;
   background-position: 0 0, 0 16px;
-  opacity: 0.05;
+  opacity: 0.03;
 }
 
 .angolan-border {
-  background:
-    repeating-linear-gradient(
-      90deg,
-      var(--p2) 0 6px,
-      var(--gold) 6px 12px,
-      var(--p1) 12px 18px,
-      transparent 18px 24px
-    );
+  background: repeating-linear-gradient(
+    90deg,
+    var(--p2) 0 6px,
+    var(--gold) 6px 12px,
+    var(--p1) 12px 18px,
+    transparent 18px 24px
+  );
 }
 
 .angolan-diamond {
@@ -220,175 +204,91 @@
     linear-gradient(315deg, var(--p2) 25%, transparent 25%);
   background-size: 24px 24px;
   background-position: 12px 0, 12px 0, 0 0, 0 0;
-  opacity: 0.12;
-}
-
-/* Padrão de malha subtil para fundos */
-.mesh-gradient {
-  background-image:
-    radial-gradient(at 20% 20%, var(--p1-soft) 0%, transparent 50%),
-    radial-gradient(at 80% 80%, var(--gold-soft) 0%, transparent 50%),
-    radial-gradient(at 50% 50%, var(--p2-soft) 0%, transparent 60%);
+  opacity: 0.08;
 }
 
 /* ============================================================
-   SISTEMA DE ELEVAÇÃO — sombras profissionais em camadas
+   SOMBRAS SIMPLES E LIMPAS (como chess.com)
    ============================================================ */
-.elevation-1 {
-  box-shadow:
-    0 1px 2px oklch(0 0 0 / 0.06),
-    0 1px 3px oklch(0 0 0 / 0.08);
+.shadow-sm-clean {
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.06);
 }
-.elevation-2 {
-  box-shadow:
-    0 2px 4px oklch(0 0 0 / 0.08),
-    0 3px 6px oklch(0 0 0 / 0.1),
-    0 1px 2px oklch(0 0 0 / 0.06);
+.shadow-md-clean {
+  box-shadow: 0 2px 4px oklch(0 0 0 / 0.08), 0 1px 2px oklch(0 0 0 / 0.04);
 }
-.elevation-3 {
-  box-shadow:
-    0 4px 8px oklch(0 0 0 / 0.1),
-    0 6px 12px oklch(0 0 0 / 0.12),
-    0 2px 4px oklch(0 0 0 / 0.06);
-}
-.elevation-4 {
-  box-shadow:
-    0 8px 16px oklch(0 0 0 / 0.12),
-    0 12px 24px oklch(0 0 0 / 0.14),
-    0 4px 8px oklch(0 0 0 / 0.08);
-}
-.elevation-5 {
-  box-shadow:
-    0 16px 32px oklch(0 0 0 / 0.16),
-    0 24px 48px oklch(0 0 0 / 0.18),
-    0 8px 16px oklch(0 0 0 / 0.1);
+.shadow-lg-clean {
+  box-shadow: 0 4px 8px oklch(0 0 0 / 0.1), 0 2px 4px oklch(0 0 0 / 0.04);
 }
 
 /* ============================================================
-   BRILHOS E EFEITOS DE PEÇAS — mais realistas e premium
+   PEÇAS — simples e limpas
    ============================================================ */
-.piece-glow-p1 {
+.piece-p1 {
   box-shadow:
-    0 0 16px oklch(0.7 0.17 155 / 0.5),
-    0 0 32px oklch(0.7 0.17 155 / 0.25),
-    inset 0 -4px 8px oklch(0.42 0.1 152),
-    inset 0 4px 8px oklch(0.85 0.14 155),
-    inset 0 0 0 1px oklch(0.9 0.1 155 / 0.3);
+    inset 0 -2px 4px oklch(0.35 0.08 150),
+    inset 0 2px 4px oklch(0.75 0.12 150),
+    0 2px 4px oklch(0 0 0 / 0.15);
 }
-.piece-glow-p2 {
+.piece-p2 {
   box-shadow:
-    0 0 16px oklch(0.62 0.21 25 / 0.5),
-    0 0 32px oklch(0.62 0.21 25 / 0.25),
-    inset 0 -4px 8px oklch(0.38 0.1 25),
-    inset 0 4px 8px oklch(0.8 0.15 25),
-    inset 0 0 0 1px oklch(0.85 0.12 25 / 0.3);
-}
-.gold-frame {
-  box-shadow:
-    0 0 0 1px oklch(0.83 0.14 82 / 0.6),
-    0 0 0 3px oklch(0.83 0.14 82 / 0.2),
-    0 0 24px oklch(0.83 0.14 82 / 0.3),
-    0 12px 40px oklch(0 0 0 / 0.5);
-}
-.text-glow-gold {
-  text-shadow:
-    0 0 16px oklch(0.83 0.14 82 / 0.5),
-    0 0 32px oklch(0.83 0.14 82 / 0.2);
-}
-.text-glow-p1 {
-  text-shadow:
-    0 0 12px oklch(0.7 0.17 155 / 0.5),
-    0 0 24px oklch(0.7 0.17 155 / 0.2);
-}
-.text-glow-p2 {
-  text-shadow:
-    0 0 12px oklch(0.62 0.21 25 / 0.5),
-    0 0 24px oklch(0.62 0.21 25 / 0.2);
+    inset 0 -2px 4px oklch(0.3 0.08 25),
+    inset 0 2px 4px oklch(0.7 0.12 25),
+    0 2px 4px oklch(0 0 0 / 0.15);
 }
 
 /* ============================================================
-   GLASSMORPHISM — vidro fosco premium
+   MOLDURA DO TABULEIRO — simples e sólida
    ============================================================ */
-.glass {
-  background: oklch(0.2 0.015 165 / 0.6);
-  backdrop-filter: blur(20px) saturate(1.5);
-  -webkit-backdrop-filter: blur(20px) saturate(1.5);
-  border: 1px solid oklch(1 0 0 / 0.08);
-}
-.glass-light {
-  background: oklch(0.97 0.004 120 / 0.08);
-  backdrop-filter: blur(12px) saturate(1.2);
-  -webkit-backdrop-filter: blur(12px) saturate(1.2);
-  border: 1px solid oklch(1 0 0 / 0.06);
+.board-frame {
+  box-shadow:
+    0 0 0 3px var(--gold),
+    0 0 0 4px oklch(0 0 0 / 0.1),
+    0 8px 24px oklch(0 0 0 / 0.12);
 }
 
 /* ============================================================
-   SCROLLBAR — minimalista e elegante
+   SCROLLBAR — minimalista
    ============================================================ */
 .scrollbar-custom::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 .scrollbar-custom::-webkit-scrollbar-track {
   background: transparent;
 }
 .scrollbar-custom::-webkit-scrollbar-thumb {
-  background: oklch(0.4 0.01 165 / 0.4);
-  border-radius: 10px;
+  background: oklch(0.7 0.003 120 / 0.4);
+  border-radius: 4px;
 }
 .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.5 0.01 165 / 0.6);
+  background: oklch(0.6 0.003 120 / 0.6);
 }
 
 /* ============================================================
-   ANIMAÇÕES — suaves e profissionais
+   ANIMAÇÕES — simples e diretas
    ============================================================ */
 @keyframes piece-place {
-  0% { transform: scale(0.5) translateY(-20px); opacity: 0; }
-  60% { transform: scale(1.08) translateY(0); opacity: 1; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
 .animate-piece-place {
-  animation: piece-place 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: piece-place 0.2s ease-out;
 }
 
-@keyframes pulse-glow {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.05); }
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-.shimmer {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    oklch(1 0 0 / 0.06) 50%,
-    transparent 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 2.5s linear infinite;
+.animate-pulse-soft {
+  animation: pulse-soft 1.5s ease-in-out infinite;
 }
 
 @keyframes slide-up {
-  from { transform: translateY(24px); opacity: 0; }
+  from { transform: translateY(12px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 .animate-slide-up {
-  animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes slide-in-right {
-  from { transform: translateX(24px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-.animate-slide-in-right {
-  animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slide-up 0.3s ease-out;
 }
 
 @keyframes fade-in {
@@ -396,20 +296,10 @@
   to { opacity: 1; }
 }
 .animate-fade-in {
-  animation: fade-in 0.6s ease-out;
+  animation: fade-in 0.4s ease-out;
 }
 
-@keyframes scale-in {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-.animate-scale-in {
-  animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* ============================================================
-   CONFETTI DE VITÓRIA
-   ============================================================ */
+/* Confetti */
 @keyframes confetti-fall {
   0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
   100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
@@ -417,39 +307,11 @@
 .confetti-piece {
   position: absolute;
   width: 8px;
-  height: 14px;
+  height: 12px;
   top: -20px;
   animation-name: confetti-fall;
   animation-timing-function: linear;
   animation-fill-mode: forwards;
-}
-
-/* ============================================================
-   EFEITOS DE VITÓRIA
-   ============================================================ */
-@keyframes victory-rays {
-  0% { transform: scale(0.5) rotate(0deg); opacity: 0; }
-  50% { opacity: 0.5; }
-  100% { transform: scale(1.5) rotate(180deg); opacity: 0; }
-}
-.animate-victory-rays {
-  animation: victory-rays 1.4s ease-out forwards;
-}
-
-@keyframes pop-in {
-  0% { transform: scale(0) rotate(-10deg); }
-  60% { transform: scale(1.12) rotate(2deg); }
-  100% { transform: scale(1) rotate(0deg); }
-}
-.animate-pop-in {
-  animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-/* ============================================================
-   TRANSIÇÕES BASE — suaves em todos os elementos interativos
-   ============================================================ */
-button, a, [role="button"] {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ============================================================
@@ -462,21 +324,64 @@ button, a, [role="button"] {
 }
 
 .colorblind .piece-p1 {
-  filter: saturate(0.4) brightness(1.1);
+  filter: saturate(0.3);
 }
 .colorblind .piece-p2 {
-  filter: saturate(0.4) brightness(0.9);
+  filter: saturate(0.3) brightness(0.85);
 }
 
-/* Focus visível melhorado para acessibilidade */
 *:focus-visible {
-  outline: 2px solid var(--gold);
+  outline: 2px solid var(--p1);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
-/* Seleção de texto */
 ::selection {
-  background: var(--gold-soft);
-  color: var(--foreground);
+  background: var(--p1-soft);
+}
+
+/* ============================================================
+   CLASSES DE COMPATIBILIDADE — mantêm ecrãs antigos a funcionar
+   ============================================================ */
+.animate-pulse-glow {
+  animation: pulse-soft 1.5s ease-in-out infinite;
+}
+.text-glow-gold {
+  text-shadow: 0 0 8px oklch(0.7 0.15 75 / 0.3);
+}
+.text-glow-p1 {
+  text-shadow: 0 0 8px oklch(0.58 0.14 150 / 0.3);
+}
+.text-glow-p2 {
+  text-shadow: 0 0 8px oklch(0.55 0.19 25 / 0.3);
+}
+.piece-glow-p1 {
+  box-shadow: inset 0 -2px 4px oklch(0.35 0.08 150), inset 0 2px 4px oklch(0.75 0.12 150), 0 2px 4px oklch(0 0 0 / 0.15);
+}
+.piece-glow-p2 {
+  box-shadow: inset 0 -2px 4px oklch(0.3 0.08 25), inset 0 2px 4px oklch(0.7 0.12 25), 0 2px 4px oklch(0 0 0 / 0.15);
+}
+.gold-frame {
+  box-shadow: 0 0 0 2px var(--gold), 0 0 0 3px oklch(0 0 0 / 0.1), 0 8px 24px oklch(0 0 0 / 0.12);
+}
+.elevation-1, .elevation-2, .elevation-3, .elevation-4, .elevation-5 {
+  box-shadow: 0 2px 4px oklch(0 0 0 / 0.08);
+}
+.glass, .glass-light {
+  background: var(--surface);
+  backdrop-filter: blur(8px);
+}
+.mesh-gradient {
+  background: var(--surface-2);
+}
+.animate-victory-rays {
+  animation: pulse-soft 1s ease-in-out;
+}
+.animate-pop-in {
+  animation: piece-place 0.3s ease-out;
+}
+.animate-slide-in-right {
+  animation: slide-up 0.3s ease-out;
+}
+.animate-scale-in {
+  animation: piece-place 0.2s ease-out;
 }

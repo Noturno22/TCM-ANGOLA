@@ -513,3 +513,35 @@ Stage Summary:
 Unresolved issues / próximas fases:
 - Dev server: precisa de restart.
 - Próximas melhorias: melhorar HomeScreen, GameScreen, e outros ecrãs com o novo design system. Adicionar mais micro-interações e polish.
+
+---
+Task ID: design-chess-com
+Agent: Designer (main)
+Task: Redesenho limpo e simples como chess.com
+
+Work Log:
+- **globals.css** — redescrita completa para visual limpo:
+  - Tema claro (light) como padrão (em vez de dark). Fundo branco limpo, superfícies brancas e cinza claro.
+  - Paleta simplificada: cores sólidas sem variantes brilhantes. Verde (P1), vermelho (P2), dourado (acentos).
+  - Removidos: glassmorphism, sistema de elevação de 5 níveis, mesh-gradient, gradientes complexos.
+  - Adicionadas: sombras simples e limpas (.shadow-sm/md/lg-clean), board-frame simples.
+  - Peças com sombras simples (inset + drop shadow), sem gradientes radiais.
+  - Raios menores (0.5rem vs 0.875rem) — visual mais compacto.
+  - Animações simplificadas (piece-place 0.2s, slide-up 0.3s).
+  - Classes de compatibilidade adicionadas para ecrãs antigos.
+- **GameButton** — cores sólidas, sem gradientes, rounded-lg, sombras simples.
+- **GameCard** — branco sólido com borda simples, sem glassmorphism.
+- **BalancePill** — cinza com borda, sem gradientes dourados.
+- **GameLogo** — peças sólidas com gap-px, sem gradientes ou blur.
+- **AppHeader** — branco com border-b simples, sem glassmorphism.
+- **TabBar** — branco com border-t, sem indicadores animados, cor ativa verde simples.
+- **SplashScreen** — simplificado, sem mesh gradient, sem animações escalonadas.
+- **Board** — tabuleiro com moldura dourada simples (board-frame), células brancas com hover cinza, sem gradientes.
+- **Piece** — círculos sólidos com cor de fundo, sem gradientes radiais, sombras inset simples.
+- **Layout** — tema padrão mudado para 'light'.
+- **Settings store** — theme default mudado para 'light'.
+
+Stage Summary:
+- **Visual limpo e simples** como chess.com: fundo branco, cores sólidas, sombras subtis, sem glassmorphism.
+- **Lint**: 0 erros. **Testes**: 30/30 passam.
+- **Dev server**: ainda em baixo. Código pronto.
