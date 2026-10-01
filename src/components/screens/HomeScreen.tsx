@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Trophy, Zap, X, ChevronRight, Swords, Bot, Users, Crown, Gamepad2, Target, Check, Share2, Eye } from 'lucide-react';
+import { Trophy, Zap, X, ChevronRight, Swords, Bot, Users, Crown, Gamepad2, Target, Check, Share2, Eye, Flag } from 'lucide-react';
 import { useState } from 'react';
 import { useApp } from '@/store/app';
 import { useProfile, getSimulatedRankings, xpProgress } from '@/store/profile';
@@ -136,6 +136,33 @@ export function HomeScreen() {
           </div>
         </GameButton>
       </div>
+
+      {/* Campanha */}
+      <button
+        type="button"
+        onClick={() => navigate('campaign')}
+        className="w-full text-left rounded-2xl overflow-hidden bg-gradient-to-r from-p2/20 via-gold/15 to-p2/20 border-2 border-p2/40 p-4 hover:border-p2/60 transition-all group"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-p2/20 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <Flag className="w-6 h-6 text-p2" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-[10px] uppercase tracking-wider text-p2 font-semibold">
+                Modo História
+              </span>
+            </div>
+            <h3 className="font-display text-lg leading-tight">CAMPANHA</h3>
+            <p className="text-[10px] text-muted-foreground">
+              8 níveis progressivos com objetivos únicos • até 2000 KZ
+            </p>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-p2/15 flex items-center justify-center group-hover:bg-p2/30 transition-colors">
+            <ChevronRight className="w-4 h-4 text-p2" />
+          </div>
+        </div>
+      </button>
 
       {/* Assistir IA vs IA */}
       <button

@@ -408,3 +408,43 @@ Unresolved issues / próximas fases:
 - Notificações push: não implementado.
 - Mate-in-3 puzzles: não encontrados com solução única (o espaço de estados do jogo não tem mate-in-3 com solução única em free-blocked; o jogo é resolúvel em ≤3 plies desde a posição inicial).
 - Próxima ronda recomendada: notificações de desbloqueio (toast quando uma dificuldade é desbloqueada), mais variedade de puzzles com múltiplas soluções, e talvez um modo "Campanha" com partidas progressivas.
+
+---
+Task ID: cron-round-9
+Agent: QA + Features (webDevReview cron)
+Task: Notificações de desbloqueio, modo Campanha (8 níveis progressivos)
+
+Work Log:
+- QA inicial: app estável, lint limpo, 30/30 testes passam.
+- **Notificações de desbloqueio** (`page.tsx` + `progression.ts`):
+  - Store de progressão atualizado com `newlyUnlocked: Difficulty[]` que regista dificuldades recém-desbloqueadas.
+  - Hook no app shell (`page.tsx`): watched `newlyUnlocked`, mostra toast sonner ("🔒 Dificuldade X desbloqueada!") + toca `achievementRare` sound, depois limpa com `clearNewlyUnlocked`.
+- **Modo Campanha** (`campaign.ts` + `campaign.ts` store + `CampaignScreen.tsx` + `CampaignPlayScreen.tsx`):
+  - 8 níveis progressivos com objetivos únicos:
+    1. Primeira Vitória (Fácil, vencer) — 100 KZ
+    2. Velocidade (Fácil, vencer em ≤3 jogadas) — 200 KZ
+    3. Lado Reverso (Fácil, vencer com P2) — 250 KZ
+    4. Desafio Médio (Médio, vencer) — 300 KZ
+    5. Sobrevivente (Difícil, resistir 8 jogadas) — 400 KZ
+    6. Velocidade Média (Médio, vencer em ≤5 jogadas) — 500 KZ
+    7. Mestre Tático (Difícil, vencer) — 700 KZ
+    8. Lendário (Perfeito, vencer) — 2000 KZ
+  - Store persistido: completed[], currentLevel, attemptsByLevel.
+  - CampaignScreen: lista de níveis com estados (completo/atual/bloqueado), barra de progresso, badges de dificuldade/recompensa/lado, tentativas.
+  - CampaignPlayScreen: ecrã de jogo completo com objetivo visível, contador de jogadas, dica, reiniciar, overlay de sucesso/falha com recompensas e próximo nível.
+  - Verificação de objetivos: win, win_fast (≤N jogadas), survive (≥N jogadas sem perder).
+  - Cartão "CAMPANHA" na Home (Flag icon, gradient vermelho/dourado).
+- Adicionado 'campaign' e 'campaign-play' ao tipo Screen + AppHeader titles + campaignLevelId ao app store.
+
+Stage Summary:
+- **Notificações de desbloqueio**: toasts sonner + som quando uma dificuldade é desbloqueada.
+- **Modo Campanha**: 8 níveis progressivos com objetivos variados, recompensas, persistência, e ecrã de jogo dedicado.
+- **Lint**: 0 erros. **Testes**: 30/30 passam.
+- **QA**: Campaign screen testada (8 níveis visíveis, Level 1 desbloqueado, restantes bloqueados). CampaignPlayScreen tinha um bug runtime (setPrevGameEnded chamado antes da declaração) que foi corrigido. Dev server needs restart after the crash.
+
+Unresolved issues / próximas fases:
+- Dev server crashed durante QA do CampaignPlayScreen (bug runtime corrigido, mas servidor precisa de restart manual).
+- i18n: ainda só PT.
+- Modo online: ainda simulado.
+- Notificações push: não implementado.
+- Próxima ronda recomendada: verificar que o CampaignPlayScreen funciona após restart do servidor, adicionar mais níveis de campanha, e talvez um modo "Desafio Diário Avançado" com puzzles gerados proceduralmente.

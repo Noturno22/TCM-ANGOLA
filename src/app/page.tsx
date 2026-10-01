@@ -24,9 +24,21 @@ import { StatsScreen } from '@/components/screens/StatsScreen';
 import { ShareScreen } from '@/components/screens/ShareScreen';
 import { LightningChallengeScreen } from '@/components/screens/LightningChallengeScreen';
 import { WatchScreen } from '@/components/screens/WatchScreen';
+import { CampaignScreen } from '@/components/screens/CampaignScreen';
+import { CampaignPlayScreen } from '@/components/screens/CampaignPlayScreen';
 import { AppHeader } from '@/components/game/AppHeader';
 import { TabBar } from '@/components/game/TabBar';
-import { useMusicSync, useSound, startMusic } from '@/lib/sound';
+import { useMusicSync, useSound, startMusic, playSound } from '@/lib/sound';
+import { useProgression } from '@/store/progression';
+import { toast } from 'sonner';
+import type { Difficulty } from '@/lib/ai';
+
+const DIFF_LABELS: Record<Difficulty, string> = {
+  easy: 'Fácil',
+  medium: 'Médio',
+  hard: 'Difícil',
+  perfect: 'Perfeito',
+};
 
 export default function Home() {
   const screen = useApp((s) => s.screen);
@@ -37,6 +49,21 @@ export default function Home() {
   // Sincronizar sons + música com as settings
   useSound();
   useMusicSync();
+
+  // Notificações de desbloqueio de dificuldades
+  const newlyUnlocked = useProgression((s) => s.newlyUnlocked);
+  const clearNewlyUnlocked = useProgression((s) => s.clearNewlyUnlocked);
+  useEffect(() => {
+    if (newlyUnlocked.length === 0) return;
+    for (const diff of newlyUnlocked) {
+      toast.success(`🔒 Dificuldade ${DIFF_LABELS[diff]} desbloqueada!`, {
+        description: 'Agora podes desafiar a IA neste nível.',
+        duration: 5000,
+      });
+    }
+    playSound('achievementRare');
+    clearNewlyUnlocked();
+  }, [newlyUnlocked, clearNewlyUnlocked]);
 
   // Desbloquear áudio na primeira interação (política de autoplay dos browsers)
   useEffect(() => {
@@ -120,6 +147,8 @@ export default function Home() {
             {screen === 'import-match' && <ShareScreen />}
             {screen === 'lightning' && <LightningChallengeScreen />}
             {screen === 'watch' && <WatchScreen />}
+            {screen === 'campaign' && <CampaignScreen />}
+            {screen === 'campaign-play' && <CampaignPlayScreen />}
           </motion.div>
         </AnimatePresence>
       </main>

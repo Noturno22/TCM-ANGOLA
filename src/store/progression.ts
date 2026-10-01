@@ -16,9 +16,12 @@ interface ProgressionStore {
   winsByDifficulty: Record<Difficulty, number>;
   /** Dificuldades desbloqueadas */
   unlocked: Record<Difficulty, boolean>;
+  /** Dificuldades recém-desbloqueadas (para mostrar toast) — limpo após leitura */
+  newlyUnlocked: Difficulty[];
 
   recordWin: (difficulty: Difficulty) => void;
   isUnlocked: (difficulty: Difficulty) => boolean;
+  clearNewlyUnlocked: () => void;
   reset: () => void;
 }
 
@@ -33,6 +36,7 @@ export const useProgression = create<ProgressionStore>()(
     (set, get) => ({
       winsByDifficulty: { easy: 0, medium: 0, hard: 0, perfect: 0 },
       unlocked: { easy: true, medium: false, hard: false, perfect: false },
+      newlyUnlocked: [],
 
       recordWin: (difficulty) => {
         const newWins = {
@@ -40,23 +44,28 @@ export const useProgression = create<ProgressionStore>()(
           [difficulty]: get().winsByDifficulty[difficulty] + 1,
         };
         const newUnlocked = { ...get().unlocked };
+        const newlyUnlocked: Difficulty[] = [];
         // Verificar se desbloqueia a próxima dificuldade
         for (const [nextDiff, req] of Object.entries(UNLOCK_THRESHOLDS)) {
           if (!newUnlocked[nextDiff as Difficulty]) {
             if (newWins[req.difficulty] >= req.wins) {
               newUnlocked[nextDiff as Difficulty] = true;
+              newlyUnlocked.push(nextDiff as Difficulty);
             }
           }
         }
-        set({ winsByDifficulty: newWins, unlocked: newUnlocked });
+        set({ winsByDifficulty: newWins, unlocked: newUnlocked, newlyUnlocked });
       },
 
       isUnlocked: (difficulty) => get().unlocked[difficulty],
+
+      clearNewlyUnlocked: () => set({ newlyUnlocked: [] }),
 
       reset: () =>
         set({
           winsByDifficulty: { easy: 0, medium: 0, hard: 0, perfect: 0 },
           unlocked: { easy: true, medium: false, hard: false, perfect: false },
+          newlyUnlocked: [],
         }),
     }),
     { name: 'tira-coco-progression' },

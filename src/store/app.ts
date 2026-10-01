@@ -26,7 +26,9 @@ export type Screen =
   | 'import-match'
   | 'practice'
   | 'lightning'
-  | 'watch';
+  | 'watch'
+  | 'campaign'
+  | 'campaign-play';
 
 interface AppState {
   screen: Screen;
@@ -35,12 +37,15 @@ interface AppState {
   replayMatchId: string | null;
   /** Código de partida partilhada para importar */
   shareCode: string | null;
+  /** ID do nível de campanha a jogar */
+  campaignLevelId: number | null;
 
   navigate: (screen: Screen) => void;
   back: () => void;
   canGoBack: () => boolean;
   setReplayMatchId: (id: string | null) => void;
   setShareCode: (code: string | null) => void;
+  setCampaignLevelId: (id: number | null) => void;
 }
 
 export const useApp = create<AppState>((set, get) => ({
@@ -48,6 +53,7 @@ export const useApp = create<AppState>((set, get) => ({
   history: [],
   replayMatchId: null,
   shareCode: null,
+  campaignLevelId: null,
 
   navigate: (screen) =>
     set((s) => ({
@@ -72,4 +78,5 @@ export const useApp = create<AppState>((set, get) => ({
 
   setReplayMatchId: (id) => set({ replayMatchId: id }),
   setShareCode: (code) => set({ shareCode: code }),
+  setCampaignLevelId: (id) => set({ campaignLevelId: id }),
 }));

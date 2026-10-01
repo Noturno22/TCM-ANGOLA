@@ -21,6 +21,8 @@ const SCREEN_TITLES: Record<string, string> = {
   'import-match': 'Importar Partida',
   lightning: 'Desafio Relâmpago',
   watch: 'Assistir',
+  campaign: 'Campanha',
+  'campaign-play': 'Campanha',
 };
 
 export function AppHeader() {
