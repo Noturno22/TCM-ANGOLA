@@ -10,6 +10,7 @@ import { persist } from 'zustand/middleware';
 import type { Difficulty } from '@/lib/ai';
 import type { Move } from '@/lib/engine';
 import { playSound } from '@/lib/sound';
+import { useProgression } from '@/store/progression';
 
 export interface MatchRecord {
   id: string;
@@ -161,6 +162,10 @@ export const useProfile = create<ProfileStore>()(
         // Verificar conquistas
         const s = get();
         if (s.wins === 1) get().unlockAchievement('first_win');
+        // Registar vitória para progressão de dificuldades (apenas PvE)
+        if (humanWonRecord(record) && m.mode === 'pve' && m.difficulty) {
+          useProgression.getState().recordWin(m.difficulty);
+        }
         if (s.currentStreak >= 5) get().unlockAchievement('streak_5');
         if (s.totalMatches >= 10) get().unlockAchievement('played_10');
         if (s.totalMatches >= 50) get().unlockAchievement('played_50');

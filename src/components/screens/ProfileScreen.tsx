@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useProfile, xpProgress } from '@/store/profile';
+import { useProgression } from '@/store/progression';
+import type { Difficulty } from '@/lib/ai';
 import {
   GameCard,
   GameButton,
@@ -100,6 +102,9 @@ export function ProfileScreen() {
           </div>
         </div>
       </GameCard>
+
+      {/* Progressão de dificuldades */}
+      <ProgressionPanel />
 
       {/* Botão de estatísticas detalhadas */}
       <GameButton variant="gold" className="w-full" onClick={() => navigate('stats')}>
@@ -297,4 +302,68 @@ function formatDate(iso: string): string {
   if (hours < 24) return `${hours}h atrás`;
   if (days < 7) return `${days}d atrás`;
   return d.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' });
+}
+
+// ============ Painel de progressão de dificuldades ============
+function ProgressionPanel() {
+  const wins = useProgression((s) => s.winsByDifficulty);
+  const unlocked = useProgression((s) => s.unlocked);
+
+  const diffs: { id: Difficulty; label: string; emoji: string; color: string }[] = [
+    { id: 'easy', label: 'Fácil', emoji: '😊', color: 'text-p1' },
+    { id: 'medium', label: 'Médio', emoji: '🧠', color: 'text-gold' },
+    { id: 'hard', label: 'Difícil', emoji: '💎', color: 'text-orange' },
+    { id: 'perfect', label: 'Perfeito', emoji: '👑', color: 'text-p2' },
+  ];
+
+  const reqs: Record<Difficulty, number> = { easy: 0, medium: 2, hard: 3, perfect: 5 };
+  const reqDiff: Record<Difficulty, Difficulty | null> = { easy: null, medium: 'easy', hard: 'medium', perfect: 'hard' };
+
+  return (
+    <GameCard className="p-4">
+      <SectionTitle title="Níveis de IA" />
+      <div className="space-y-2.5">
+        {diffs.map((d) => {
+          const isUnlocked = unlocked[d.id];
+          const reqWins = reqs[d.id];
+          const reqD = reqDiff[d.id];
+          const currentWins = reqD ? wins[reqD] : 0;
+          const pct = reqWins > 0 ? Math.min(100, (currentWins / reqWins) * 100) : 100;
+
+          return (
+            <div key={d.id} className={cn('flex items-center gap-3', !isUnlocked && 'opacity-60')}>
+              <div className={cn(
+                'w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0',
+                isUnlocked ? 'bg-surface-2' : 'bg-surface-2/50',
+              )}>
+                {isUnlocked ? d.emoji : '🔒'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <span className={cn('text-xs font-semibold', isUnlocked ? d.color : 'text-muted-foreground')}>
+                    {d.label}
+                  </span>
+                  {isUnlocked ? (
+                    <span className="text-[10px] text-muted-foreground">{wins[d.id]} vitórias</span>
+                  ) : reqD ? (
+                    <span className="text-[10px] text-gold/70">
+                      {currentWins}/{reqWins} no {reqD === 'easy' ? 'Fácil' : reqD === 'medium' ? 'Médio' : 'Difícil'}
+                    </span>
+                  ) : null}
+                </div>
+                {!isUnlocked && reqWins > 0 && (
+                  <div className="h-1.5 rounded-full bg-surface-2 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-p1 to-gold rounded-full transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </GameCard>
+  );
 }

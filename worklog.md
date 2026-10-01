@@ -373,3 +373,38 @@ Unresolved issues / próximas fases:
 - Modo online: ainda simulado.
 - Notificações push: não implementado.
 - Próxima ronda recomendada: mais variedade de puzzles (mate-in-3), sistema de níveis/desbloqueio progressivo, e talvez um modo "Treino de Aberturas" com posições iniciais alternativas.
+
+---
+Task ID: cron-round-8
+Agent: QA + Features (webDevReview cron)
+Task: Sistema de progressão (desbloqueio de dificuldades), painel no Perfil
+
+Work Log:
+- QA inicial: app estável, lint limpo, 30/30 testes passam.
+- **Store de progressão** (`src/store/progression.ts`): sistema de desbloqueio progressivo de dificuldades.
+  - Fácil: sempre desbloqueada
+  - Médio: desbloqueada após 2 vitórias no Fácil
+  - Difícil: desbloqueada após 3 vitórias no Médio
+  - Perfeito: desbloqueada após 5 vitórias no Difícil
+  - Persistido em localStorage. Funções: recordWin, isUnlocked, getUnlockRequirement, getUnlockText.
+- Integrado no profile store: `recordMatch` chama `useProgression.getState().recordWin(difficulty)` quando o humano vence uma partida PvE.
+- **OfflineSelectScreen atualizado**: botões de dificuldade mostram 🔒 quando bloqueadas, com texto de requisito ("Vence 2x no Fácil", etc.) e progresso (wins/threshold). Botões bloqueados são disabled. Dificuldade padrão ajusta-se automaticamente para a mais alta desbloqueada (padrão "adjust state during render"). Badge de vitórias (✓) nos botões desbloqueados com histórico.
+- **Painel de progressão no Perfil** (`ProgressionPanel`): mostra os 4 níveis de IA com:
+  - Emoji ou 🔒 conforme desbloqueado
+  - Contagem de vitórias nos desbloqueados
+  - Barra de progresso (gradiente verde→dourado) nos bloqueados com currentWins/threshold
+  - Texto de requisito nos bloqueados
+- Verificação: progression panel testado no Perfil (4 níveis visíveis, barras nos bloqueados), locked difficulties testadas no OfflineSelect (Fácil desbloqueado, Médio/Difícil/Perfeito bloqueados com 🔒 e requisitos). VLM confirmou a renderização correta.
+
+Stage Summary:
+- **Sistema de progressão**: desbloqueio progressivo de dificuldades com 4 níveis, persistido, integrado no recordMatch e no OfflineSelect.
+- **Painel de progressão no Perfil**: visualização completa com barras de progresso e requisitos.
+- **Lint**: 0 erros. **Testes**: 30/30 passam.
+- **QA**: progression panel e locked difficulties testados e verificados visualmente.
+
+Unresolved issues / próximas fases:
+- i18n: ainda só PT.
+- Modo online: ainda simulado.
+- Notificações push: não implementado.
+- Mate-in-3 puzzles: não encontrados com solução única (o espaço de estados do jogo não tem mate-in-3 com solução única em free-blocked; o jogo é resolúvel em ≤3 plies desde a posição inicial).
+- Próxima ronda recomendada: notificações de desbloqueio (toast quando uma dificuldade é desbloqueada), mais variedade de puzzles com múltiplas soluções, e talvez um modo "Campanha" com partidas progressivas.

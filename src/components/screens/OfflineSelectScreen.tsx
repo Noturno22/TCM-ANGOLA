@@ -7,6 +7,7 @@ import { useApp } from '@/store/app';
 import { useGame } from '@/store/game';
 import type { Difficulty } from '@/lib/ai';
 import type { PlayerId } from '@/lib/engine';
+import { useProgression, getUnlockRequirement, getUnlockText } from '@/store/progression';
 import { GameButton, GameCard } from '@/components/game/ui';
 import { cn } from '@/lib/utils';
 
@@ -20,12 +21,25 @@ const DIFFICULTIES: { id: Difficulty; label: string; desc: string; emoji: string
 export function OfflineSelectScreen() {
   const navigate = useApp((s) => s.navigate);
   const startGame = useGame((s) => s.startGame);
+  const isUnlocked = useProgression((s) => s.isUnlocked);
+  const winsByDifficulty = useProgression((s) => s.winsByDifficulty);
+  const unlocked = useProgression((s) => s.unlocked);
 
   const [mode, setMode] = useState<'pvp' | 'pve' | 'cvc' | 'practice' | null>(null);
-  const [difficulty, setDifficulty] = useState<Difficulty>('medium');
+  const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [side, setSide] = useState<PlayerId>('P1');
   const [showThreats, setShowThreats] = useState(false);
   const [timeMode, setTimeMode] = useState<'normal' | 'quick' | 'none'>('normal');
+
+  // Ajustar dificuldade se a selecionada ficar bloqueada — padrão "adjust state during render"
+  const [prevUnlocked, setPrevUnlocked] = useState(unlocked);
+  if (prevUnlocked !== unlocked) {
+    setPrevUnlocked(unlocked);
+    if (unlocked.hard && difficulty !== 'hard') setDifficulty('hard');
+    else if (!unlocked.hard && unlocked.medium && difficulty === 'hard') setDifficulty('medium');
+    else if (!unlocked.medium && difficulty === 'medium') setDifficulty('easy');
+    else if (!isUnlocked(difficulty)) setDifficulty('easy');
+  }
 
   const TIME_OPTIONS: { id: 'normal' | 'quick' | 'none'; label: string; desc: string; seconds: number; emoji: string }[] = [
     { id: 'normal', label: 'Normal', desc: '45s por jogada', seconds: 45, emoji: '🕐' },
@@ -101,25 +115,45 @@ export function OfflineSelectScreen() {
           <GameCard className="p-4">
             <h3 className="font-display text-lg mb-3">Dificuldade da IA</h3>
             <div className="grid grid-cols-2 gap-2">
-              {DIFFICULTIES.map((d) => (
-                <button
-                  key={d.id}
-                  type="button"
-                  onClick={() => setDifficulty(d.id)}
-                  className={cn(
-                    'p-3 rounded-xl border text-left transition-all',
-                    difficulty === d.id
-                      ? 'border-gold bg-gold/10'
-                      : 'border-border/40 bg-surface/40 hover:border-border',
-                  )}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-lg">{d.emoji}</span>
-                    <span className={cn('font-semibold text-sm', d.color)}>{d.label}</span>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground leading-tight">{d.desc}</p>
-                </button>
-              ))}
+              {DIFFICULTIES.map((d) => {
+                const unlocked = isUnlocked(d.id);
+                const wins = winsByDifficulty[d.id];
+                const req = getUnlockRequirement(d.id);
+                return (
+                  <button
+                    key={d.id}
+                    type="button"
+                    disabled={!unlocked}
+                    onClick={() => unlocked && setDifficulty(d.id)}
+                    className={cn(
+                      'p-3 rounded-xl border text-left transition-all relative',
+                      !unlocked && 'opacity-60 cursor-not-allowed',
+                      unlocked && difficulty === d.id
+                        ? 'border-gold bg-gold/10'
+                        : unlocked
+                          ? 'border-border/40 bg-surface/40 hover:border-border'
+                          : 'border-border/40 bg-surface/20',
+                    )}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">{unlocked ? d.emoji : '🔒'}</span>
+                      <span className={cn('font-semibold text-sm', unlocked ? d.color : 'text-muted-foreground')}>{d.label}</span>
+                    </div>
+                    {unlocked ? (
+                      <p className="text-[10px] text-muted-foreground leading-tight">{d.desc}</p>
+                    ) : (
+                      <p className="text-[10px] text-gold/70 leading-tight">
+                        {req ? `${getUnlockText(d.id)}${wins > 0 ? ` (${wins}/${req.wins})` : ''}` : ''}
+                      </p>
+                    )}
+                    {unlocked && wins > 0 && (
+                      <span className="absolute top-1 right-1 text-[9px] text-muted-foreground/60">
+                        {wins}✓
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </GameCard>
 
