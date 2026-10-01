@@ -94,44 +94,50 @@ describe('Motor — Validação de movimentos', () => {
     if (!r.ok) expect(r.code).toBe('NOT_YOUR_TURN');
   });
 
-  it('caminho bloqueado colinear 1→3 (2 ocupada, 3 vazia) → PATH_BLOCKED', () => {
-    // Construir: P1 tem peça em 1 e 2, casa 3 vazia. 1→3 bloqueado por 2.
+  it('casa não-adjacente bloqueada: 1→6 → PATH_BLOCKED', () => {
+    // 1=(0,0), 6=(2,1): não são adjacentes. 6 está vazia.
     const g = createGame();
-    let s = applyMove(g, { from: 3, to: 6 }).state; // P1: 3→6 (liberta casa 3)
-    s = applyMove(s, { from: 9, to: 4 }).state; // P2: 9→4 (qualquer)
-    // Agora P1 pode tentar 1→3: 3 está vazia, mas 2 (intermédio) tem P1. BLOCKED.
-    const r = validateMove(s, { from: 1, to: 3 });
+    const r = validateMove(g, { from: 1, to: 6 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.code).toBe('PATH_BLOCKED');
   });
 
-  it('caminho bloqueado colinear 1→9 (5 ocupada) → PATH_BLOCKED', () => {
+  it('casa não-adjacente bloqueada: 4→9 → PATH_BLOCKED', () => {
+    // 4=(0,1), 9=(2,2): não são adjacentes. 9 está vazia após 9→6.
     const g = createGame();
     let s = applyMove(g, { from: 1, to: 4 }).state;
     s = applyMove(s, { from: 9, to: 6 }).state;
-    s = applyMove(s, { from: 2, to: 5 }).state; // P1 em 5
-    const r = validateMove(s, { from: 8, to: 2 }); // 8→2 passa por 5 (ocupada)
+    // Agora é vez de P1. P1 tem peça em 4. 9 está vazia. 4→9 não é adjacente.
+    const r = validateMove(s, { from: 4, to: 9 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.code).toBe('PATH_BLOCKED');
   });
 
-  it('movimento não-colinear permitido: 1→6', () => {
+  it('movimento adjacente permitido: 1→4 (vertical)', () => {
     const g = createGame();
-    const r = validateMove(g, { from: 1, to: 6 });
+    const r = validateMove(g, { from: 1, to: 4 });
     expect(r.ok).toBe(true);
   });
 
-  it('movimento não-colinear permitido: 2→4', () => {
+  it('movimento adjacente permitido: 2→4 (diagonal)', () => {
     const g = createGame();
     const r = validateMove(g, { from: 2, to: 4 });
     expect(r.ok).toBe(true);
   });
 
-  it('movimento não-colinear permitido: 3→4', () => {
+  it('movimento adjacente permitido: 1→5 (diagonal)', () => {
+    // 1=(0,0), 5=(1,1): diagonal adjacente
     const g = createGame();
-    // 3=(2,0), 4=(0,1): dx=-2, dy=1 → não colinear. 4 vazia.
-    const r = validateMove(g, { from: 3, to: 4 });
+    const r = validateMove(g, { from: 1, to: 5 });
     expect(r.ok).toBe(true);
+  });
+
+  it('casa não-adjacente bloqueada: 3→4 → PATH_BLOCKED', () => {
+    // 3=(2,0), 4=(0,1): não adjacentes
+    const g = createGame();
+    const r = validateMove(g, { from: 3, to: 4 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.code).toBe('PATH_BLOCKED');
   });
 });
 

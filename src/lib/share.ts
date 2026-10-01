@@ -28,8 +28,8 @@ export interface SharedMatch {
 }
 
 const VERSION = '1';
-const MODE_CHARS: Record<GameMode, string> = { pvp: 'P', pve: 'V', cvc: 'C' };
-const MODE_REV: Record<string, GameMode> = { P: 'pvp', V: 'pve', C: 'cvc' };
+const MODE_CHARS: Record<GameMode, string> = { pvp: 'P', pve: 'V', cvc: 'C', practice: 'T' };
+const MODE_REV: Record<string, GameMode> = { P: 'pvp', V: 'pve', C: 'cvc', T: 'practice' };
 const DIFF_CHARS: Record<Difficulty, string> = { easy: 'F', medium: 'M', hard: 'D', perfect: 'P' };
 const DIFF_REV: Record<string, Difficulty> = { F: 'easy', M: 'medium', D: 'hard', P: 'perfect' };
 

@@ -79,8 +79,9 @@ const SECTIONS: Section[] = [
     body: (
       <ul className="space-y-1.5">
         <li>• Escolhe uma peça tua e move-a para uma casa <strong className="text-foreground">vazia</strong>.</li>
-        <li>• Podes mover em qualquer direção (linha, coluna ou diagonal).</li>
-        <li>• Cada peça move-se <strong className="text-foreground">uma casa de cada vez</strong> ao longo de uma reta.</li>
+        <li>• Só podes mover para uma casa <strong className="text-foreground">vizinha</strong> (adjacente).</li>
+        <li>• Podes mover em qualquer direção: horizontal, vertical ou diagonal.</li>
+        <li>• <strong className="text-p2">Não podes saltar peças.</strong></li>
       </ul>
     ),
   },
@@ -222,7 +223,7 @@ export function HowToPlayScreen() {
               <Row k="Tabuleiro" v="3×3 (9 casas)" />
               <Row k="Peças por jogador" v="3" />
               <Row k="Jogador inicial" v="P1 (verde)" />
-              <Row k="Movimento" v="Livre, sem saltar" />
+              <Row k="Movimento" v="Casa vizinha, sem saltar" />
               <Row k="Linhas vencedoras" v="8" />
               <Row k="Empate" v="3ª repetição" />
               <Row k="Duração média" v="2-5 min" />

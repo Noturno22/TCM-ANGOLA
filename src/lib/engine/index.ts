@@ -95,7 +95,7 @@ export const WINNING_LINES: readonly Line[] = [
 ] as const;
 
 export const DEFAULT_CONFIG: RulesConfig = {
-  movementMode: 'free-blocked',
+  movementMode: 'adjacent-only',
   firstPlayer: 'P1',
   homeLineCounts: true,
   repetitionLimit: 3,
@@ -110,7 +110,7 @@ export const MOVE_ERROR_MESSAGES: Record<MoveErrorCode, string> = {
   SAME_SQUARE: 'Escolhe uma casa diferente.',
   NOT_YOUR_PIECE: 'Essa peça não é tua.',
   DESTINATION_OCCUPIED: 'Essa casa está ocupada.',
-  PATH_BLOCKED: 'Não podes saltar uma peça.',
+  PATH_BLOCKED: 'Só podes mover para uma casa vizinha vazia.',
 };
 
 /** Coordenadas (col, row) de cada casa para verificação de colinearidade. */

@@ -545,3 +545,33 @@ Stage Summary:
 - **Visual limpo e simples** como chess.com: fundo branco, cores sólidas, sombras subtis, sem glassmorphism.
 - **Lint**: 0 erros. **Testes**: 30/30 passam.
 - **Dev server**: ainda em baixo. Código pronto.
+
+---
+Task ID: fix-movement-adjacent
+Agent: Bug Fix (main)
+Task: Corrigir bug de movimentação — peças só se movem para casas adjacentes vazias
+
+Work Log:
+- **Bug identificado**: o motor usava `free-blocked` (permite mover para qualquer casa vazia sem saltar em retas colineares). O utilizador quer `adjacent-only` — peças só se movem para casas vizinhas (1 passo em qualquer direção).
+- **Correção do motor** (`src/lib/engine/index.ts`):
+  - `DEFAULT_CONFIG.movementMode` mudado de `'free-blocked'` para `'adjacent-only'`.
+  - Mensagem de erro `PATH_BLOCKED` atualizada para "Só podes mover para uma casa vizinha vazia."
+  - O modo `adjacent-only` já estava implementado no `checkPath`: verifica se dx e dy são ≤1 (adjacente em reta ou diagonal).
+- **Testes atualizados** (`engine.test.ts`):
+  - Removidos testes de movimentos não-colineares permitidos (1→6, 3→4) — agora são bloqueados.
+  - Adicionados testes de movimentos adjacentes permitidos: 1→4 (vertical), 2→4 (diagonal), 1→5 (diagonal).
+  - Adicionados testes de casas não-adjacentes bloqueadas: 1→6, 3→4, 4→9 → PATH_BLOCKED.
+  - 27 testes passam (era 26).
+- **Puzzles regenerados** (`src/lib/puzzles.ts`):
+  - Removidos puzzles antigos (mate-in-1 e mate-in-2) que usavam movimentos não-adjacentes.
+  - Gerados 7 novos puzzles mate-in-1 verificados com `adjacent-only`, cada um completando uma linha diferente (1-2-3, 1-4-7, 2-5-8, 1-5-9, 3-5-7, 4-5-6, 3-6-9).
+  - Todos verificados: solução única, P2 sem ameaça, movimento adjacente legal e vencedor.
+- **HowToPlay atualizado**: regras de movimento agora dizem "Só podes mover para uma casa vizinha (adjacente)" e "Não podes saltar peças."
+- **Share codec atualizado**: adicionado 'practice' (T) ao MODE_CHARS/MODE_REV.
+- **Verificação no browser**: peça na casa 1 agora mostra apenas 2 destinos válidos (4 e 5) em vez de 4-5. Movimento 1→5 funciona corretamente. IA responde com movimento adjacente legal. Sem erros.
+
+Stage Summary:
+- **Bug corrigido**: peças só se movem para casas adjacentes vazias (1 passo em qualquer direção), sem saltar.
+- **Lint**: 0 erros. **Testes**: 31/31 passam (27 motor + 4 IA).
+- **QA no browser**: movimentação adjacente confirmada, IA joga legalmente, sem erros de runtime.
+- **Dev server**: online (HTTP 200).
