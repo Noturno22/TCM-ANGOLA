@@ -167,8 +167,9 @@ export function SettingsScreen() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="pt">Português</SelectItem>
-                <SelectItem value="en" disabled>Inglês (em breve)</SelectItem>
+                <SelectItem value="pt">🇵🇹 Português</SelectItem>
+                <SelectItem value="en">🇬🇧 English</SelectItem>
+                <SelectItem value="fr">🇫🇷 Français</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -1,26 +1,27 @@
 'use client';
 
 import { Home, Users, Trophy, User, Award } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useApp, type Screen } from '@/store/app';
+import { useI18n } from '@/lib/i18n/hook';
 import { cn } from '@/lib/utils';
 
 interface Tab {
   id: Screen;
-  label: string;
+  labelKey: string;
   icon: React.ComponentType<{ className?: string }>;
 }
 
 const REAL_TABS: Tab[] = [
-  { id: 'home', label: 'Início', icon: Home },
-  { id: 'rooms', label: 'Salas', icon: Users },
-  { id: 'rankings', label: 'Rankings', icon: Trophy },
-  { id: 'achievements', label: 'Prémios', icon: Award },
-  { id: 'profile', label: 'Perfil', icon: User },
+  { id: 'home', labelKey: 'nav.home', icon: Home },
+  { id: 'rooms', labelKey: 'nav.rooms', icon: Users },
+  { id: 'rankings', labelKey: 'nav.rankings', icon: Trophy },
+  { id: 'achievements', labelKey: 'nav.prizes', icon: Award },
+  { id: 'profile', labelKey: 'nav.profile', icon: User },
 ];
 
 export function TabBar({ active }: { active: string }) {
   const navigate = useApp((s) => s.navigate);
+  const { t } = useI18n();
 
   return (
     <nav
@@ -33,7 +34,7 @@ export function TabBar({ active }: { active: string }) {
           const isActive = active === tab.id;
           return (
             <button
-              key={tab.label}
+              key={tab.labelKey}
               type="button"
               onClick={() => navigate(tab.id)}
               className={cn(
@@ -41,7 +42,7 @@ export function TabBar({ active }: { active: string }) {
                 'min-h-[44px]',
                 isActive ? 'text-p1' : 'text-muted-foreground hover:text-foreground',
               )}
-              aria-label={tab.label}
+              aria-label={t(tab.labelKey)}
               aria-current={isActive ? 'page' : undefined}
             >
               <Icon className="w-5 h-5" />
@@ -49,7 +50,7 @@ export function TabBar({ active }: { active: string }) {
                 'text-[10px] transition-all',
                 isActive ? 'font-semibold' : 'font-medium',
               )}>
-                {tab.label}
+                {t(tab.labelKey)}
               </span>
             </button>
           );

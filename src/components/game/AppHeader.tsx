@@ -5,24 +5,25 @@ import { useApp } from '@/store/app';
 import { useProfile } from '@/store/profile';
 import { BalancePill, GameLogo } from './ui';
 import { Button } from '@/components/ui/button';
+import { useI18n } from '@/lib/i18n/hook';
 
 const SCREEN_TITLES: Record<string, string> = {
-  'offline-select': 'Modo Offline',
-  tutorial: 'Tutorial',
-  'how-to-play': 'Como Jogar',
-  about: 'Sobre',
-  settings: 'Configurações',
-  wallet: 'Carteira',
-  replay: 'Replay',
-  achievements: 'Conquistas',
-  challenge: 'Desafio Diário',
-  stats: 'Estatísticas',
-  share: 'Partilhar',
-  'import-match': 'Importar Partida',
-  lightning: 'Desafio Relâmpago',
-  watch: 'Assistir',
-  campaign: 'Campanha',
-  'campaign-play': 'Campanha',
+  'offline-select': 'mode.title',
+  tutorial: 'nav.tutorial',
+  'how-to-play': 'settings.how_to_play',
+  about: 'settings.about',
+  settings: 'settings.account',
+  wallet: 'nav.wallet',
+  replay: 'nav.replay',
+  achievements: 'profile.achievements',
+  challenge: 'nav.challenge',
+  stats: 'profile.stats',
+  share: 'nav.share',
+  'import-match': 'nav.import',
+  lightning: 'nav.lightning',
+  watch: 'nav.watch',
+  campaign: 'nav.campaign',
+  'campaign-play': 'nav.campaign',
 };
 
 export function AppHeader() {
@@ -30,8 +31,10 @@ export function AppHeader() {
   const back = useApp((s) => s.back);
   const navigate = useApp((s) => s.navigate);
   const coins = useProfile((s) => s.coins);
+  const { t } = useI18n();
 
-  const title = SCREEN_TITLES[screen] ?? '';
+  const titleKey = SCREEN_TITLES[screen] ?? '';
+  const title = titleKey ? t(titleKey) : '';
 
   return (
     <header className="sticky top-0 z-30 w-full max-w-2xl mx-auto bg-background/95 backdrop-blur-sm border-b border-border">
@@ -42,7 +45,7 @@ export function AppHeader() {
             size="icon"
             onClick={back}
             className="rounded-lg h-9 w-9 shrink-0"
-            aria-label="Voltar"
+            aria-label={t('nav.back')}
           >
             <ChevronLeft className="w-5 h-5" />
           </Button>
@@ -64,7 +67,7 @@ export function AppHeader() {
             size="icon"
             onClick={() => navigate('settings')}
             className="rounded-lg h-9 w-9"
-            aria-label="Configurações"
+            aria-label={t('settings.account')}
           >
             <SettingsIcon className="w-4 h-4" />
           </Button>

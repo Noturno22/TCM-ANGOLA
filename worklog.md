@@ -575,3 +575,35 @@ Stage Summary:
 - **Lint**: 0 erros. **Testes**: 31/31 passam (27 motor + 4 IA).
 - **QA no browser**: movimentação adjacente confirmada, IA joga legalmente, sem erros de runtime.
 - **Dev server**: online (HTTP 200).
+
+---
+Task ID: professional-worldwide
+Agent: Designer Pro (main)
+Task: Sistema i18n (PT/EN/FR), SEO profissional, PWA manifest
+
+Work Log:
+- **Sistema i18n completo** (`src/lib/i18n/index.ts` + `hook.ts`):
+  - 3 idiomas: Português 🇵🇹, English 🇬🇧, Français 🇫🇷
+  - ~150 chaves de tradução cobrindo: app, navegação, home, welcome, modos de jogo, dificuldades, jogo, perfil, configurações.
+  - Função `t(key, vars)` com interpolação de variáveis.
+  - Hook `useI18n()` que sincroniza com as settings e força re-render.
+- **Settings atualizado**: seletor de idioma com 3 opções ativas (🇵🇹 Português, 🇬🇧 English, 🇫🇷 Français) — removido "em breve" do Inglês.
+- **TabBar integrado com i18n**: usa `t(tab.labelKey)` para traduzir os labels das tabs.
+- **AppHeader integrado com i18n**: títulos dos ecrãs traduzidos.
+- **SEO profissional** (`layout.tsx`):
+  - Metadata completa: title template, description, keywords em PT/EN, authors, creator, publisher.
+  - Open Graph com imagem 1200x630, locale pt_PT + alternates en_US, fr_FR.
+  - Twitter Card summary_large_image.
+  - Robots index/follow com googleBot config.
+  - Alternates canonical com languages pt-PT, en-US, fr-FR.
+  - JSON-LD structured data (Schema.org Game) com nome, descrição, género, plataforma, jogadores, idiomas, oferta (grátis).
+  - Apple Web App config.
+  - Viewport com themeColor light/dark, colorScheme.
+- **PWA Manifest** (`public/manifest.json`): name, short_name, description, standalone display, icons 192/512, theme colors, categories, lang.
+- **Verificação no browser**: idioma mudado de PT para EN — TabBar passou de "Início, Salas, Rankings, Prémios, Perfil" para "Home, Rooms, Rankings, Prizes, Profile". Sem erros de runtime.
+
+Stage Summary:
+- **i18n**: 3 idiomas ativos (PT/EN/FR) com ~150 traduções, integrado no TabBar e AppHeader.
+- **SEO**: metadata profissional com Open Graph, Twitter Cards, JSON-LD, robots, alternates.
+- **PWA**: manifest.json para instalação como app.
+- **Lint**: 0 erros. **Testes**: 31/31 passam. **Servidor**: online (200).
