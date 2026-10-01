@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Flag,
@@ -9,10 +9,7 @@ import {
   RefreshCw,
   ChevronRight,
   Target,
-  Zap,
-  Clock,
   Lightbulb,
-  Trophy,
 } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useGame } from '@/store/game';
@@ -28,8 +25,8 @@ import { cn } from '@/lib/utils';
 type ResultType = 'success' | 'failure' | null;
 
 export function CampaignPlayScreen() {
-  const navigate = useApp((s) => s.navigate);
   const back = useApp((s) => s.back);
+  const navigate = useApp((s) => s.navigate);
   const campaignLevelId = useApp((s) => s.campaignLevelId);
   const completeLevel = useCampaign((s) => s.completeLevel);
   const recordAttempt = useCampaign((s) => s.recordAttempt);
@@ -40,95 +37,72 @@ export function CampaignPlayScreen() {
     [campaignLevelId],
   );
 
-  const {
-    state,
-    mode,
-    difficulty,
-    humanSide,
-    selectedSquare,
-    validTargets,
-    lastMove,
-    winner,
-    winningLine,
-    moveCount,
-    startGame,
-    selectSquare,
-    attemptMove,
-  } = useGame();
+  const game = useGame();
 
   const [result, setResult] = useState<ResultType>(null);
   const [showHint, setShowHint] = useState(false);
-  const [attemptRecorded, setAttemptRecorded] = useState(false);
-  const [startedLevelId, setStartedLevelId] = useState<number | null>(null);
-  const [prevGameEnded, setPrevGameEnded] = useState(false);
+  const [resultComputed, setResultComputed] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
 
-  // Iniciar o nível quando muda — padrão "adjust state during render"
-  if (level && startedLevelId !== level.id) {
-    setStartedLevelId(level.id);
-    startGame({
+  // Iniciar o nível no mount (key muda quando o nível muda, forçando remount)
+  useEffect(() => {
+    if (!level) return;
+    game.startGame({
       mode: 'pve',
       difficulty: level.difficulty,
       humanSide: level.humanSide,
       showThreats: true,
       timePerTurn: 0,
     });
-    setResult(null);
-    setShowHint(false);
-    setAttemptRecorded(false);
-    setPrevGameEnded(false);
-  }
+    // Usar microtask para evitar setState em effect
+    Promise.resolve().then(() => setGameStarted(true));
+  }, [level, game]);
 
   // Verificar objetivo quando o jogo termina — padrão "adjust state during render"
-  const gameEnded = isGameOver(state);
-  if (gameEnded !== prevGameEnded) {
-    setPrevGameEnded(gameEnded);
-    if (gameEnded && level && !attemptRecorded) {
-      setAttemptRecorded(true);
-      recordAttempt(level.id);
-      const success = checkObjective(level, state, moveCount);
-      if (success) {
-        setResult('success');
-        completeLevel(level.id);
-        addCoins(level.reward);
-        playSound('win');
-      } else {
-        setResult('failure');
-        playSound('error');
-      }
-    }
-    // Se o jogo reiniciou (não terminado), limpar resultado
-    if (!gameEnded && result !== null) {
-      setResult(null);
+  const gameEnded = isGameOver(game.state);
+  if (gameEnded && level && gameStarted && !resultComputed) {
+    setResultComputed(true);
+    recordAttempt(level.id);
+    const success = checkObjective(level, game.state, game.moveCount);
+    if (success) {
+      setResult('success');
+      completeLevel(level.id);
+      addCoins(level.reward);
+      playSound('win');
+    } else {
+      setResult('failure');
+      playSound('error');
     }
   }
 
   const handleSquareClick = useCallback(
     (sq: Square) => {
-      if (isGameOver(state)) return;
-      if (state.currentPlayer !== humanSide) return;
-      const cell = state.board[sq - 1];
-      if (cell === state.currentPlayer) {
-        selectSquare(sq);
-      } else if (selectedSquare && validTargets.includes(sq)) {
-        attemptMove(sq);
+      if (isGameOver(game.state)) return;
+      if (game.state.currentPlayer !== game.humanSide) return;
+      const cell = game.state.board[sq - 1];
+      if (cell === game.state.currentPlayer) {
+        game.selectSquare(sq);
+      } else if (game.selectedSquare && game.validTargets.includes(sq)) {
+        game.attemptMove(sq);
       }
     },
-    [state, humanSide, selectedSquare, validTargets, selectSquare, attemptMove],
+    [game],
   );
 
-  const handleRestart = () => {
+  const handleRestart = useCallback(() => {
     if (!level) return;
-    startGame({
+    setResult(null);
+    setResultComputed(false);
+    setGameStarted(false);
+    game.startGame({
       mode: 'pve',
       difficulty: level.difficulty,
       humanSide: level.humanSide,
       showThreats: true,
       timePerTurn: 0,
     });
-    setResult(null);
-    setAttemptRecorded(false);
-    setPrevGameEnded(false);
-  };
+    Promise.resolve().then(() => setGameStarted(true));
+  }, [level, game]);
 
   const handleNextLevel = () => {
     if (!level) return;
@@ -136,7 +110,12 @@ export function CampaignPlayScreen() {
     const nextLevel = getCampaignLevel(nextId);
     if (nextLevel) {
       useApp.getState().setCampaignLevelId(nextId);
-      handleRestart();
+      // Force remount by navigating away and back, or just update the key
+      navigate('campaign');
+      setTimeout(() => {
+        useApp.getState().setCampaignLevelId(nextId);
+        useApp.getState().navigate('campaign-play');
+      }, 50);
     } else {
       navigate('campaign');
     }
@@ -200,19 +179,17 @@ export function CampaignPlayScreen() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Objetivo</p>
-              <p className="text-sm font-medium">
-                {objectiveText(level)}
-              </p>
+              <p className="text-sm font-medium">{objectiveText(level)}</p>
             </div>
             <div className="text-right">
               <p className="text-[10px] text-muted-foreground">Jogadas</p>
               <p className={cn(
                 'font-display text-lg',
-                level.objective.type === 'win_fast' && moveCount > (level.objective.maxMoves ?? 0)
+                level.objective.type === 'win_fast' && game.moveCount > (level.objective.maxMoves ?? 0)
                   ? 'text-p2'
                   : 'text-foreground',
               )}>
-                {moveCount}
+                {game.moveCount}
                 {level.objective.maxMoves && `/${level.objective.maxMoves}`}
                 {level.objective.minMoves && `/${level.objective.minMoves}`}
               </p>
@@ -223,15 +200,15 @@ export function CampaignPlayScreen() {
         {/* Tabuleiro */}
         <div className="flex justify-center mb-4">
           <Board
-            board={state.board}
-            selectedSquare={selectedSquare}
-            validTargets={validTargets}
-            lastMove={lastMove}
-            winningLine={winningLine}
+            board={game.state.board}
+            selectedSquare={game.selectedSquare}
+            validTargets={game.validTargets}
+            lastMove={game.lastMove}
+            winningLine={game.winningLine}
             threatSquares={[]}
             onSquareClick={handleSquareClick}
             flipped={flipped}
-            disabled={state.currentPlayer !== humanSide}
+            disabled={game.state.currentPlayer !== game.humanSide}
             size="md"
           />
         </div>
@@ -360,10 +337,7 @@ function checkObjective(
     return humanWon && moveCount <= (objective.maxMoves ?? 0);
   }
   if (objective.type === 'survive') {
-    // Sobreviver = o jogo terminou (qualquer resultado) após N jogadas
-    // ou o humano ganhou
-    return (state.status !== 'PLAYER_1_TURN' && state.status !== 'PLAYER_2_TURN') ||
-      humanWon;
+    return (state.status !== 'PLAYER_1_TURN' && state.status !== 'PLAYER_2_TURN') || humanWon;
   }
   return false;
 }

@@ -148,7 +148,7 @@ export default function Home() {
             {screen === 'lightning' && <LightningChallengeScreen />}
             {screen === 'watch' && <WatchScreen />}
             {screen === 'campaign' && <CampaignScreen />}
-            {screen === 'campaign-play' && <CampaignPlayScreen />}
+            {screen === 'campaign-play' && <CampaignPlayScreen key={useApp.getState().campaignLevelId ?? 'none'} />}
           </motion.div>
         </AnimatePresence>
       </main>

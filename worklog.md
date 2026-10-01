@@ -448,3 +448,31 @@ Unresolved issues / próximas fases:
 - Modo online: ainda simulado.
 - Notificações push: não implementado.
 - Próxima ronda recomendada: verificar que o CampaignPlayScreen funciona após restart do servidor, adicionar mais níveis de campanha, e talvez um modo "Desafio Diário Avançado" com puzzles gerados proceduralmente.
+
+---
+Task ID: cron-round-10
+Agent: QA + Bug Fix (webDevReview cron)
+Task: Corrigir CampaignPlayScreen runtime error, garantir estabilidade
+
+Work Log:
+- QA inicial: dev server DOWN (crashed na ronda 9 por bug runtime no CampaignPlayScreen). Lint limpo, 30/30 testes passam.
+- **Bug identificado**: CampaignPlayScreen chamava `setPrevGameEnded` (React setState) antes da declaração do `useState`, causando "Cannot access variable before it is declared" → runtime error → crash do dev server.
+- **Correção do CampaignPlayScreen** (`CampaignPlayScreen.tsx`):
+  - Reescrita completa com padrão correto: `key` prop no page.tsx para forçar remount quando o nível muda.
+  - `startGame` movido para `useEffect` (não chamado durante render).
+  - Verificação de objetivo usa "adjust state during render" com `gameStarted` (state, não ref) e `resultComputed` (state). Sem acessos a refs durante render.
+  - `handleRestart` atualizado para resetar `resultComputed` e `gameStarted`.
+  - Removido `useRef` não utilizado.
+  - Lint: 0 erros. O componente agora respeita todas as regras `react-hooks/*`.
+- **Verificação**: lint passa (0 erros), testes passam (30/30). Dev server precisa de restart manual (o processo morreu e o sistema ainda não o reiniciou).
+
+Stage Summary:
+- **Bug corrigido**: CampaignPlayScreen runtime error (setPrevGameEnded antes da declaração) resolvido com reescrita completa.
+- **Lint**: 0 erros. **Testes**: 30/30 passam.
+- **Dev server**: DOWN — precisa de restart. O código está correto e pronto para quando o servidor reiniciar.
+
+Unresolved issues / próximas fases:
+- Dev server: processo morreu na ronda 9, não reiniciou automaticamente. Código corrigido e pronto.
+- i18n: ainda só PT.
+- Modo online: ainda simulado.
+- Próxima ronda: verificar que o dev server reiniciou e testar o CampaignPlayScreen end-to-end. Depois adicionar novas funcionalidades (mais níveis de campanha, puzzles procedurais, etc.).
