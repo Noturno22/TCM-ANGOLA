@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, MapPin, Crosshair } from 'lucide-react';
+import { Users, MapPin, Crosshair, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// ============ Dados de jogadores online (simulados) ============
+// ============ Dados de jogadores online ============
 interface PlayerLocation {
   id: string;
   country: string;
@@ -14,7 +14,6 @@ interface PlayerLocation {
   province: string;
   city: string;
   players: number;
-  // Coordenadas lat/lng para projeção no globo
   lat: number;
   lng: number;
 }
@@ -36,69 +35,118 @@ const PLAYER_LOCATIONS: PlayerLocation[] = [
   { id: 'l14', country: 'Reino Unido', countryCode: 'GB', flag: '🇬🇧', province: 'Londres', city: 'Londres', players: 8, lat: 51.5, lng: -0.1 },
 ];
 
-// ============ Projeção ortográfica (lat/lng → x/y no SVG) ============
-function project(lat: number, lng: number, rotation: number, r: number, cx: number, cy: number): { x: number; y: number; visible: boolean } {
+// ============ Projeção ortográfica ============
+function project(lat: number, lng: number, rotation: number, r: number, cx: number, cy: number) {
   const latRad = (lat * Math.PI) / 180;
   const lngRad = ((lng + rotation) * Math.PI) / 180;
   const x = r * Math.cos(latRad) * Math.sin(lngRad);
   const y = -r * Math.sin(latRad);
   const z = r * Math.cos(latRad) * Math.cos(lngRad);
-  return { x: cx + x, y: cy + y, visible: z > 0 };
+  return { x: cx + x, y: cy + y, visible: z > -r * 0.1 };
 }
 
-// ============ Continentes simplificados (SVG paths) ============
-// Pontos aproximados dos continentes como polígonos fechados
+// ============ Continentes detalhados (mais pontos = mais realista) ============
+// Coordenadas [lng, lat] dos contornos continentais
 const CONTINENTS: { name: string; points: [number, number][] }[] = [
-  // África
+  // África — contorno detalhado
   {
     name: 'africa',
     points: [
-      [10, -35], [20, -35], [35, -25], [45, -15], [52, -5], [50, 5], [48, 12],
-      [42, 15], [40, 25], [35, 30], [30, 32], [20, 32], [10, 28], [5, 20],
-      [-5, 15], [-15, 12], [-20, 5], [-25, -5], [-25, -20], [-20, -30], [-10, -33],
+      [-17, 21], [-16, 19], [-13, 16], [-10, 12], [-8, 8], [-5, 6], [-3, 5],
+      [0, 5], [3, 6], [6, 4], [8, 2], [9, -1], [12, -5], [13, -9], [12, -15],
+      [14, -22], [17, -28], [18, -32], [20, -34], [25, -34], [28, -32],
+      [32, -29], [33, -25], [35, -22], [38, -18], [40, -12], [41, -5],
+      [42, 0], [43, 4], [46, 8], [48, 11], [51, 12], [52, 10], [50, 7],
+      [48, 4], [46, 1], [44, -2], [42, -8], [42, -12], [40, -16], [37, -20],
+      [35, -23], [33, -26], [30, -29], [28, -31], [25, -33], [22, -34],
+      [18, -34], [16, -32], [14, -28], [12, -24], [11, -20], [10, -16],
+      [9, -12], [8, -8], [7, -4], [5, -1], [3, 1], [0, 3], [-3, 4],
+      [-6, 5], [-9, 6], [-12, 8], [-15, 12], [-17, 16], [-17, 21],
     ],
   },
   // Europa
   {
     name: 'europe',
     points: [
-      [-10, 38], [0, 36], [10, 38], [20, 40], [30, 42], [35, 50], [30, 60],
-      [20, 65], [10, 62], [0, 60], [-5, 55], [-10, 50], [-10, 42],
+      [-9, 43], [-8, 44], [-5, 43], [-2, 43], [0, 44], [2, 43], [4, 43],
+      [6, 44], [8, 44], [10, 44], [12, 45], [14, 46], [16, 44], [18, 42],
+      [20, 40], [22, 39], [24, 38], [26, 37], [28, 37], [30, 38], [32, 39],
+      [34, 41], [36, 42], [38, 44], [40, 46], [40, 50], [38, 54], [36, 56],
+      [34, 58], [30, 60], [26, 62], [22, 64], [18, 64], [14, 62], [10, 60],
+      [6, 58], [4, 56], [2, 54], [0, 52], [-2, 50], [-4, 48], [-6, 46],
+      [-8, 44], [-9, 43],
     ],
   },
-  // Ásia (ocidental)
+  // Ásia (extensa)
   {
     name: 'asia',
     points: [
-      [35, 42], [45, 40], [60, 35], [75, 30], [85, 25], [90, 35], [100, 40],
-      [110, 50], [120, 55], [130, 50], [135, 45], [130, 35], [120, 25], [110, 15],
-      [100, 10], [90, 15], [80, 20], [70, 25], [60, 30], [50, 35], [40, 38],
+      [30, 40], [34, 38], [38, 36], [42, 38], [46, 40], [50, 42], [54, 40],
+      [58, 38], [62, 36], [66, 34], [70, 32], [74, 30], [78, 28], [82, 26],
+      [86, 24], [90, 22], [94, 20], [98, 18], [100, 16], [102, 14], [104, 12],
+      [106, 10], [108, 12], [110, 14], [112, 16], [114, 18], [116, 20],
+      [118, 22], [120, 24], [122, 26], [124, 28], [126, 30], [128, 32],
+      [130, 34], [132, 36], [134, 38], [136, 40], [138, 42], [140, 44],
+      [140, 48], [138, 52], [134, 56], [130, 58], [126, 60], [120, 62],
+      [114, 64], [108, 66], [100, 68], [90, 70], [80, 72], [70, 72],
+      [60, 68], [50, 64], [44, 60], [40, 56], [38, 52], [36, 48], [34, 44],
+      [32, 42], [30, 40],
     ],
   },
   // América do Norte
   {
     name: 'na',
     points: [
-      [-130, 55], [-120, 60], [-100, 65], [-80, 60], [-65, 50], [-60, 45],
-      [-70, 35], [-80, 30], [-85, 25], [-95, 25], [-100, 30], [-110, 32],
-      [-120, 35], [-125, 42], [-130, 48],
+      [-168, 66], [-160, 68], [-150, 70], [-140, 70], [-130, 68], [-125, 64],
+      [-122, 58], [-120, 52], [-118, 46], [-116, 40], [-114, 34], [-112, 28],
+      [-108, 24], [-104, 22], [-100, 22], [-96, 20], [-92, 18], [-88, 18],
+      [-84, 16], [-82, 14], [-80, 10], [-78, 8], [-80, 12], [-82, 16],
+      [-80, 20], [-78, 24], [-76, 28], [-74, 32], [-72, 36], [-70, 40],
+      [-68, 44], [-66, 46], [-64, 48], [-60, 50], [-58, 52], [-56, 54],
+      [-58, 56], [-62, 58], [-68, 60], [-74, 62], [-80, 64], [-88, 66],
+      [-96, 68], [-104, 70], [-112, 70], [-120, 68], [-128, 68], [-136, 68],
+      [-144, 68], [-152, 68], [-160, 68], [-168, 66],
     ],
   },
   // América do Sul
   {
     name: 'sa',
     points: [
-      [-80, 12], [-70, 10], [-55, 5], [-45, -5], [-40, -15], [-45, -25],
-      [-50, -35], [-60, -40], [-70, -45], [-75, -40], [-78, -30], [-80, -20],
-      [-80, -5],
+      [-78, 12], [-74, 10], [-70, 10], [-66, 8], [-62, 6], [-58, 4],
+      [-54, 2], [-50, 0], [-48, -4], [-46, -8], [-44, -12], [-42, -16],
+      [-40, -20], [-42, -24], [-44, -28], [-46, -32], [-48, -36], [-52, -40],
+      [-58, -44], [-64, -48], [-70, -52], [-74, -50], [-76, -46], [-74, -42],
+      [-72, -38], [-74, -34], [-76, -30], [-78, -26], [-80, -22], [-80, -18],
+      [-80, -14], [-80, -10], [-80, -6], [-80, -2], [-80, 2], [-78, 6],
+      [-78, 12],
     ],
   },
-  // Oceânia
+  // Oceânia (Austrália + Nova Zelândia)
   {
     name: 'oceania',
     points: [
-      [115, -15], [125, -12], [135, -15], [145, -18], [150, -25], [148, -35],
-      [140, -38], [130, -32], [120, -25], [115, -20],
+      [114, -22], [118, -20], [122, -18], [126, -16], [130, -14], [134, -16],
+      [138, -18], [142, -12], [146, -16], [148, -20], [150, -24], [150, -28],
+      [148, -32], [146, -36], [142, -38], [138, -36], [134, -34], [130, -32],
+      [126, -30], [122, -28], [118, -26], [114, -24], [114, -22],
+    ],
+  },
+  // Groenlândia
+  {
+    name: 'greenland',
+    points: [
+      [-55, 60], [-48, 60], [-40, 62], [-35, 66], [-30, 70], [-25, 74],
+      [-22, 78], [-25, 82], [-35, 83], [-45, 82], [-55, 80], [-60, 76],
+      [-58, 72], [-55, 68], [-52, 64], [-55, 60],
+    ],
+  },
+  // Antártica (parcial)
+  {
+    name: 'antarctica',
+    points: [
+      [-180, -75], [-140, -72], [-100, -70], [-60, -68], [-20, -70],
+      [20, -68], [60, -70], [100, -68], [140, -70], [180, -75],
+      [180, -85], [-180, -85], [-180, -75],
     ],
   },
 ];
@@ -109,46 +157,49 @@ interface GlobeProps {
 }
 
 export function Globe3D({ onLocationClick, className }: GlobeProps) {
-  const [rotation, setRotation] = useState(0);
+  const [rotation, setRotation] = useState(20);
   const [autoRotate, setAutoRotate] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
-  const [pulsePhase, setPulsePhase] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [tick, setTick] = useState(0);
+  const dragRef = useRef<{ startX: number; startRot: number } | null>(null);
 
-  // Auto-rotação lenta
+  // Auto-rotação suave
   useEffect(() => {
     if (!autoRotate) return;
     const interval = setInterval(() => {
-      setRotation((r) => (r + 360) % 36000 / 100); // 0.35 graus por tick
-    }, 50);
+      setRotation((r) => r + 0.25);
+    }, 30);
     return () => clearInterval(interval);
   }, [autoRotate]);
 
   // Pulsar dos marcadores
   useEffect(() => {
     const interval = setInterval(() => {
-      setPulsePhase((p) => (p + 1) % 100);
-    }, 1000);
+      setTick((t) => t + 1);
+    }, 1500);
     return () => clearInterval(interval);
   }, []);
 
-  const size = 280;
+  const size = 320;
   const cx = size / 2;
   const cy = size / 2;
-  const r = size / 2 - 20;
+  const r = size / 2 - 16;
 
   // Projetar continentes
   const continentPaths = useMemo(() => {
     return CONTINENTS.map((cont) => {
-      const pts = cont.points.map(([lng, lat]) => {
-        const p = project(lat, lng, rotation, r, cx, cy);
-        return p.visible ? `${p.x},${p.y}` : null;
-      }).filter(Boolean);
-      return { name: cont.name, path: pts.length > 2 ? `M ${pts.join(' L ')} Z` : '' };
+      const projected = cont.points.map(([lng, lat]) => project(lat, lng, rotation, r, cx, cy));
+      // Só desenhar se pelo menos 3 pontos visíveis
+      const visiblePts = projected.filter((p) => p.visible);
+      if (visiblePts.length < 3) return { name: cont.name, path: '', opacity: 0 };
+      // Para continentes parcialmente visíveis, usar clip via circle
+      const pts = projected.map((p) => `${p.x},${p.y}`);
+      const path = `M ${pts.join(' L ')} Z`;
+      return { name: cont.name, path, opacity: 1 };
     });
   }, [rotation, r, cx, cy]);
 
-  // Projetar marcadores de jogadores
+  // Projetar marcadores
   const markers = useMemo(() => {
     return PLAYER_LOCATIONS.map((loc) => {
       const p = project(loc.lat, loc.lng, rotation, r, cx, cy);
@@ -159,179 +210,248 @@ export function Globe3D({ onLocationClick, className }: GlobeProps) {
   const totalPlayers = PLAYER_LOCATIONS.reduce((s, l) => s + l.players, 0);
   const visibleMarkers = markers.filter((m) => m.visible);
 
+  // Drag para girar manualmente
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    dragRef.current = { startX: e.clientX, startRot: rotation };
+    setAutoRotate(false);
+  }, [rotation]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    setRotation(dragRef.current.startRot + dx * 0.5);
+  }, []);
+
+  const handlePointerUp = useCallback(() => {
+    dragRef.current = null;
+  }, []);
+
   return (
-    <div ref={containerRef} className={cn('relative flex flex-col items-center', className)}>
+    <div className={cn('flex flex-col items-center', className)}>
       {/* Info bar */}
-      <div className="flex items-center gap-2 mb-3 text-sm">
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-p1/10 text-p1">
-          <span className="w-2 h-2 rounded-full bg-p1 animate-pulse-soft" />
-          <span className="font-semibold">{totalPlayers}</span>
-          <span className="text-[10px] uppercase tracking-wider">online</span>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-p1/10 border border-p1/20">
+          <span className="relative flex w-2.5 h-2.5">
+            <span className="absolute inline-flex w-full h-full rounded-full bg-p1 opacity-60 animate-ping" />
+            <span className="relative inline-flex w-2.5 h-2.5 rounded-full bg-p1" />
+          </span>
+          <span className="text-sm font-bold text-p1 tabular-nums">{totalPlayers}</span>
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">online</span>
         </div>
         <button
           type="button"
           onClick={() => setAutoRotate((v) => !v)}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-2 border border-border text-muted-foreground hover:text-foreground transition-colors text-xs"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-2 border border-border text-muted-foreground hover:text-foreground transition-colors text-xs font-medium"
         >
-          <Crosshair className="w-3 h-3" />
-          {autoRotate ? 'Parar' : 'Girar'}
+          <Crosshair className="w-3.5 h-3.5" />
+          {autoRotate ? 'Pausar' : 'Girar'}
         </button>
       </div>
 
-      {/* Globo SVG */}
-      <div className="relative" style={{ width: size, height: size }}>
-        <svg
-          viewBox={`0 0 ${size} ${size}`}
-          className="w-full h-full"
-          style={{ filter: 'drop-shadow(0 8px 24px oklch(0 0 0 / 0.15))' }}
-        >
+      {/* Globo */}
+      <div
+        className="relative select-none"
+        style={{ width: size, height: size, touchAction: 'none' }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+      >
+        <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full">
           <defs>
-            {/* Gradiente do oceano */}
-            <radialGradient id="ocean" cx="35%" cy="35%">
-              <stop offset="0%" stopColor="oklch(0.97 0.003 120)" />
-              <stop offset="70%" stopColor="oklch(0.93 0.005 120)" />
-              <stop offset="100%" stopColor="oklch(0.88 0.008 120)" />
+            {/* Oceano — cinza claro com gradiente subtil */}
+            <radialGradient id="oceanGrad" cx="38%" cy="35%" r="70%">
+              <stop offset="0%" stopColor="#F5F6F8" />
+              <stop offset="60%" stopColor="#ECEEF1" />
+              <stop offset="100%" stopColor="#D8DBE0" />
             </radialGradient>
-            {/* Sombra interna para efeito 3D */}
-            <radialGradient id="shadow3d" cx="50%" cy="50%">
-              <stop offset="60%" stopColor="transparent" />
-              <stop offset="100%" stopColor="oklch(0 0 0 / 0.12)" />
+            {/* Sombra interna para efeito 3D (lado escuro) */}
+            <radialGradient id="sphereShadow" cx="35%" cy="30%" r="75%">
+              <stop offset="55%" stopColor="rgba(0,0,0,0)" />
+              <stop offset="85%" stopColor="rgba(0,0,0,0.08)" />
+              <stop offset="100%" stopColor="rgba(0,0,0,0.18)" />
             </radialGradient>
-            {/* Brilho do sol */}
-            <radialGradient id="highlight" cx="30%" cy="30%">
-              <stop offset="0%" stopColor="oklch(1 0 0 / 0.4)" />
-              <stop offset="40%" stopColor="transparent" />
+            {/* Highlight glossy (topo-esquerda) */}
+            <radialGradient id="sphereHighlight" cx="32%" cy="28%" r="40%">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.5)" />
+              <stop offset="60%" stopColor="rgba(255,255,255,0)" />
             </radialGradient>
+            {/* Crescent highlight (bottom-right) */}
+            <radialGradient id="crescentHL" cx="65%" cy="68%" r="35%">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.25)" />
+              <stop offset="50%" stopColor="rgba(255,255,255,0)" />
+            </radialGradient>
+            {/* Clip path para continentes (não sair do círculo) */}
+            <clipPath id="globeClip">
+              <circle cx={cx} cy={cy} r={r} />
+            </clipPath>
+            {/* Filtro de sombra exterior */}
+            <filter id="globeDropShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="6" stdDeviation="10" floodColor="#000" floodOpacity="0.15" />
+            </filter>
           </defs>
 
-          {/* Oceano (esfera) */}
-          <circle cx={cx} cy={cy} r={r} fill="url(#ocean)" stroke="oklch(0.85 0.003 120)" strokeWidth="1" />
+          {/* Sombra exterior do globo */}
+          <ellipse cx={cx} cy={cy + r + 4} rx={r * 0.85} ry={8} fill="rgba(0,0,0,0.08)" />
 
-          {/* Continentes */}
-          {continentPaths.map((cont) =>
-            cont.path ? (
-              <path
-                key={cont.name}
-                d={cont.path}
-                fill="oklch(0.35 0.01 150)"
-                stroke="oklch(0.3 0.01 150)"
-                strokeWidth="0.5"
-                opacity={0.85}
-              />
-            ) : null,
-          )}
+          {/* Esfera (oceano) */}
+          <circle
+            cx={cx}
+            cy={cy}
+            r={r}
+            fill="url(#oceanGrad)"
+            stroke="rgba(0,0,0,0.06)"
+            strokeWidth="1"
+            filter="url(#globeDropShadow)"
+          />
 
-          {/* Sombra 3D */}
-          <circle cx={cx} cy={cy} r={r} fill="url(#shadow3d)" pointerEvents="none" />
-          {/* Highlight */}
-          <circle cx={cx} cy={cy} r={r} fill="url(#highlight)" pointerEvents="none" />
+          {/* Continentes (clipados ao círculo) */}
+          <g clipPath="url(#globeClip)">
+            {continentPaths.map((cont) =>
+              cont.path ? (
+                <path
+                  key={cont.name}
+                  d={cont.path}
+                  fill="#2A2A2A"
+                  stroke="#222"
+                  strokeWidth="0.4"
+                  opacity={cont.opacity}
+                />
+              ) : null,
+            )}
 
-          {/* Meridianos (linhas de longitude) */}
-          {[0, 30, 60, 90, 120, 150].map((deg) => {
-            const rad = ((deg + rotation) * Math.PI) / 180;
-            const x1 = cx + r * Math.cos(rad);
-            const y1 = cy;
-            const x2 = cx - r * Math.cos(rad);
-            const y2 = cy;
-            const ellipseW = Math.abs(r * Math.cos(rad));
-            if (ellipseW < 2) return null;
-            return (
-              <ellipse
-                key={`meridian-${deg}`}
-                cx={cx}
-                cy={cy}
-                rx={ellipseW}
-                ry={r}
-                fill="none"
-                stroke="oklch(0.7 0.003 120 / 0.3)"
-                strokeWidth="0.5"
-              />
-            );
-          })}
+            {/* Linhas de latitude (paralelos) */}
+            {[-60, -30, 0, 30, 60].map((lat) => {
+              const latRad = (lat * Math.PI) / 180;
+              const ry = r * Math.cos(latRad);
+              const py = cy - r * Math.sin(latRad);
+              return (
+                <ellipse
+                  key={`lat-${lat}`}
+                  cx={cx}
+                  cy={py}
+                  rx={ry}
+                  ry={ry}
+                  fill="none"
+                  stroke="rgba(0,0,0,0.04)"
+                  strokeWidth="0.5"
+                />
+              );
+            })}
 
-          {/* Paralelos (linhas de latitude) */}
-          {[-60, -30, 0, 30, 60].map((lat) => {
-            const latRad = (lat * Math.PI) / 180;
-            const ry = r * Math.cos(latRad);
-            const py = cy - r * Math.sin(latRad);
-            return (
-              <ellipse
-                key={`parallel-${lat}`}
-                cx={cx}
-                cy={py}
-                rx={ry}
-                ry={ry}
-                fill="none"
-                stroke="oklch(0.7 0.003 120 / 0.2)"
-                strokeWidth="0.5"
-              />
-            );
-          })}
+            {/* Linhas de longitude (meridianos) */}
+            {[0, 30, 60, 90, 120, 150].map((deg) => {
+              const rad = ((deg + rotation) * Math.PI) / 180;
+              const ellipseW = Math.abs(r * Math.cos(rad));
+              if (ellipseW < 2) return null;
+              return (
+                <ellipse
+                  key={`lng-${deg}`}
+                  cx={cx}
+                  cy={cy}
+                  rx={ellipseW}
+                  ry={r}
+                  fill="none"
+                  stroke="rgba(0,0,0,0.04)"
+                  strokeWidth="0.5"
+                />
+              );
+            })}
+          </g>
+
+          {/* Sombra 3D (lado escuro do globo) */}
+          <circle cx={cx} cy={cy} r={r} fill="url(#sphereShadow)" pointerEvents="none" />
+          {/* Highlight glossy (topo-esquerda) */}
+          <circle cx={cx} cy={cy} r={r} fill="url(#sphereHighlight)" pointerEvents="none" />
+          {/* Crescent highlight (bottom-right) */}
+          <circle cx={cx} cy={cy} r={r} fill="url(#crescentHL)" pointerEvents="none" />
 
           {/* Marcadores de jogadores */}
           {markers.map((m) => {
             if (!m.visible) return null;
             const isSelected = selected === m.id;
-            const size_marker = m.players > 30 ? 8 : m.players > 15 ? 6 : m.players > 5 ? 5 : 4;
+            const markerR = m.players > 30 ? 7 : m.players > 15 ? 6 : m.players > 5 ? 5 : 4;
+            const pulseR = markerR + 4 + (tick % 3) * 3;
             return (
-              <g key={m.id} className="cursor-pointer" onClick={() => { setSelected(m.id); onLocationClick?.(m); }}>
-                {/* Pulso */}
+              <g
+                key={m.id}
+                className="cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelected(m.id);
+                  onLocationClick?.(m);
+                }}
+              >
+                {/* Pulso animado */}
                 <circle
                   cx={m.x}
                   cy={m.y}
-                  r={size_marker + 6 + (pulsePhase % 3) * 2}
-                  fill="oklch(0.58 0.14 150 / 0.15)"
-                  className="animate-pulse-soft"
+                  r={pulseR}
+                  fill="rgba(88,168,85,0.12)"
                 />
-                {/* Marcador */}
+                {/* Anel */}
                 <circle
                   cx={m.x}
                   cy={m.y}
-                  r={size_marker}
-                  fill={isSelected ? 'oklch(0.7 0.15 75)' : 'oklch(0.58 0.14 150)'}
+                  r={markerR + 2}
+                  fill="none"
+                  stroke="rgba(88,168,85,0.4)"
+                  strokeWidth="1"
+                />
+                {/* Marcador sólido */}
+                <circle
+                  cx={m.x}
+                  cy={m.y}
+                  r={markerR}
+                  fill={isSelected ? '#F0B90B' : '#3AA855'}
                   stroke="white"
-                  strokeWidth="1.5"
+                  strokeWidth="2"
                 />
-                {/* Número de jogadores (se selecionado) */}
+                {/* Número se selecionado */}
                 {isSelected && (
                   <text
                     x={m.x}
-                    y={m.y - size_marker - 5}
+                    y={m.y - markerR - 6}
                     textAnchor="middle"
-                    fontSize="10"
+                    fontSize="11"
                     fontWeight="bold"
-                    fill="oklch(0.7 0.15 75)"
+                    fill="#2A2A2A"
                   >
-                    {m.players} 🎮
+                    {m.players} 👤
                   </text>
                 )}
               </g>
             );
           })}
         </svg>
+
+        {/* Indicador de drag */}
+        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-muted-foreground/50 pointer-events-none">
+          ↔ Arrasta para girar
+        </div>
       </div>
 
-      {/* Lista de localizações visíveis */}
-      <div className="mt-3 w-full max-w-xs">
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 text-center font-medium">
-          {visibleMarkers.length} localizações visíveis
+      {/* Localizações visíveis */}
+      <div className="mt-4 w-full">
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2 text-center font-medium">
+          {visibleMarkers.length} localizações ativas
         </p>
-        <div className="flex flex-wrap gap-1 justify-center">
-          {visibleMarkers.slice(0, 8).map((m) => (
+        <div className="flex flex-wrap gap-1.5 justify-center max-w-sm mx-auto">
+          {visibleMarkers.map((m) => (
             <button
               key={m.id}
               type="button"
               onClick={() => { setSelected(m.id); onLocationClick?.(m); }}
               className={cn(
-                'flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors',
+                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all',
                 selected === m.id
-                  ? 'bg-gold/15 text-gold border border-gold/30'
-                  : 'bg-surface-2 text-muted-foreground hover:text-foreground',
+                  ? 'bg-gold/10 text-gold border border-gold/30 shadow-sm'
+                  : 'bg-surface border border-border text-muted-foreground hover:text-foreground hover:border-border/80',
               )}
             >
-              <span>{m.flag}</span>
+              <span className="text-sm">{m.flag}</span>
               <span>{m.city}</span>
-              <span className="text-p1 font-bold">{m.players}</span>
+              <span className="text-p1 font-bold tabular-nums">{m.players}</span>
             </button>
           ))}
         </div>
@@ -344,30 +464,32 @@ export function Globe3D({ onLocationClick, className }: GlobeProps) {
           if (!loc) return null;
           return (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="mt-3 w-full max-w-xs"
+              exit={{ opacity: 0, y: 12 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="mt-4 w-full max-w-sm"
             >
-              <div className="p-3 rounded-lg bg-surface border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">{loc.flag}</span>
+              <div className="p-4 rounded-xl bg-surface border border-border shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-3xl">{loc.flag}</span>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold">{loc.city}, {loc.country}</p>
-                    <p className="text-[10px] text-muted-foreground">{loc.province}</p>
+                    <p className="text-sm font-bold">{loc.city}</p>
+                    <p className="text-[11px] text-muted-foreground">{loc.province}, {loc.country}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-display text-lg text-p1 leading-none">{loc.players}</p>
-                    <p className="text-[9px] text-muted-foreground uppercase">jogadores</p>
+                    <p className="font-display text-xl text-p1 leading-none">{loc.players}</p>
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-wider">a jogar</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => onLocationClick?.(loc)}
-                  className="w-full py-2 rounded-md bg-p1 text-white text-xs font-semibold hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
+                  className="w-full py-2.5 rounded-lg bg-p1 text-white text-sm font-semibold hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-sm"
                 >
-                  <Users className="w-3.5 h-3.5" />
-                  Desafiar jogadores
+                  <Users className="w-4 h-4" />
+                  Desafiar jogadores em {loc.city}
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </motion.div>

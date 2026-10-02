@@ -644,3 +644,30 @@ Stage Summary:
 - **Pagamentos**: 4 métodos (Binance, PIX, Express Angola, VISA), depósito e levantamento, min 1 USD, conversão KZ automática, validações.
 - **Globo 3D**: SVG animado com projeção ortográfica, 14 localizações, auto-rotação, marcadores pulsantes, lista de cidades, painel de detalhe.
 - **Lint**: 0 erros. **Testes**: 31/31 passam. **Servidor**: online (200).
+
+---
+Task ID: globe-professional
+Agent: Designer Pro (main)
+Task: Reescrever globo 3D para visual profissional (estilo referência)
+
+Work Log:
+- **Análise da imagem de referência**: globo minimalista, flat-vector, continentes pretos sólidos (#2A2A2A), oceano cinza claro (#F0F2F5), highlight glossy no topo-esquerda, sombra interna no lado direito, sem marcadores na imagem original.
+- **Globe3D.tsx reescrito completamente**:
+  - **Continentes detalhados**: 8 massas terrestres com contornos detalhados (África, Europa, Ásia, América do Norte, América do Sul, Oceânia, Groenlândia, Antártica) — 20-30 pontos por continente vs 10-15 antes.
+  - **Estilo da referência**: continentes pretos sólidos (#2A2A2A), oceano com gradiente radial cinza claro (#F5F6F8 → #D8DBE0), borda subtil.
+  - **Efeito 3D profissional**: 4 gradientes sobrepostos — oceano base, sombra interna (lado escuro), highlight glossy (topo-esquerda), crescent highlight (bottom-right). Drop shadow exterior.
+  - **Linhas geográficas**: paralelos e meridianos como elipses subtis (rgba 0.04) — dão profundidade sem distrair.
+  - **Clip path**: continentes clipados ao círculo do globo (não saem da esfera).
+  - **Marcadores premium**: anel + pulso animado + círculo sólido verde (#3AA855) com borda branca. Marcadores grandes para muitos jogadores, pequenos para poucos.
+  - **Drag-to-rotate**: o utilizador pode arrastar o globo para girar manualmente (pointer events). Auto-rotação pausa ao arrastar.
+  - **Auto-rotação**: 0.25° por tick (30ms) — suave e lenta.
+  - **Indicador "↔ Arrasta para girar"** no fundo do globo.
+  - **Tamanho**: 320x320px (maior que antes).
+  - **Info bar**: contador "229 online" com indicador pulsante (ping animation), botão Pausar/Girar.
+  - **Lista de localizações**: tags com bandeira + cidade + contagem, clicáveis.
+  - **Painel de detalhe**: card com cidade, país, província, jogadores, botão "Desafiar jogadores".
+- **Verificação VLM**: "dark/black continents, light gray ocean, 3D shading with shadow, green circular player markers. Professional quality: 8/10."
+
+Stage Summary:
+- **Globo profissional**: estilo da imagem de referência com continentes pretos, oceano cinza, efeito 3D com 4 gradientes, drag-to-rotate, marcadores premium.
+- **Lint**: 0 erros. **Testes**: 31/31 passam. **Servidor**: online (200).
