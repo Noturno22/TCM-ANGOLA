@@ -2,26 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, ChevronRight, MapPin, ZoomIn, ZoomOut, Globe2, Navigation } from 'lucide-react';
+import { Users, ChevronRight, MapPin, Globe2, ZoomIn, ZoomOut, Navigation } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-// Tipos
-type MaplibreMapType = {
-  on(event: string, cb: () => void): void;
-  getZoom(): number;
-  getBearing(): number;
-  setBearing(b: number): void;
-  flyTo(opts: { center: [number, number]; zoom: number; duration: number }): void;
-  zoomIn(opts: { duration: number }): void;
-  zoomOut(opts: { duration: number }): void;
-  remove(): void;
-};
-
-type MaplibreMarkerType = {
-  setLngLat(coords: [number, number]): MaplibreMarkerType;
-  addTo(map: MaplibreMapType): MaplibreMarkerType;
-  remove(): void;
-};
 
 // ============ Dados de jogadores online ============
 interface PlayerLocation {
@@ -59,145 +41,14 @@ interface GlobeProps {
 
 export function Globe3D({ onLocationClick, className }: GlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<MaplibreMapType | null>(null);
-  const markersRef = useRef<MaplibreMarkerType[]>([]);
   const [selected, setSelected] = useState<PlayerLocation | null>(null);
   const [autoRotate, setAutoRotate] = useState(true);
-  const [ready, setReady] = useState(false);
-
-  // Inicializar mapa
-  useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
-
-    let cancelled = false;
-
-    // Import dinâmico para evitar problemas de SSR com maplibre
-    import('maplibre-gl').then((maplibregl) => {
-      import('maplibre-gl/dist/maplibre-gl.css');
-      if (cancelled || !containerRef.current) return;
-
-      const Map = (maplibregl as unknown as { Map: new (opts: Record<string, unknown>) => MaplibreMapType }).Map;
-      const Marker = (maplibregl as unknown as { Marker: new (opts: { element: HTMLElement }) => MaplibreMarkerType }).Marker;
-
-      const map = new Map({
-      container: containerRef.current,
-      style: {
-        version: 8,
-        sources: {
-          'osm': {
-            type: 'raster',
-            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-            tileSize: 256,
-            attribution: '© OpenStreetMap',
-          },
-        },
-        layers: [
-          {
-            id: 'background',
-            type: 'raster',
-            source: 'osm',
-            minzoom: 0,
-            maxzoom: 19,
-          },
-        ],
-      },
-      center: [13.2, -8.8], // Centrado em Angola
-      zoom: 1.5,
-      minZoom: 1,
-      maxZoom: 12,
-      pitch: 0,
-      bearing: 0,
-      dragRotate: true,
-      touchZoomRotate: true,
-    });
-
-    mapRef.current = map;
-
-    map.on('load', () => {
-      setReady(true);
-
-      // Adicionar marcadores
-      markersRef.current.forEach((m) => m.remove());
-      markersRef.current = [];
-      for (const loc of PLAYER_LOCATIONS) {
-        const el = document.createElement('div');
-        el.style.cursor = 'pointer';
-        const sz = loc.players > 30 ? 44 : loc.players > 15 ? 38 : loc.players > 5 ? 32 : 28;
-        const col = loc.players > 30 ? '#F0B90B' : '#3AA855';
-        el.innerHTML = `<div style="position:relative;width:${sz}px;height:${sz}px;"><div style="position:absolute;inset:0;border-radius:50%;background:${col}33;animation:mkpulse 2s ease-in-out infinite;"></div><div style="position:absolute;inset:4px;border-radius:50%;background:${col};border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><span style="font-size:${sz > 36 ? '11px' : '9px'};font-weight:700;color:white;">${loc.players}</span></div></div>`;
-        el.title = `${loc.flag} ${loc.city}, ${loc.country} — ${loc.players} jogadores`;
-        el.addEventListener('click', (e) => {
-          e.stopPropagation();
-          setSelected(loc);
-          map.flyTo({ center: [loc.lng, loc.lat], zoom: Math.max(map.getZoom(), 4), duration: 1000 });
-        });
-        const marker = new Marker({ element: el }).setLngLat([loc.lng, loc.lat]).addTo(map as MaplibreMapType);
-        markersRef.current.push(marker);
-      }
-    });
-    }); // fim do .then()
-
-    return () => {
-      cancelled = true;
-      markersRef.current.forEach((m) => m.remove());
-      markersRef.current = [];
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, []);
-
-  // Auto-rotação lenta
-  useEffect(() => {
-    if (!ready) return;
-    const map = mapRef.current;
-    if (!map) return;
-
-    let raf: number;
-    let lastTime = 0;
-
-    const rotate = (time: number) => {
-      if (autoRotate && time - lastTime > 50) {
-        const bearing = map.getBearing();
-        map.setBearing(bearing + 0.2);
-        lastTime = time;
-      }
-      raf = requestAnimationFrame(rotate);
-    };
-    raf = requestAnimationFrame(rotate);
-
-    return () => cancelAnimationFrame(raf);
-  }, [autoRotate, ready]);
-
-  // CSS para animação pulse
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes mkpulse {
-        0%, 100% { transform: scale(1); opacity: 0.6; }
-        50% { transform: scale(1.4); opacity: 0.15; }
-      }
-    `;
-    document.head.appendChild(style);
-    return () => { document.head.removeChild(style); };
-  }, []);
+  const [iframeKey, setIframeKey] = useState(0);
 
   const totalPlayers = PLAYER_LOCATIONS.reduce((s, l) => s + l.players, 0);
 
-  const handleZoomIn = () => {
-    mapRef.current?.zoomIn({ duration: 300 });
-  };
-  const handleZoomOut = () => {
-    mapRef.current?.zoomOut({ duration: 300 });
-  };
-  const handleResetView = () => {
-    mapRef.current?.flyTo({ center: [13.2, -8.8], zoom: 1.5, bearing: 0, duration: 1000 });
-    setSelected(null);
-  };
-
   return (
-    <div className={cn('flex flex-col items-center w-full', className)}>
+    <div ref={containerRef} className={cn('flex flex-col items-center w-full', className)}>
       {/* Info bar + controlos */}
       <div className="flex items-center gap-2 mb-3 flex-wrap justify-center">
         <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-p1/10 border border-p1/20">
@@ -225,43 +76,59 @@ export function Globe3D({ onLocationClick, className }: GlobeProps) {
 
         <button
           type="button"
-          onClick={handleZoomIn}
-          className="w-8 h-8 rounded-full bg-surface-2 border border-border text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors"
-          aria-label="Aproximar"
+          onClick={() => setIframeKey((k) => k + 1)}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-2 border border-border text-muted-foreground hover:text-foreground transition-colors text-xs font-medium"
         >
-          <ZoomIn className="w-4 h-4" />
-        </button>
-
-        <button
-          type="button"
-          onClick={handleZoomOut}
-          className="w-8 h-8 rounded-full bg-surface-2 border border-border text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors"
-          aria-label="Afastar"
-        >
-          <ZoomOut className="w-4 h-4" />
-        </button>
-
-        <button
-          type="button"
-          onClick={handleResetView}
-          className="w-8 h-8 rounded-full bg-surface-2 border border-border text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors"
-          aria-label="Repor vista"
-        >
-          <Navigation className="w-4 h-4" />
+          <Navigation className="w-3.5 h-3.5" />
+          Reset
         </button>
       </div>
 
-      {/* Mapa MapLibre */}
+      {/* Globo SVG interativo */}
       <div
-        ref={containerRef}
-        className="relative w-full rounded-2xl overflow-hidden border border-border"
-        style={{ height: 380, minHeight: 300, background: '#e8eaed' }}
-      />
+        className="relative w-full rounded-2xl overflow-hidden border border-border bg-surface-2"
+        style={{ maxWidth: 380, height: 380 }}
+      >
+        <iframe
+          key={iframeKey}
+          src="/globe.svg"
+          className="w-full h-full border-0"
+          title="Globo Terrestre Interativo"
+          style={{ background: 'transparent' }}
+          scrolling="no"
+          loading="eager"
+        />
+      </div>
 
       {/* Indicador */}
       <p className="text-[10px] text-muted-foreground/60 mt-1.5 text-center">
-        🖱️ Arrasta para girar • Scroll para zoom • Clique nos marcadores
+        🖱️ Arrasta para girar • Duplo clique muda vista • Clica nos marcadores
       </p>
+
+      {/* Lista de localizações clicáveis */}
+      <div className="mt-3 w-full">
+        <div className="flex flex-wrap gap-1.5 justify-center max-w-sm mx-auto">
+          {PLAYER_LOCATIONS.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => {
+                setSelected(m);
+              }}
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all',
+                selected?.id === m.id
+                  ? 'bg-gold/10 text-gold border border-gold/30 shadow-sm'
+                  : 'bg-surface border border-border text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <span className="text-sm">{m.flag}</span>
+              <span>{m.city}</span>
+              <span className="text-p1 font-bold tabular-nums">{m.players}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Detalhe da localização selecionada */}
       <AnimatePresence>
@@ -282,6 +149,9 @@ export function Globe3D({ onLocationClick, className }: GlobeProps) {
                     {selected.city}
                   </p>
                   <p className="text-[11px] text-muted-foreground">{selected.province}, {selected.country}</p>
+                  <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                    Lat: {selected.lat.toFixed(1)}°, Lng: {selected.lng.toFixed(1)}°
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="font-display text-xl text-p1 leading-none">{selected.players}</p>
