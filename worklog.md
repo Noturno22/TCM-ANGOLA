@@ -671,3 +671,24 @@ Work Log:
 Stage Summary:
 - **Globo profissional**: estilo da imagem de referência com continentes pretos, oceano cinza, efeito 3D com 4 gradientes, drag-to-rotate, marcadores premium.
 - **Lint**: 0 erros. **Testes**: 31/31 passam. **Servidor**: online (200).
+
+---
+Task ID: globe-perfect-svg
+Agent: Designer Pro (main)
+Task: Integrar o globo SVG perfeito do utilizador
+
+Work Log:
+- O utilizador forneceu `globo_terrestre_rotacionavel.svg` — um globo SVG profissional com JavaScript embutido para rotação interativa (drag, duplo clique para mudar vista, setas do teclado).
+- Copiado para `public/globe.svg` (41KB).
+- **Globe3D.tsx reescrito** para usar o SVG do utilizador via iframe:
+  - O globo é carregado num iframe (`/globe.svg`) que preserva toda a interatividade JavaScript (drag-to-rotate, duplo clique para alternar vistas, setas do teclado).
+  - Info bar com contador de jogadores online (229) e indicador pulsante.
+  - Indicador "↔ Arrasta para girar • Duplo clique muda vista" no fundo do globo.
+  - Lista de 14 localizações com bandeiras + cidade + contagem de jogadores.
+  - Painel de detalhe ao selecionar uma localização (cidade, país, província, jogadores, botão "Desafiar").
+- **Verificação VLM**: "Professional 3D globe with dark continents. Africa is clearly visible. Player location tags with flags and counts. City names like Luanda, Lisboa, São Paulo visible. Overall quality: 9/10."
+
+Stage Summary:
+- **Globo perfeito**: o SVG profissional do utilizador está integrado, totalmente interativo (drag, duplo clique, setas), com continentes detalhados e projeção ortográfica real.
+- **Lint**: 0 erros. **Testes**: 31/31 passam. **Servidor**: online (200).
+- **VLM**: qualidade 9/10.
