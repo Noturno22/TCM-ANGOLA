@@ -8,7 +8,7 @@
 <path id="meia-lua" clip-path="url(#disco)" fill="#e6e6e6" fill-rule="evenodd" d="M10 200a190 190 0 1 0 380 0a190 190 0 1 0-380 0ZM-2 188a190 190 0 1 0 380 0a190 190 0 1 0-380 0Z"/>
 <path id="terra" fill="#323232" fill-rule="evenodd" d=""/>
 
-<g id="markers"></g>
+<g id="markers" style="pointer-events:none"></g>
 <script type="text/javascript"><![CDATA[
 (function(){
 var NS="http://www.w3.org/2000/svg",CX=200,CY=200,R=190,D2R=Math.PI/180,STEP=1.2*D2R;
@@ -74,30 +74,47 @@ root.addEventListener("pointerup",function(){drag=null;});
 root.addEventListener("dblclick",function(){idx=(idx+1)%nomes.length;ir(nomes[idx],true);});
 window.addEventListener("keydown",function(ev){var m={ArrowLeft:[5,0],ArrowRight:[-5,0],ArrowUp:[0,-5],ArrowDown:[0,5]}[ev.key];if(m){girar(st.lon+m[0],st.lat+m[1],st.roll);ev.preventDefault();}});
 
-// === Marcadores de jogadores ===
-var MK=[[13.2,-8.8,47,"Luanda"],[13.4,-12.6,18,"Benguela"],[15.7,-12.8,12,"Huambo"],[12.2,-5.6,8,"Cabinda"],[-9.1,38.7,24,"Lisboa"],[-8.6,41.1,11,"Porto"],[-46.6,-23.5,33,"S.Paulo"],[-43.2,-22.9,19,"Rio"],[2.3,48.8,15,"Paris"],[-74.0,40.7,9,"NYC"],[32.6,-25.9,7,"Maputo"],[-23.5,14.9,5,"Praia"],[28.0,-26.2,13,"JHB"],[-0.1,51.5,8,"London"]];
+// === Marcadores de jogadores online ===
+var MKS=[[13.2,-8.8,47],[13.4,-12.6,18],[15.7,-12.8,12],[12.2,-5.6,8],[-9.1,38.7,24],[-8.6,41.1,11],[-46.6,-23.5,33],[-43.2,-22.9,19],[2.3,48.8,15],[-74.0,40.7,9],[32.6,-25.9,7],[-23.5,14.9,5],[28.0,-26.2,13],[-0.1,51.5,8]];
 var mkG=document.getElementById("markers");
-function projMk(lon,lat){var la=lat*D2R,lo=(lon+st.lon)*D2R,x=R*Math.cos(la)*Math.sin(lo),y=-R*Math.sin(la),z=R*Math.cos(la)*Math.cos(lo);return{x:CX+x,y:CY-y,v:z>0};}
-function renderMk(){while(mkG.firstChild)mkG.removeChild(mkG.firstChild);
-for(var i=0;i<MK.length;i++){var m=MK[i],p=projMk(m[0],m[1]);if(!p.v)continue;
-var n=m[2],sz=n>30?7:n>15?6:n>5?5:4,col=n>30?"#F0B90B":"#3AA855";
-var pulse=document.createElementNS(NS,"circle");
-pulse.setAttribute("cx",p.x);pulse.setAttribute("cy",p.y);pulse.setAttribute("r",sz+5);
-pulse.setAttribute("fill","rgba(58,168,85,0.12)");mkG.appendChild(pulse);
-var ring=document.createElementNS(NS,"circle");
-ring.setAttribute("cx",p.x);ring.setAttribute("cy",p.y);ring.setAttribute("r",sz+2);
-ring.setAttribute("fill","none");ring.setAttribute("stroke","rgba(58,168,85,0.4)");
-ring.setAttribute("stroke-width","1");mkG.appendChild(ring);
-var dot=document.createElementNS(NS,"circle");
-dot.setAttribute("cx",p.x);dot.setAttribute("cy",p.y);dot.setAttribute("r",sz);
-dot.setAttribute("fill",col);dot.setAttribute("stroke","white");dot.setAttribute("stroke-width","2");
-mkG.appendChild(dot);
-var lbl=document.createElementNS(NS,"text");
-lbl.setAttribute("x",p.x);lbl.setAttribute("y",p.y-sz-5);lbl.setAttribute("text-anchor","middle");
-lbl.setAttribute("font-size","8");lbl.setAttribute("font-weight","bold");lbl.setAttribute("fill","#555");
-lbl.textContent=n+"";mkG.appendChild(lbl);}}
 var _origRender=render;
-render=function(){_origRender();renderMk();};
+render=function(){
+ _origRender();
+ // Reutilizar a matriz de rotação já calculada por _origRender
+ var l0=st.lon*D2R,p0=st.lat*D2R,g=st.roll*D2R,c=Math.cos(g),s=Math.sin(g);
+ var e=[-Math.sin(l0),Math.cos(l0),0],nn=[-Math.sin(p0)*Math.cos(l0),-Math.sin(p0)*Math.sin(l0),Math.cos(p0)],f=[Math.cos(p0)*Math.cos(l0),Math.cos(p0)*Math.sin(l0),Math.sin(p0)];
+ while(mkG.firstChild)mkG.removeChild(mkG.firstChild);
+ for(var i=0;i<MKS.length;i++){
+  var m=MKS[i],p=v3(m[0],m[1]);
+  var a=p[0]*e[0]+p[1]*e[1]+p[2]*e[2];
+  var b=p[0]*nn[0]+p[1]*nn[1]+p[2]*nn[2];
+  var z=p[0]*f[0]+p[1]*f[1]+p[2]*f[2];
+  if(z<=0)continue;
+  var x=c*a-s*b,y=s*a+c*b;
+  var sx=CX+R*x,sy=CY-R*y;
+  var n=m[2],sz=n>30?7:n>15?6:n>5?5:4;
+  var col=n>30?"#F0B90B":"#3AA855";
+  // Pulso
+  var pulse=document.createElementNS(NS,"circle");
+  pulse.setAttribute("cx",f1(sx));pulse.setAttribute("cy",f1(sy));pulse.setAttribute("r",sz+5);
+  pulse.setAttribute("fill","rgba(58,168,85,0.12)");mkG.appendChild(pulse);
+  // Anel
+  var ring=document.createElementNS(NS,"circle");
+  ring.setAttribute("cx",f1(sx));ring.setAttribute("cy",f1(sy));ring.setAttribute("r",sz+2);
+  ring.setAttribute("fill","none");ring.setAttribute("stroke","rgba(58,168,85,0.4)");
+  ring.setAttribute("stroke-width","1");mkG.appendChild(ring);
+  // Ponto
+  var dot=document.createElementNS(NS,"circle");
+  dot.setAttribute("cx",f1(sx));dot.setAttribute("cy",f1(sy));dot.setAttribute("r",sz);
+  dot.setAttribute("fill",col);dot.setAttribute("stroke","white");dot.setAttribute("stroke-width","2");
+  mkG.appendChild(dot);
+  // Número
+  var lbl=document.createElementNS(NS,"text");
+  lbl.setAttribute("x",f1(sx));lbl.setAttribute("y",f1(sy-sz-5));lbl.setAttribute("text-anchor","middle");
+  lbl.setAttribute("font-size","8");lbl.setAttribute("font-weight","bold");lbl.setAttribute("fill","#555");
+  lbl.textContent=n+"";mkG.appendChild(lbl);
+ }
+};
 
 window.Globo={girar:girar,ir:ir,vistas:VISTAS,estado:function(){return {lon:st.lon,lat:st.lat,roll:st.roll};}};
 ir("frontal",false);
