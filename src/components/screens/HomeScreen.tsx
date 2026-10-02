@@ -7,6 +7,7 @@ import { useApp } from '@/store/app';
 import { useProfile, getSimulatedRankings, xpProgress } from '@/store/profile';
 import { useChallenge } from '@/store/challenge';
 import { getTodayPuzzle } from '@/lib/puzzles';
+import { AdSlot } from '@/components/game/AdSlot';
 import {
   GameButton,
   GameCard,
@@ -93,6 +94,9 @@ export function HomeScreen() {
           </div>
         </motion.div>
       )}
+
+      {/* Google Ads — banner topo */}
+      <AdSlot format="banner-top" />
 
       {/* CTAs principais: JOGAR ONLINE / JOGAR OFFLINE */}
       <div className="grid grid-cols-1 gap-3">

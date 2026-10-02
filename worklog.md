@@ -724,3 +724,43 @@ Stage Summary:
 - **Sem scrollbars**: CSS overflow:hidden + iframe scrolling="no".
 - **Responsivo**: globo ajusta-se ao container (260-400px).
 - **Lint**: 0 erros. **Testes**: 31/31 passam. **Servidor**: online.
+
+---
+Task ID: payments-comprovativo-ads
+Agent: Designer Pro (main)
+Task: Comprovativo de depósito + verificação admin 6h + Google Ads + marcadores fixados
+
+Work Log:
+- **Marcadores do globo corrigidos** (`public/globe.svg`):
+  - Reescrita a injeção de marcadores DENTRO da IIFE original do SVG.
+  - Agora usa EXATAMENTE a mesma projeção 3D do globo: `v3(lon,lat)` → matriz de rotação (`e`, `nn`, `f`, roll) → `pt()`.
+  - Marcadores ficam **colados à superfície do globo** e giram perfeitamente.
+  - Só visíveis no hemisfério visível (`z > 0`).
+  - VLM confirmou: "Green dots stuck on the globe's surface at correct geographic positions."
+- **Store de transações com comprovativo** (`src/lib/transactions.ts`):
+  - `useTransactions` Zustand persistido com: createTransaction, approveTransaction, rejectTransaction.
+  - VISA = instantâneo (approved imediatamente); Binance/PIX/Express = pending até admin aprovar (6h).
+  - Cada transação tem: tipo, método, valor USD/KZ, status, comprovativo (base64), nota do admin.
+- **WalletScreen atualizada** com:
+  - Upload de comprovativo (file input → base64) para Binance/PIX/Express.
+  - Validação: não pode submeter sem comprovativo quando necessário.
+  - Aviso "⏱️ Verificação em até 6h após admin aprovar."
+  - Aviso "VISA: depósito instantâneo (sem comprovativo)."
+  - Secção "Transações Pendentes" com countdown de 6h e auto-aprovação.
+  - Toast de sucesso diferenciado: VISA (instantâneo) vs outros (pendente).
+- **Google Ads** (`src/components/game/AdSlot.tsx`):
+  - Componente `AdSlot` com 4 formatos: banner-top, banner-inline, square, responsive.
+  - Placeholder discreto com label "Anúncio / Google Ads".
+  - Em produção: substituir por `<ins class="adsbygoogle">`.
+  - Integrado na Home (banner-top após torneio) e nas Salas (banner-inline após globo).
+- **Verificação no browser**:
+  - Wallet: Binance selecionado → comprovativo upload visível → "COMPROVATIVO DE PAGAMENTO (OBRIGATÓRIO)" + "6 horas".
+  - Home: AdSlot visível com "ANÚNCIO / Google Ads".
+  - Sem erros de runtime.
+
+Stage Summary:
+- **Marcadores fixados**: colados ao globo, girando corretamente com a mesma projeção 3D.
+- **Comprovativo**: upload obrigatório para Binance/PIX/Express, verificação admin em 6h, VISA instantâneo.
+- **Transações pendentes**: countdown de 6h, auto-aprovação, notificações.
+- **Google Ads**: AdSlot na Home e Salas.
+- **Lint**: 0 erros. **Testes**: 31/31 passam. **Servidor**: online (200).

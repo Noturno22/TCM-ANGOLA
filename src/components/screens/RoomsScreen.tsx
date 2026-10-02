@@ -6,6 +6,7 @@ import { Users, Coins, LogIn, MessageCircle, Send, Globe, Sparkles, Info, MapPin
 import { useApp } from '@/store/app';
 import { GameButton, GameCard, FilterChip, LevelAvatar, SectionTitle } from '@/components/game/ui';
 import { Globe3D } from '@/components/game/Globe3D';
+import { AdSlot } from '@/components/game/AdSlot';
 import {
   Dialog,
   DialogContent,
@@ -164,6 +165,9 @@ export function RoomsScreen() {
           }}
         />
       </GameCard>
+
+      {/* Google Ads — banner inline */}
+      <AdSlot format="banner-inline" />
 
       {/* Aviso subtil */}
       <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-orange/10 border border-orange/30 text-orange">

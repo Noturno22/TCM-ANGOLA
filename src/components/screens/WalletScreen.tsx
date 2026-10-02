@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
@@ -21,8 +21,10 @@ import {
   Banknote,
   Check,
   AlertCircle,
+  Clock,
 } from 'lucide-react';
 import { useProfile } from '@/store/profile';
+import { useTransactions, METHOD_LABELS, type PaymentMethod } from '@/lib/transactions';
 import { GameButton, GameCard, SectionTitle } from '@/components/game/ui';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -291,6 +293,9 @@ export function WalletScreen() {
       {/* Depósito e Levantamento */}
       <PaymentSection coins={profile.coins} addCoins={addCoins} />
 
+      {/* Transações pendentes */}
+      <PendingTransactions />
+
       {/* Aviso de jogo responsável */}
       <div className="flex items-start gap-2.5 px-3 py-3 rounded-xl bg-surface/60 border border-border/40">
         <Info className="w-4 h-4 shrink-0 mt-0.5 text-muted-foreground" />
@@ -314,7 +319,7 @@ const PAYMENT_METHODS = [
 ] as const;
 
 const MIN_USD = 1;
-const USD_TO_KZ = 1195; // 1 USD = 1.195 KZ (multiplicar por 1000 para KZ virtual)
+const USD_TO_KZ = 1195;
 
 type PaymentMode = 'deposit' | 'withdraw';
 
@@ -322,35 +327,85 @@ function PaymentSection({ coins, addCoins }: { coins: number; addCoins: (n: numb
   const [mode, setMode] = useState<PaymentMode>('deposit');
   const [method, setMethod] = useState<string | null>(null);
   const [amount, setAmount] = useState<string>('');
+  const [comprovativo, setComprovativo] = useState<{ name: string; data: string } | null>(null);
+  const createTransaction = useTransactions((s) => s.createTransaction);
 
   const amountNum = parseFloat(amount) || 0;
   const minError = amountNum > 0 && amountNum < MIN_USD;
-  const canSubmit = method !== null && amountNum >= MIN_USD;
+  const needsComprovativo = method && method !== 'visa' && mode === 'deposit';
+  const canSubmit = method !== null && amountNum >= MIN_USD && (!needsComprovativo || comprovativo !== null);
 
   const kzAmount = Math.round(amountNum * USD_TO_KZ);
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Ficheiro demasiado grande (máx 5MB).');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setComprovativo({ name: file.name, data: reader.result as string });
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = () => {
     if (!canSubmit || !method) return;
     const methodLabel = PAYMENT_METHODS.find((m) => m.id === method)?.label ?? '';
+    const isVisa = method === 'visa';
+
     if (mode === 'deposit') {
-      addCoins(kzAmount);
-      toast.success(`Depósito de ${amountNum} USD processado!`, {
-        description: `${kzAmount.toLocaleString('pt-PT')} KZ adicionados via ${methodLabel}.`,
+      // Criar transação no store
+      const txId = createTransaction({
+        type: 'deposit',
+        method: method as PaymentMethod,
+        amountUSD: amountNum,
+        amountKZ: kzAmount,
+        hasComprovativo: !!comprovativo,
+        comprovativoName: comprovativo?.name ?? null,
+        comprovativoData: comprovativo?.data ?? null,
       });
+
+      if (isVisa) {
+        // VISA é instantâneo
+        addCoins(kzAmount);
+        toast.success(`Depósito de ${amountNum} USD processado!`, {
+          description: `${kzAmount.toLocaleString('pt-PT')} KZ creditados via VISA (instantâneo).`,
+        });
+      } else {
+        // Binance/PIX/Express: pendente até admin aprovar (até 6h)
+        toast.success(`Depósito enviado para verificação!`, {
+          description: `${kzAmount.toLocaleString('pt-PT')} KZ serão creditados em até 6h após o admin aprovar o comprovativo (${methodLabel}).`,
+          duration: 6000,
+        });
+      }
     } else {
+      // Levantamento
       if (kzAmount > coins) {
         toast.error('Saldo insuficiente para levantamento.', {
           description: `Precisas de ${kzAmount.toLocaleString('pt-PT')} KZ mas tens apenas ${coins.toLocaleString('pt-PT')} KZ.`,
         });
         return;
       }
+      createTransaction({
+        type: 'withdraw',
+        method: method as PaymentMethod,
+        amountUSD: amountNum,
+        amountKZ: kzAmount,
+        hasComprovativo: false,
+        comprovativoName: null,
+        comprovativoData: null,
+      });
       addCoins(-kzAmount);
       toast.success(`Levantamento de ${amountNum} USD processado!`, {
-        description: `${kzAmount.toLocaleString('pt-PT')} KZ levantados via ${methodLabel}.`,
+        description: `${kzAmount.toLocaleString('pt-PT')} KZ levantados via ${methodLabel}. Processa em 24-48h.`,
       });
     }
     setAmount('');
     setMethod(null);
+    setComprovativo(null);
   };
 
   return (
@@ -478,6 +533,61 @@ function PaymentSection({ coins, addCoins }: { coins: number; addCoins: (n: numb
           )}
         </div>
 
+        {/* Upload de comprovativo (apenas Binance/PIX/Express em depósito) */}
+        {needsComprovativo && (
+          <div>
+            <p className="text-[11px] text-muted-foreground mb-1.5 uppercase tracking-wider font-medium flex items-center gap-1">
+              <Lock className="w-3 h-3" />
+              Comprovativo de pagamento (obrigatório)
+            </p>
+            <label className="block">
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                onChange={handleFile}
+                className="hidden"
+              />
+              <div className={cn(
+                'border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all',
+                comprovativo
+                  ? 'border-p1/40 bg-p1/5'
+                  : 'border-border hover:border-border/80 hover:bg-surface-2',
+              )}>
+                {comprovativo ? (
+                  <div className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-p1 shrink-0" />
+                    <span className="text-xs text-foreground truncate flex-1 text-left">{comprovativo.name}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); setComprovativo(null); }}
+                      className="text-[10px] text-p2 hover:underline"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-1">
+                    <Lock className="w-5 h-5 text-muted-foreground/50" />
+                    <span className="text-xs text-muted-foreground">Toque para enviar o comprovativo</span>
+                    <span className="text-[9px] text-muted-foreground/60">PNG, JPG ou PDF (máx 5MB)</span>
+                  </div>
+                )}
+              </div>
+            </label>
+            <p className="text-[10px] text-muted-foreground/70 mt-1.5 leading-relaxed">
+              ⏱️ O depósito será verificado pelo admin em até <strong>6 horas</strong>. Só após aprovação é creditado na sua conta.
+            </p>
+          </div>
+        )}
+
+        {/* Aviso VISA instantâneo */}
+        {method === 'visa' && mode === 'deposit' && (
+          <div className="flex items-center gap-1.5 text-xs text-p1">
+            <Check className="w-3.5 h-3.5" />
+            <span>VISA: depósito instantâneo (sem comprovativo).</span>
+          </div>
+        )}
+
         {/* Botão de ação */}
         <GameButton
           variant={mode === 'deposit' ? 'p1' : 'p2'}
@@ -522,8 +632,81 @@ function PaymentSection({ coins, addCoins }: { coins: number; addCoins: (n: numb
       <div className="flex items-start gap-2 mt-2 px-3">
         <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-muted-foreground" />
         <p className="text-[10px] text-muted-foreground leading-relaxed">
-          Taxa de processamento: 0%. Depósitos são creditados instantaneamente. Levantamentos processam em 24-48h. 1 USD = 1.195 KZ.
+          VISA: instantâneo. Binance/PIX/Express: verificação em até 6h. Levantamentos: 24-48h. 1 USD = 1.195 KZ.
         </p>
+      </div>
+    </div>
+  );
+}
+
+// ============ Transações Pendentes (visão do utilizador) ============
+function PendingTransactions() {
+  const transactions = useTransactions((s) => s.transactions);
+  const pending = transactions.filter((t) => t.status === 'pending');
+  const addCoins = useProfile((s) => s.addCoins);
+
+  // Auto-aprovar transações pendentes após 6h (simulação)
+  const approveTx = useTransactions((s) => s.approveTransaction);
+  useEffect(() => {
+    const now = Date.now();
+    for (const tx of pending) {
+      const elapsed = now - new Date(tx.createdAt).getTime();
+      const sixHours = 6 * 60 * 60 * 1000;
+      if (elapsed >= sixHours) {
+        approveTx(tx.id, 'Aprovado automaticamente (6h)');
+        if (tx.type === 'deposit') {
+          addCoins(tx.amountKZ);
+          toast.success(`Depósito aprovado!`, {
+            description: `${tx.amountKZ.toLocaleString('pt-PT')} KZ creditados via ${METHOD_LABELS[tx.method]}.`,
+          });
+        }
+      }
+    }
+  }, [pending, approveTx, addCoins]);
+
+  if (pending.length === 0) return null;
+
+  return (
+    <div>
+      <SectionTitle title="Transações Pendentes" />
+      <div className="space-y-2">
+        {pending.map((tx) => {
+          const elapsed = Date.now() - new Date(tx.createdAt).getTime();
+          const sixHours = 6 * 60 * 60 * 1000;
+          const remaining = Math.max(0, sixHours - elapsed);
+          const remainingH = Math.floor(remaining / (60 * 60 * 1000));
+          const remainingM = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+          return (
+            <GameCard key={tx.id} className="p-3 border-gold/30">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-gold/15 flex items-center justify-center shrink-0">
+                  <Clock className="w-4 h-4 text-gold" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold">
+                      {tx.type === 'deposit' ? 'Depósito' : 'Levantamento'} • {METHOD_LABELS[tx.method]}
+                    </p>
+                    <span className="text-[10px] text-gold font-semibold">PENDENTE</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    {tx.amountUSD} USD = {tx.amountKZ.toLocaleString('pt-PT')} KZ
+                  </p>
+                  {tx.hasComprovativo && (
+                    <p className="text-[9px] text-p1 flex items-center gap-0.5 mt-0.5">
+                      <Check className="w-2.5 h-2.5" /> Comprovativo enviado
+                    </p>
+                  )}
+                  {tx.type === 'deposit' && tx.method !== 'visa' && (
+                    <p className="text-[9px] text-muted-foreground/70 mt-0.5">
+                      ⏱️ Aprovação em ~{remainingH}h {remainingM}m
+                    </p>
+                  )}
+                </div>
+              </div>
+            </GameCard>
+          );
+        })}
       </div>
     </div>
   );
