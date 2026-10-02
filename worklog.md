@@ -607,3 +607,40 @@ Stage Summary:
 - **SEO**: metadata profissional com Open Graph, Twitter Cards, JSON-LD, robots, alternates.
 - **PWA**: manifest.json para instalação como app.
 - **Lint**: 0 erros. **Testes**: 31/31 passam. **Servidor**: online (200).
+
+---
+Task ID: payments-globe
+Agent: Designer Pro (main)
+Task: Métodos de pagamento (Depósito/Levantamento) + Globo 3D com jogadores online
+
+Work Log:
+- **Sistema de Pagamentos na Wallet** (`WalletScreen.tsx`):
+  - 4 métodos: Binance (Crypto USDT BEP20), PIX (Transferência BR), Express Angola (Transferência AO), VISA (Cartão).
+  - Toggle Depósito / Levantamento com cores distintas (verde/vermelho).
+  - Input de valor em USD com conversão automática para KZ (1 USD = 1.195 KZ).
+  - Validação: mínimo 1 USD, erro visual se abaixo do mínimo.
+  - Levantamento verifica saldo insuficiente.
+  - Atalhos de valor ($1, $5, $10, $50).
+  - Toast de confirmação com detalhes (valor, método, KZ).
+  - Info de taxas (0%, depósitos instantâneos, levantamentos 24-48h).
+  - Ícones com cores da marca de cada método.
+- **Globo 3D SVG animado** (`Globe3D.tsx`):
+  - Projeção ortográfica de lat/lng → x/y no SVG.
+  - 6 continentes como paths SVG (África, Europa, Ásia, Amérias, Oceânia).
+  - Meridianos e paralelos como elipses para efeito 3D.
+  - Gradientes: oceano (radial), sombra 3D, highlight do sol.
+  - Auto-rotação lenta (0.35°/tick) com botão Parar/Girar.
+  - 14 localizações de jogadores (Angola: Luanda, Benguela, Huambo, Cabinda; Portugal: Lisboa, Porto; Brasil: SP, RJ; França: Paris; EUA: NY; Moçambique: Maputo; Cabo Verde: Praia; África do Sul: JHB; Reino Unido: Londres).
+  - Marcadores com tamanho proporcional ao nº de jogadores, pulso animado.
+  - Lista de localizações visíveis com bandeiras e contagens.
+  - Painel de detalhe ao selecionar uma localização (cidade, país, província, jogadores, botão "Desafiar").
+  - Total de 229 jogadores online simulados.
+- **Integração no RoomsScreen**: globo no topo das Salas com título "Jogadores Online", antes dos filtros e lista de salas.
+- **Verificação no browser**:
+  - Globo: visível com continentes, marcadores, auto-rotação, botão Parar, lista de cidades com bandeiras e contagens. VLM confirmou: "circular globe with dark continents and green player location markers, 229 ONLINE".
+  - Pagamentos: Binance selecionado, valor 5 USD inserido, "DEPOSITAR 5 USD" clicado, saldo passou de 5000 → 10975 KZ (5000 + 5×1195 = 10975). Toast de confirmação apareceu.
+
+Stage Summary:
+- **Pagamentos**: 4 métodos (Binance, PIX, Express Angola, VISA), depósito e levantamento, min 1 USD, conversão KZ automática, validações.
+- **Globo 3D**: SVG animado com projeção ortográfica, 14 localizações, auto-rotação, marcadores pulsantes, lista de cidades, painel de detalhe.
+- **Lint**: 0 erros. **Testes**: 31/31 passam. **Servidor**: online (200).

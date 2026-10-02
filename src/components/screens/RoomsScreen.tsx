@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Coins, LogIn, MessageCircle, Send, Globe, Sparkles, Info } from 'lucide-react';
+import { Users, Coins, LogIn, MessageCircle, Send, Globe, Sparkles, Info, MapPin } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { GameButton, GameCard, FilterChip, LevelAvatar, SectionTitle } from '@/components/game/ui';
+import { Globe3D } from '@/components/game/Globe3D';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 type Filter = 'all' | 'online' | 'bets' | 'friends';
@@ -139,9 +141,29 @@ export function RoomsScreen() {
       <div>
         <h1 className="font-display text-3xl tracking-wide">SALAS</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Escolhe uma sala e encontra jogadores.
+          Encontra jogadores de todo o mundo no globo.
         </p>
       </div>
+
+      {/* Globo 3D com jogadores online */}
+      <GameCard className="p-4 flex flex-col items-center">
+        <SectionTitle
+          title="Jogadores Online"
+          action={
+            <span className="flex items-center gap-1 text-[10px] text-p1 font-semibold">
+              <MapPin className="w-3 h-3" />
+              Tempo real
+            </span>
+          }
+        />
+        <Globe3D
+          onLocationClick={(loc) => {
+            toast.info(`Desafio em ${loc.city}, ${loc.country}!`, {
+              description: `${loc.players} jogadores disponíveis. Modo online em breve — joga offline por agora.`,
+            });
+          }}
+        />
+      </GameCard>
 
       {/* Aviso subtil */}
       <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-orange/10 border border-orange/30 text-orange">
