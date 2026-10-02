@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, ChevronRight, Pause, Play } from 'lucide-react';
+import { Users, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// ============ Dados de jogadores online ============
 interface PlayerLocation {
   id: string;
   country: string;
@@ -41,21 +40,28 @@ interface GlobeProps {
 
 export function Globe3D({ onLocationClick, className }: GlobeProps) {
   const [selected, setSelected] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState(340);
 
-  // Pulsar
+  // Responsivo: ajustar tamanho do globo ao container
   useEffect(() => {
-    const interval = setInterval(() => setTick((t) => t + 1), 1500);
-    return () => clearInterval(interval);
+    const updateSize = () => {
+      if (!containerRef.current) return;
+      const w = containerRef.current.clientWidth;
+      // Quadrado com margem, max 400, min 260
+      setSize(Math.max(260, Math.min(400, w - 20)));
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
   }, []);
 
   const totalPlayers = PLAYER_LOCATIONS.reduce((s, l) => s + l.players, 0);
 
   return (
-    <div className={cn('flex flex-col items-center', className)}>
+    <div ref={containerRef} className={cn('flex flex-col items-center w-full', className)}>
       {/* Info bar */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-2">
         <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-p1/10 border border-p1/20">
           <span className="relative flex w-2.5 h-2.5">
             <span className="absolute inline-flex w-full h-full rounded-full bg-p1 opacity-60 animate-ping" />
@@ -66,62 +72,31 @@ export function Globe3D({ onLocationClick, className }: GlobeProps) {
         </div>
       </div>
 
-      {/* Globo SVG interativo via iframe */}
+      {/* Globo — responsivo, sem scrollbars */}
       <div
-        className="relative rounded-full overflow-hidden"
-        style={{ width: 340, height: 390 }}
+        className="relative overflow-hidden"
+        style={{ width: size, height: size }}
       >
         <iframe
-          ref={iframeRef}
           src="/globe.svg"
-          className="w-full h-full border-0 pointer-events-auto"
+          className="w-full h-full border-0"
           title="Globo Terrestre"
-          style={{ background: 'transparent' }}
+          style={{ background: 'transparent', overflow: 'hidden' }}
+          scrolling="no"
           loading="eager"
         />
-        {/* Indicador de drag */}
-        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-muted-foreground/50 pointer-events-none">
-          ↔ Arrasta para girar • Duplo clique muda vista
-        </div>
       </div>
 
-      {/* Localizações */}
-      <div className="mt-3 w-full">
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2 text-center font-medium">
-          {PLAYER_LOCATIONS.length} localizações ativas
-        </p>
-        <div className="flex flex-wrap gap-1.5 justify-center max-w-sm mx-auto">
-          {PLAYER_LOCATIONS.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => { setSelected(m.id); onLocationClick?.(m); }}
-              className={cn(
-                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all',
-                selected === m.id
-                  ? 'bg-gold/10 text-gold border border-gold/30 shadow-sm'
-                  : 'bg-surface border border-border text-muted-foreground hover:text-foreground',
-              )}
-            >
-              <span className="text-sm">{m.flag}</span>
-              <span>{m.city}</span>
-              <span className="text-p1 font-bold tabular-nums">{m.players}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Detalhe da localização */}
+      {/* Detalhe da localização selecionada */}
       <AnimatePresence>
         {selected && (() => {
           const loc = PLAYER_LOCATIONS.find((l) => l.id === selected);
           if (!loc) return null;
           return (
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 12 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              exit={{ opacity: 0, y: 10 }}
               className="mt-3 w-full max-w-sm"
             >
               <div className="p-4 rounded-xl bg-surface border border-border shadow-sm">

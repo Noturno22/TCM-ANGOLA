@@ -692,3 +692,35 @@ Stage Summary:
 - **Globo perfeito**: o SVG profissional do utilizador está integrado, totalmente interativo (drag, duplo clique, setas), com continentes detalhados e projeção ortográfica real.
 - **Lint**: 0 erros. **Testes**: 31/31 passam. **Servidor**: online (200).
 - **VLM**: qualidade 9/10.
+
+---
+Task ID: globe-markers-onsurface
+Agent: Designer Pro (main)
+Task: Marcadores no globo, sem texto, sem scrollbars, responsivo
+
+Work Log:
+- **SVG modificado** (`public/globe.svg`):
+  - Removido o rótulo de texto `<text id="rotulo">` e toda a referência a `lab`.
+  - Removido o metadata c2pa (41KB → 36KB).
+  - Tornado responsivo: `width="100%" height="100%"`, viewBox ajustado para `0 0 400 400`.
+  - CSS: `html,body{margin:0;padding:0;overflow:hidden}` — sem scrollbars.
+  - **Marcadores injetados DENTRO da IIFE original** (para aceder a `st`, `render`, `R`, `CX`, `CY`, `D2R`, `NS`):
+    - 14 localizações com [lng, lat, players, cidade].
+    - Função `projMk(lon, lat)` que projeta lat/lng para x/y no SVG usando a rotação atual `st.lon`.
+    - Função `renderMk()` que cria marcadores SVG (círculo de pulso + anel + círculo sólido + label de número) apenas para localizações visíveis (z > 0).
+    - `render` original interceptado: `var _origRender=render; render=function(){_origRender();renderMk();};` — os marcadores atualizam a cada rotação.
+    - Marcadores: verde (#3AA855) para <30 jogadores, dourado (#F0B90B) para >30. Tamanho proporcional.
+- **Globe3D.tsx reescrito**:
+  - Removido texto "X localizações ativas" e lista de tags de cidades abaixo do globo.
+  - Removido indicador "↔ Arrasta para girar".
+  - Responsivo: `useEffect` mede a largura do container e ajusta o tamanho do globo (260-400px).
+  - iframe com `scrolling="no"` e `overflow:hidden`.
+  - Painel de detalhe mantido ao selecionar uma localização.
+- **Verificação VLM**: "Green and yellow dots on the globe. Small numbers (31, 9) near dots. Africa and Europe visible. No text below globe. No scrollbars. Quality: 8-9/10."
+
+Stage Summary:
+- **Marcadores no globo**: 14 localizações com dots verde/dourado + números, que giram com o globo.
+- **Sem texto abaixo**: removido rótulo e lista de cidades.
+- **Sem scrollbars**: CSS overflow:hidden + iframe scrolling="no".
+- **Responsivo**: globo ajusta-se ao container (260-400px).
+- **Lint**: 0 erros. **Testes**: 31/31 passam. **Servidor**: online.
