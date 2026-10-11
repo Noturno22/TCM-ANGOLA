@@ -4,8 +4,8 @@
  * e uma configuração de IA definida.
  */
 
-import type { Difficulty } from '@/lib/ai';
-import type { PlayerId } from '@/lib/engine';
+import type { Difficulty } from '@tira/ai';
+import type { PlayerId } from '@tira/engine';
 
 export interface CampaignLevel {
   id: number;

@@ -17,7 +17,7 @@ import {
 import { useApp } from '@/store/app';
 import { useGame } from '@/store/game';
 import { useSettings } from '@/store/settings';
-import { isGameOver, getLegalMoves, type Square } from '@/lib/engine';
+import { isGameOver, getLegalMoves, type Square } from '@tira/engine';
 import { playSound } from '@/lib/sound';
 import { Board } from '@/components/game/Board';
 import { GameButton, GameCard, LevelAvatar } from '@/components/game/ui';

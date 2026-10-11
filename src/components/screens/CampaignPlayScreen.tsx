@@ -16,7 +16,7 @@ import { useGame } from '@/store/game';
 import { useCampaign } from '@/store/campaign';
 import { useProfile } from '@/store/profile';
 import { getCampaignLevel, type CampaignLevel } from '@/lib/campaign';
-import { isGameOver, type Square } from '@/lib/engine';
+import { isGameOver, type Square } from '@tira/engine';
 import { Board } from '@/components/game/Board';
 import { GameButton, GameCard } from '@/components/game/ui';
 import { playSound } from '@/lib/sound';

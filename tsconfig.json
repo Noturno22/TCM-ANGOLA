@@ -26,6 +26,18 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@tira/engine": [
+        "./packages/engine/src/index.ts"
+      ],
+      "@tira/ai": [
+        "./packages/ai/src/index.ts"
+      ],
+      "@tira/engine/*": [
+        "./packages/engine/src/*"
+      ],
+      "@tira/ai/*": [
+        "./packages/ai/src/*"
       ]
     }
   },
@@ -37,6 +49,7 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "apps"
   ]
 }

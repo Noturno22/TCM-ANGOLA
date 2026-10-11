@@ -23,7 +23,7 @@ import { useApp } from '@/store/app';
 import { useProfile, type MatchRecord } from '@/store/profile';
 import { Board } from '@/components/game/Board';
 import { GameButton, GameCard, ResultBadge } from '@/components/game/ui';
-import { replayFrom } from '@/lib/engine';
+import { replayFrom } from '@tira/engine';
 import { decodeMatch } from '@/lib/share';
 import { cn } from '@/lib/utils';
 

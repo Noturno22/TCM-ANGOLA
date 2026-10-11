@@ -14,8 +14,8 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useApp } from '@/store/app';
-import { createGame, applyMove, getWinningMoves, getLegalMoves, isGameOver, type GameState, type Move } from '@/lib/engine';
-import { chooseMove, type Difficulty } from '@/lib/ai';
+import { createGame, applyMove, getWinningMoves, getLegalMoves, isGameOver, type GameState, type Move } from '@tira/engine';
+import { chooseMove, type Difficulty } from '@tira/ai';
 import { Board } from '@/components/game/Board';
 import { GameButton, GameCard, SectionTitle } from '@/components/game/ui';
 import { playSound } from '@/lib/sound';

@@ -18,7 +18,7 @@ import { useApp } from '@/store/app';
 import { useProfile } from '@/store/profile';
 import { useLightning, type LightningResult } from '@/store/lightning';
 import { PUZZLES, type Puzzle } from '@/lib/puzzles';
-import { getLegalMoves, getWinningMoves, applyMove, type Square, type Move, type Cell, type GameState, DEFAULT_CONFIG } from '@/lib/engine';
+import { getLegalMoves, getWinningMoves, applyMove, type Square, type Move, type Cell, type GameState, DEFAULT_CONFIG } from '@tira/engine';
 import { Board } from '@/components/game/Board';
 import { GameButton, GameCard, LevelAvatar, SectionTitle } from '@/components/game/ui';
 import { playSound } from '@/lib/sound';

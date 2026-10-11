@@ -10,7 +10,7 @@ import {
   type GameState,
   type Move,
   type PlayerId,
-} from '@/lib/engine';
+} from '@tira/engine';
 
 export interface Commentary {
   text: string;

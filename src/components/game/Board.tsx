@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { Cell, Move, PlayerId, Square } from '@/lib/engine';
+import type { Cell, Move, PlayerId, Square } from '@tira/engine';
 import { useSettings } from '@/store/settings';
 import { cn } from '@/lib/utils';
 

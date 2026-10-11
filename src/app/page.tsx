@@ -31,7 +31,7 @@ import { TabBar } from '@/components/game/TabBar';
 import { useMusicSync, useSound, startMusic, playSound } from '@/lib/sound';
 import { useProgression } from '@/store/progression';
 import { toast } from 'sonner';
-import type { Difficulty } from '@/lib/ai';
+import type { Difficulty } from '@tira/ai';
 
 const DIFF_LABELS: Record<Difficulty, string> = {
   easy: 'Fácil',

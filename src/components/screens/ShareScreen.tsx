@@ -16,7 +16,7 @@ import {
 import { useApp } from '@/store/app';
 import { useProfile } from '@/store/profile';
 import { encodeMatch, decodeMatch, describeSharedMatch, type SharedMatch } from '@/lib/share';
-import { replayFrom, isGameOver, type Move } from '@/lib/engine';
+import { replayFrom, isGameOver, type Move } from '@tira/engine';
 import { GameButton, GameCard, SectionTitle } from '@/components/game/ui';
 import { Board } from '@/components/game/Board';
 import { toast } from 'sonner';

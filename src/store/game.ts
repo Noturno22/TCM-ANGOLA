@@ -1,6 +1,6 @@
 /**
  * Store de jogo — gere a partida atual (offline).
- * Usa o motor puro (@/lib/engine) e a IA (@/lib/ai).
+ * Usa o motor puro (@tira/engine) e a IA (@tira/ai).
  */
 import { create } from 'zustand';
 import {
@@ -15,8 +15,8 @@ import {
   type Move,
   type PlayerId,
   type Square,
-} from '@/lib/engine';
-import { chooseMove, type Difficulty } from '@/lib/ai';
+} from '@tira/engine';
+import { chooseMove, type Difficulty } from '@tira/ai';
 import { useProfile, type MatchRecord } from './profile';
 import { playSound } from '@/lib/sound';
 import { setMusicIntensity } from '@/lib/sound';

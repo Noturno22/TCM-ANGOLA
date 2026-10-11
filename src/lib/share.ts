@@ -15,8 +15,8 @@
  * Exemplo: "1VM_02" → modo pve, médio, sem lado, 2 jogadas
  */
 
-import type { Move } from '@/lib/engine';
-import type { Difficulty } from '@/lib/ai';
+import type { Move } from '@tira/engine';
+import type { Difficulty } from '@tira/ai';
 import type { GameMode } from '@/store/game';
 
 export interface SharedMatch {

@@ -19,7 +19,7 @@ import {
 import { useApp } from '@/store/app';
 import { useProfile, xpProgress } from '@/store/profile';
 import { useProgression } from '@/store/progression';
-import type { Difficulty } from '@/lib/ai';
+import type { Difficulty } from '@tira/ai';
 import {
   GameCard,
   GameButton,

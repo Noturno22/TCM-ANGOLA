@@ -9,7 +9,7 @@
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Difficulty } from '@/lib/ai';
+import type { Difficulty } from '@tira/ai';
 
 interface ProgressionStore {
   /** Vitórias por dificuldade (apenas PvE humano) */

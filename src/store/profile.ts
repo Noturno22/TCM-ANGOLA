@@ -7,8 +7,8 @@
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Difficulty } from '@/lib/ai';
-import type { Move } from '@/lib/engine';
+import type { Difficulty } from '@tira/ai';
+import type { Move } from '@tira/engine';
 import { playSound } from '@/lib/sound';
 import { useProgression } from '@/store/progression';
 

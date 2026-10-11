@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { GameButton, GameCard, SectionTitle } from '@/components/game/ui';
-import { WINNING_LINES } from '@/lib/engine';
+import { WINNING_LINES } from '@tira/engine';
 import { cn } from '@/lib/utils';
 
 interface Section {

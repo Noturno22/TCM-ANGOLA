@@ -7,7 +7,7 @@
  * Os puzzles rodam por dia da semana (7 puzzles).
  */
 
-import type { Cell, Square } from '@/lib/engine';
+import type { Cell, Square } from '@tira/engine';
 
 export interface Puzzle {
   id: string;

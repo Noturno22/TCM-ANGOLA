@@ -18,7 +18,7 @@ import {
 import { useApp } from '@/store/app';
 import { Board } from '@/components/game/Board';
 import { GameButton, GameCard } from '@/components/game/ui';
-import { createGame, type Cell, type GameState, type Move, type Square } from '@/lib/engine';
+import { createGame, type Cell, type GameState, type Move, type Square } from '@tira/engine';
 import { cn } from '@/lib/utils';
 
 /** Constrói um estado de jogo manual a partir de um board. */
