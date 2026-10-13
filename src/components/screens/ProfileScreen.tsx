@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import {
   Trophy,
   History,
@@ -17,7 +16,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { useApp } from '@/store/app';
-import { useProfile, xpProgress } from '@/store/profile';
+import { useProfile } from '@/store/profile';
 import { useProgression } from '@/store/progression';
 import type { Difficulty } from '@tira/ai';
 import {
@@ -39,7 +38,6 @@ export function ProfileScreen() {
   const profile = useProfile();
   const [tab, setTab] = useState<Tab>('history');
 
-  const xp = xpProgress(profile.xp, profile.level);
   const winRate =
     profile.totalMatches > 0
       ? Math.round((profile.wins / profile.totalMatches) * 100)

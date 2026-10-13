@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap,
-  Clock,
   Check,
   X,
   SkipForward,
-  Trophy,
   Play,
   RefreshCw,
   ChevronRight,
@@ -20,7 +18,7 @@ import { useLightning, type LightningResult } from '@/store/lightning';
 import { PUZZLES, type Puzzle } from '@/lib/puzzles';
 import { getLegalMoves, getWinningMoves, applyMove, type Square, type Move, type Cell, type GameState, DEFAULT_CONFIG } from '@tira/engine';
 import { Board } from '@/components/game/Board';
-import { GameButton, GameCard, LevelAvatar, SectionTitle } from '@/components/game/ui';
+import { GameButton, GameCard, SectionTitle } from '@/components/game/ui';
 import { playSound } from '@/lib/sound';
 import { cn } from '@/lib/utils';
 

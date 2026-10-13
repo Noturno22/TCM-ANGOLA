@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Eye,
@@ -9,15 +9,12 @@ import {
   SkipForward,
   RefreshCw,
   MessageCircle,
-  Bot,
-  Cpu,
   ChevronRight,
 } from 'lucide-react';
-import { useApp } from '@/store/app';
-import { createGame, applyMove, getWinningMoves, getLegalMoves, isGameOver, type GameState, type Move } from '@tira/engine';
+import { createGame, applyMove, isGameOver, type GameState, type Move } from '@tira/engine';
 import { chooseMove, type Difficulty } from '@tira/ai';
 import { Board } from '@/components/game/Board';
-import { GameButton, GameCard, SectionTitle } from '@/components/game/ui';
+import { GameButton, GameCard } from '@/components/game/ui';
 import { playSound } from '@/lib/sound';
 import { commentOnMove, commentOnStart, type Commentary } from '@/lib/commentary';
 import { cn } from '@/lib/utils';
@@ -31,8 +28,6 @@ interface ChatMessage {
 }
 
 export function WatchScreen() {
-  const navigate = useApp((s) => s.navigate);
-
   const [phase, setPhase] = useState<Phase>('intro');
   const [difficulty1, setDifficulty1] = useState<Difficulty>('medium');
   const [difficulty2, setDifficulty2] = useState<Difficulty>('hard');
@@ -43,7 +38,6 @@ export function WatchScreen() {
   const [playing, setPlaying] = useState(false);
   const [lastMove, setLastMove] = useState<Move | null>(null);
   const msgIdRef = useRef(0);
-  const prevMoveRef = useRef<Move | null>(null);
   const stateRef = useRef<GameState>(state);
   useEffect(() => {
     stateRef.current = state;

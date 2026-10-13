@@ -17,11 +17,11 @@ import {
 import { useApp } from '@/store/app';
 import { useChallenge } from '@/store/challenge';
 import { useProfile } from '@/store/profile';
-import { getTodayPuzzle, getPuzzleByIndex, PUZZLES, type Puzzle } from '@/lib/puzzles';
-import { applyMove, getLegalMoves, getWinningMoves, isGameOver, type Square, type Move, type Cell, type GameState, DEFAULT_CONFIG } from '@tira/engine';
+import { getTodayPuzzle, PUZZLES, type Puzzle } from '@/lib/puzzles';
+import { applyMove, getLegalMoves, getWinningMoves, type Square, type Move, type Cell, type GameState, DEFAULT_CONFIG } from '@tira/engine';
 import { chooseMove } from '@tira/ai';
 import { Board } from '@/components/game/Board';
-import { GameButton, GameCard, LevelAvatar, SectionTitle } from '@/components/game/ui';
+import { GameButton, GameCard, SectionTitle } from '@/components/game/ui';
 import { playSound } from '@/lib/sound';
 import { cn } from '@/lib/utils';
 
@@ -461,7 +461,7 @@ export function ChallengeScreen() {
       <div>
         <SectionTitle title="Todos os desafios" />
         <div className="space-y-2">
-          {PUZZLES.map((p, i) => (
+          {PUZZLES.map((p) => (
             <PuzzleRow
               key={p.id}
               puzzle={p}

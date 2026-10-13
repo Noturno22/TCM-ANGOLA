@@ -16,7 +16,7 @@ import {
 import { useApp } from '@/store/app';
 import { useCampaign } from '@/store/campaign';
 import { CAMPAIGN_LEVELS, TOTAL_CAMPAIGN_LEVELS, type CampaignLevel } from '@/lib/campaign';
-import { GameButton, GameCard, SectionTitle } from '@/components/game/ui';
+import { GameCard } from '@/components/game/ui';
 import { cn } from '@/lib/utils';
 
 export function CampaignScreen() {

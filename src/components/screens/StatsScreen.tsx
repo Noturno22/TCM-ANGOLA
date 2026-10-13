@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, Trophy, Target, Clock, BarChart3, Zap } from 'lucide-react';
 import { useApp } from '@/store/app';
-import { useProfile, xpProgress, type MatchRecord } from '@/store/profile';
+import { useProfile, type MatchRecord } from '@/store/profile';
 import { GameCard, GameButton, SectionTitle } from '@/components/game/ui';
 import { cn } from '@/lib/utils';
 
@@ -13,7 +13,6 @@ export function StatsScreen() {
 
   // Derivar dados para gráficos a partir do histórico de partidas
   const stats = useMemo(() => computeStats(profile.matches), [profile.matches]);
-  const xp = xpProgress(profile.xp, profile.level);
 
   // Se não há partidas, mostrar empty state
   if (profile.matches.length === 0) {
@@ -55,7 +54,7 @@ export function StatsScreen() {
       {/* Gráfico de XP ao longo do tempo */}
       <GameCard className="p-4">
         <SectionTitle title="Progresso de XP" />
-        <XpChart data={stats.xpCurve} totalXp={profile.xp} />
+        <XpChart data={stats.xpCurve} />
         <div className="flex justify-between text-[10px] text-muted-foreground mt-2">
           <span>Início</span>
           <span className="text-gold">{profile.xp.toLocaleString('pt-PT')} XP total</span>
@@ -167,7 +166,7 @@ export function StatsScreen() {
 }
 
 // ============ Gráfico de XP (linha/área SVG) ============
-function XpChart({ data, totalXp }: { data: number[]; totalXp: number }) {
+function XpChart({ data }: { data: number[] }) {
   if (data.length < 2) {
     return (
       <div className="h-32 flex items-center justify-center text-xs text-muted-foreground">

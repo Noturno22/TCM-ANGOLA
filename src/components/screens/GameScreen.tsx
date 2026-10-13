@@ -8,8 +8,6 @@ import {
   Flag,
   MessageCircle,
   Clock,
-  Trophy,
-  Handshake,
   ChevronLeft,
   Undo2,
   Eye,
@@ -20,7 +18,7 @@ import { useSettings } from '@/store/settings';
 import { isGameOver, getLegalMoves, type Square, type Threat } from '@tira/engine';
 import { playSound } from '@/lib/sound';
 import { Board } from '@/components/game/Board';
-import { GameButton, GameCard, LevelAvatar } from '@/components/game/ui';
+import { GameButton, GameCard } from '@/components/game/ui';
 import { Confetti } from '@/components/game/Confetti';
 import {
   AlertDialog,
@@ -90,7 +88,7 @@ export function GameScreen() {
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [state.currentPlayer, state.status, hasClock, mode, humanSide]);
+  }, [state, mode, humanSide, hasClock]);
 
   // Reset relógio quando muda o turno — padrão "adjust state during render"
   const [lastPlayer, setLastPlayer] = useState(state.currentPlayer);
@@ -200,7 +198,6 @@ export function GameScreen() {
         <div className="flex items-stretch gap-3 mb-5">
           <PlayerCard
             label={p1Label}
-            emoji="🟢"
             active={p1Active}
             time={p1Time}
             showClock={hasClock}
@@ -212,7 +209,6 @@ export function GameScreen() {
           </div>
           <PlayerCard
             label={p2Label}
-            emoji="🔴"
             active={p2Active}
             time={p2Time}
             showClock={hasClock}
@@ -390,7 +386,6 @@ export function GameScreen() {
 
 function PlayerCard({
   label,
-  emoji,
   active,
   time,
   showClock,
@@ -398,7 +393,6 @@ function PlayerCard({
   isP1,
 }: {
   label: string;
-  emoji: string;
   active: boolean;
   time: number;
   showClock: boolean;

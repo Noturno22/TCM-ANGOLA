@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Bot, Cpu, ChevronRight, ArrowLeft, BookOpen, Info, HelpCircle, Sparkles } from 'lucide-react';
+import { Users, Bot, Cpu, ChevronRight, BookOpen, Info, HelpCircle, Sparkles } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useGame } from '@/store/game';
 import type { Difficulty } from '@tira/ai';

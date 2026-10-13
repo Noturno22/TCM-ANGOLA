@@ -17,7 +17,6 @@ import {
   Handshake,
   X,
   Info,
-  Share2,
 } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useProfile, type MatchRecord } from '@/store/profile';
@@ -93,7 +92,7 @@ function EmptyReplay({ onGoToProfile }: { onGoToProfile: () => void }) {
   );
 }
 
-function ReplayView({ match, isShared = false }: { match: MatchRecord; isShared?: boolean }) {
+function ReplayView({ match }: { match: MatchRecord; isShared?: boolean }) {
   const navigate = useApp((s) => s.navigate);
   const setReplayMatchId = useApp((s) => s.setReplayMatchId);
 

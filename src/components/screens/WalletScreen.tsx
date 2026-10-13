@@ -15,7 +15,6 @@ import {
   Info,
   CalendarCheck,
   CreditCard,
-  Wallet,
   Bitcoin,
   Zap,
   Banknote,
@@ -358,7 +357,7 @@ function PaymentSection({ coins, addCoins }: { coins: number; addCoins: (n: numb
 
     if (mode === 'deposit') {
       // Criar transação no store
-      const txId = createTransaction({
+      createTransaction({
         type: 'deposit',
         method: method as PaymentMethod,
         amountUSD: amountNum,

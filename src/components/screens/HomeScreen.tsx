@@ -1,10 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Trophy, Zap, X, ChevronRight, Swords, Bot, Users, Crown, Gamepad2, Target, Check, Share2, Eye, Flag } from 'lucide-react';
+import { Trophy, Zap, X, ChevronRight, Bot, Users, Gamepad2, Target, Check, Share2, Eye, Flag } from 'lucide-react';
 import { useState } from 'react';
 import { useApp } from '@/store/app';
-import { useProfile, getSimulatedRankings, xpProgress } from '@/store/profile';
+import { useProfile } from '@/store/profile';
 import { useChallenge } from '@/store/challenge';
 import { getTodayPuzzle } from '@/lib/puzzles';
 import { AdSlot } from '@/components/game/AdSlot';
@@ -22,7 +22,6 @@ export function HomeScreen() {
   const navigate = useApp((s) => s.navigate);
   const profile = useProfile();
   const [showTournamentBanner, setShowTournamentBanner] = useState(true);
-  const xp = xpProgress(profile.xp, profile.level);
 
   const featuredRooms = [
     { name: 'Luanda', players: '32/50', stake: 100, emoji: '🏙️' },
