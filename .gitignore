@@ -67,3 +67,6 @@ server.log
 /.playwright-mcp/
 /run-continuation/
 .omo/run-continuation/
+
+# Supabase CLI temp
+supabase/.temp/
