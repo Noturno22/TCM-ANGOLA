@@ -29,7 +29,9 @@ import {
   createDeposit,
   fetchAccount,
   fetchBalanceMinor,
+  fetchKycRecords,
   fetchLedger,
+  fetchPayouts,
 } from '@/lib/payments/client';
 import {
   MIN_DEPOSIT_MINOR,
@@ -38,10 +40,14 @@ import {
   minorFromAoa,
   newIdempotencyKey,
   type AccountRow,
+  type KycRecordRow,
   type LedgerEntryRow,
   type PaymentProviderId,
+  type PayoutRow,
 } from '@/lib/payments/types';
 import { enabledProvidersForCurrency } from '@/lib/payments/providers';
+import { KycPanel } from '@/components/payments/KycPanel';
+import { PayoutPanel } from '@/components/payments/PayoutPanel';
 import { GameButton, GameCard, SectionTitle } from '@/components/game/ui';
 import { cn } from '@/lib/utils';
 
@@ -58,6 +64,8 @@ export function AoaWalletPanel() {
   const [account, setAccount] = useState<AccountRow | null>(null);
   const [balanceMinor, setBalanceMinor] = useState(0);
   const [ledger, setLedger] = useState<LedgerEntryRow[]>([]);
+  const [kycRecords, setKycRecords] = useState<KycRecordRow[]>([]);
+  const [payouts, setPayouts] = useState<PayoutRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -71,15 +79,18 @@ export function AoaWalletPanel() {
   const refresh = useCallback(async () => {
     if (!user) return;
     try {
-      const acc = await fetchAccount('AOA');
+      const [acc, kyc] = await Promise.all([fetchAccount('AOA'), fetchKycRecords()]);
       setAccount(acc);
+      setKycRecords(kyc);
       if (acc) {
-        const [bal, entries] = await Promise.all([
+        const [bal, entries, ps] = await Promise.all([
           fetchBalanceMinor(acc.id),
           fetchLedger(acc.id, 20),
+          fetchPayouts(acc.id, 20),
         ]);
         setBalanceMinor(bal);
         setLedger(entries);
+        setPayouts(ps);
       }
       setLoadError(null);
     } catch (err) {
@@ -126,6 +137,7 @@ export function AoaWalletPanel() {
       ? `Mínimo ${formatMinor(MIN_DEPOSIT_MINOR)} AOA.`
       : null;
   const canSubmit = Boolean(user) && amountMinor >= MIN_DEPOSIT_MINOR && !submitting && AOA_PROVIDERS.length > 0;
+  const kycApproved = kycRecords.some((r) => r.status === 'approved');
 
   const handleDeposit = async () => {
     if (!canSubmit) return;
@@ -328,24 +340,15 @@ export function AoaWalletPanel() {
         </div>
       </GameCard>
 
-      {/* Levantamento — bloqueado até KYC */}
-      <GameCard className="p-4 mt-3">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-lg bg-surface-2 flex items-center justify-center shrink-0">
-            <ArrowUpRight className="w-5 h-5 text-muted-foreground" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-display text-base tracking-wide">Levantamento</h3>
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
-              <ShieldAlert className="w-3 h-3" />
-              Bloqueado até à verificação de identidade (KYC).
-            </p>
-          </div>
-          <GameButton variant="outline" disabled>
-            Indisponível
-          </GameButton>
-        </div>
-      </GameCard>
+      {/* KYC + Levantamento */}
+      <KycPanel records={kycRecords} onRefresh={refresh} />
+      <PayoutPanel
+        accountId={account?.id ?? null}
+        balanceMinor={balanceMinor}
+        kycApproved={kycApproved}
+        payouts={payouts}
+        onRefresh={refresh}
+      />
 
       {/* Extrato real */}
       <div className="mt-4">
