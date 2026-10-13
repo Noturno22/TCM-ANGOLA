@@ -57,11 +57,19 @@ export function WelcomeScreen() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="w-full space-y-2.5"
         >
-          <GameButton variant="p2" className="w-full h-12 text-base" onClick={() => navigate('home')}>
+          <GameButton
+            variant="p2"
+            className="w-full h-12 text-base"
+            onClick={() => navigate('auth')}
+          >
             <Swords className="w-4 h-4 mr-2" />
             CRIAR CONTA
           </GameButton>
-          <GameButton variant="outline" className="w-full h-12 text-base" onClick={() => navigate('home')}>
+          <GameButton
+            variant="outline"
+            className="w-full h-12 text-base"
+            onClick={() => navigate('auth')}
+          >
             ENTRAR
           </GameButton>
           <button

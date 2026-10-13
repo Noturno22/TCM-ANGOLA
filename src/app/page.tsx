@@ -4,8 +4,10 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '@/store/app';
 import { useSettings } from '@/store/settings';
+import { useAuth } from '@/store/auth';
 import { SplashScreen } from '@/components/screens/SplashScreen';
 import { WelcomeScreen } from '@/components/screens/WelcomeScreen';
+import { AuthScreen } from '@/components/screens/AuthScreen';
 import { HomeScreen } from '@/components/screens/HomeScreen';
 import { OfflineSelectScreen } from '@/components/screens/OfflineSelectScreen';
 import { GameScreen } from '@/components/screens/GameScreen';
@@ -49,6 +51,12 @@ export default function Home() {
   // Sincronizar sons + música com as settings
   useSound();
   useMusicSync();
+
+  // Inicializar a sessão de autenticação (Supabase)
+  const initializeAuth = useAuth((s) => s.initialize);
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
 
   // Notificações de desbloqueio de dificuldades
   const newlyUnlocked = useProgression((s) => s.newlyUnlocked);
@@ -96,7 +104,10 @@ export default function Home() {
 
   // Ecrãs sem header/tabbar (ecrãs full-screen)
   const isFullScreen =
-    screen === 'splash' || screen === 'welcome' || screen === 'game';
+    screen === 'splash' ||
+    screen === 'welcome' ||
+    screen === 'auth' ||
+    screen === 'game';
 
   // Ecrãs que mostram tab bar
   const showTabBar =
@@ -128,6 +139,7 @@ export default function Home() {
           >
             {screen === 'splash' && <SplashScreen />}
             {screen === 'welcome' && <WelcomeScreen />}
+            {screen === 'auth' && <AuthScreen />}
             {screen === 'home' && <HomeScreen />}
             {screen === 'offline-select' && <OfflineSelectScreen />}
             {screen === 'game' && <GameScreen />}

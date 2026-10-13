@@ -7,6 +7,7 @@ import { create } from 'zustand';
 export type Screen =
   | 'splash'
   | 'welcome'
+  | 'auth'
   | 'home'
   | 'offline-select'
   | 'game'

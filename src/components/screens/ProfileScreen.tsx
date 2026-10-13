@@ -14,10 +14,12 @@ import {
   Clock,
   BarChart3,
   Share2,
+  LogOut,
 } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useProfile } from '@/store/profile';
 import { useProgression } from '@/store/progression';
+import { useAuth } from '@/store/auth';
 import type { Difficulty } from '@tira/ai';
 import {
   GameCard,
@@ -36,6 +38,9 @@ export function ProfileScreen() {
   const navigate = useApp((s) => s.navigate);
   const setReplayMatchId = useApp((s) => s.setReplayMatchId);
   const profile = useProfile();
+  const user = useAuth((s) => s.user);
+  const signOut = useAuth((s) => s.signOut);
+  const signingOut = useAuth((s) => s.pending);
   const [tab, setTab] = useState<Tab>('history');
 
   const winRate =
@@ -62,9 +67,11 @@ export function ProfileScreen() {
         <div className="flex flex-col items-center text-center gap-3">
           <LevelAvatar emoji="🦁" level={profile.level} size="lg" isTop={profile.elo > 1500} online />
           <div>
-            <h2 className="font-display text-2xl tracking-wide">Jogador</h2>
+            <h2 className="font-display text-2xl tracking-wide">
+              {user?.email?.split('@')[0] ?? 'Jogador'}
+            </h2>
             <p className="text-xs text-muted-foreground">
-              Nível {profile.level} • Elo {profile.elo}
+              {user ? user.email : `Nível ${profile.level} • Elo ${profile.elo}`}
             </p>
           </div>
           <div className="w-full max-w-xs">
@@ -249,6 +256,19 @@ export function ProfileScreen() {
           </GameButton>
         </GameCard>
       )}
+
+      {/* Sessão / conta */}
+      {user ? (
+        <GameButton
+          variant="outline"
+          className="w-full"
+          disabled={signingOut}
+          onClick={() => signOut()}
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          {signingOut ? 'A sair…' : 'Sair da conta'}
+        </GameButton>
+      ) : null}
 
       {/* Botão de reset (discreto) */}
       {profile.totalMatches > 0 && (
