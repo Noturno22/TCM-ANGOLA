@@ -56,6 +56,39 @@ export async function creditLedger(
   return { ok: true, entry: data as LedgerEntry };
 }
 
+export type DebitResult =
+  | { ok: true; entry: LedgerEntry }
+  | { ok: false; reason: 'duplicate' | 'insufficient_funds' };
+
+/**
+ * Debita uma conta. Devolve `insufficient_funds` quando o saldo não chega
+ * (usado para reservar o valor de um levantamento antes de chamar o PSP).
+ */
+export async function debitLedger(
+  admin: SupabaseClient,
+  params: CreditParams,
+): Promise<DebitResult> {
+  const { data, error } = await admin.rpc('ledger_debit', {
+    p_account_id: params.accountId,
+    p_amount_minor: params.amountMinor,
+    p_reference_type: params.referenceType,
+    p_reference_id: params.referenceId,
+    p_idempotency_key: params.idempotencyKey,
+    p_description: params.description ?? null,
+  });
+
+  if (error) {
+    if (error.code === '23505' || /duplicate key/i.test(error.message)) {
+      return { ok: false, reason: 'duplicate' };
+    }
+    if (error.code === 'P0001' || /insufficient_funds/i.test(error.message)) {
+      return { ok: false, reason: 'insufficient_funds' };
+    }
+    throw error;
+  }
+  return { ok: true, entry: data as LedgerEntry };
+}
+
 /** True se o evento do provider já foi processado. */
 export async function wasWebhookProcessed(
   admin: SupabaseClient,

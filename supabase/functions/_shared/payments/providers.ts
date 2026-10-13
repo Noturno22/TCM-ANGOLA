@@ -8,6 +8,8 @@
 import type {
   CreateCheckoutParams,
   CreateCheckoutResult,
+  CreatePayoutParams,
+  CreatePayoutResult,
   Currency,
   NormalizedEvent,
   PSPProvider,
@@ -47,6 +49,7 @@ const mockProvider: PSPProvider = {
   id: 'mock',
   label: 'Sandbox (teste)',
   supportsCurrency: (c: Currency) => c === 'AOA',
+  supportsPayouts: true,
 
   createCheckout: (params: CreateCheckoutParams): Promise<CreateCheckoutResult> => {
     const expiresAt = new Date(Date.now() + DEFAULT_EXPIRY_MIN * 60_000).toISOString();
@@ -59,6 +62,15 @@ const mockProvider: PSPProvider = {
       checkoutUrl: url.toString(),
       expiresAt,
       status: 'pending',
+    });
+  },
+
+  // Sandbox: aceita o levantamento e devolve "processing" (não move dinheiro).
+  createPayout: (params: CreatePayoutParams): Promise<CreatePayoutResult> => {
+    return Promise.resolve({
+      providerRef: `mock_payout_${params.referenceId}`,
+      status: 'processing',
+      estimatedAt: new Date(Date.now() + 24 * 60 * 60_000).toISOString(),
     });
   },
 
@@ -79,7 +91,14 @@ const mockProvider: PSPProvider = {
       currency?: string;
       paid_at?: string;
     };
-    const allowed = ['payment.paid', 'payment.failed', 'payment.expired', 'refund.completed'];
+    const allowed = [
+      'payment.paid',
+      'payment.failed',
+      'payment.expired',
+      'refund.completed',
+      'payout.paid',
+      'payout.failed',
+    ];
     if (!payload.type || !allowed.includes(payload.type)) throw new Error('unsupported_event');
     if (!payload.event_id || !payload.reference) throw new Error('malformed_event');
 
@@ -104,6 +123,7 @@ function notConfigured(id: string): PSPProvider {
     id: id as PaymentProviderId,
     label: id,
     supportsCurrency: (c: Currency) => c === 'AOA',
+    supportsPayouts: false,
     createCheckout: fail,
     verifyAndParse: fail,
   };
