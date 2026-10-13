@@ -15,7 +15,7 @@ export interface Settings {
   reduceMotion: boolean;
   colorblindMode: boolean;
   vibration: boolean;
-  language: 'pt' | 'en';
+  language: 'pt' | 'en' | 'fr';
   aiThinkingDelay: number; // ms (400-900, spec §6)
 }
 

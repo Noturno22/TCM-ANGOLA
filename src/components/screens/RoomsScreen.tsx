@@ -221,7 +221,7 @@ export function RoomsScreen() {
                     {ROOMS[0].stake} KZ
                   </span>
                 </div>
-                <GameButton variant="gold" size="sm" onClick={() => setSelectedRoom(ROOMS[0])}>
+                <GameButton variant="gold" onClick={() => setSelectedRoom(ROOMS[0])} className="text-xs px-3 h-8">
                   <LogIn className="w-3.5 h-3.5 mr-1" />
                   Entrar
                 </GameButton>
@@ -323,10 +323,10 @@ function RoomCard({ room, onEnter }: { room: Room; onEnter: () => void }) {
 
       <GameButton
         variant="p1"
-        size="sm"
         onClick={onEnter}
         disabled={room.players >= room.capacity}
         aria-label={`Entrar na sala ${room.name}`}
+        className="text-xs px-3 h-8"
       >
         <LogIn className="w-3.5 h-3.5 mr-1" />
         Entrar

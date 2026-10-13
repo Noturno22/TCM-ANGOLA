@@ -178,7 +178,7 @@ export function WalletScreen() {
           </div>
           <GameButton
             variant={bonusClaimed ? 'outline' : 'gold'}
-            size="sm"
+
             onClick={handleClaimBonus}
             disabled={bonusClaimed}
             aria-label="Receber bónus diário"

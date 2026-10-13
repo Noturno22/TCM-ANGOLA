@@ -85,8 +85,7 @@ export function HomeScreen() {
             </div>
             <GameButton
               variant="gold"
-              size="sm"
-              className="shrink-0"
+              className="shrink-0 text-xs px-3 h-8"
               onClick={() => navigate('rooms')}
             >
               PARTICIPE AGORA
@@ -229,7 +228,7 @@ export function HomeScreen() {
                 </div>
                 <p className="text-[11px] text-gold font-medium">Aposta: {room.stake} KZ</p>
               </div>
-              <GameButton variant="p1" size="sm" onClick={() => navigate('rooms')}>
+              <GameButton variant="p1" className="text-xs px-3 h-8" onClick={() => navigate('rooms')}>
                 Entrar
               </GameButton>
             </GameCard>

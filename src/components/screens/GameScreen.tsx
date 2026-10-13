@@ -17,7 +17,7 @@ import {
 import { useApp } from '@/store/app';
 import { useGame } from '@/store/game';
 import { useSettings } from '@/store/settings';
-import { isGameOver, getLegalMoves, type Square } from '@tira/engine';
+import { isGameOver, getLegalMoves, type Square, type Threat } from '@tira/engine';
 import { playSound } from '@/lib/sound';
 import { Board } from '@/components/game/Board';
 import { GameButton, GameCard, LevelAvatar } from '@/components/game/ui';
@@ -286,8 +286,7 @@ export function GameScreen() {
         <div className="grid grid-cols-3 gap-2 max-w-md mx-auto">
           <GameButton
             variant="outline"
-            size="sm"
-            className="h-10"
+            className="h-10 text-xs px-3"
             onClick={undo}
             disabled={moveCount === 0 || mode === 'cvc' || gameOver}
           >
@@ -296,8 +295,7 @@ export function GameScreen() {
           </GameButton>
           <GameButton
             variant="outline"
-            size="sm"
-            className="h-10"
+            className="h-10 text-xs px-3"
             onClick={toggleThreats}
           >
             <Eye className="w-4 h-4 mr-1" />
@@ -305,8 +303,7 @@ export function GameScreen() {
           </GameButton>
           <GameButton
             variant="outline"
-            size="sm"
-            className="h-10"
+            className="h-10 text-xs px-3"
             onClick={restart}
           >
             <RotateCcw className="w-4 h-4 mr-1" />
@@ -317,7 +314,7 @@ export function GameScreen() {
         <div className="grid grid-cols-2 gap-2 max-w-md mx-auto mt-2">
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <GameButton variant="p2" size="sm" className="h-10" disabled={gameOver}>
+              <GameButton variant="p2" className="h-10 text-xs px-3" disabled={gameOver}>
                 <Flag className="w-4 h-4 mr-1" />
                 Desistir
               </GameButton>
@@ -345,7 +342,7 @@ export function GameScreen() {
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <GameButton variant="outline" size="sm" className="h-10">
+              <GameButton variant="outline" className="h-10 text-xs px-3">
                 <LogOut className="w-4 h-4 mr-1" />
                 Sair
               </GameButton>
@@ -586,7 +583,7 @@ function getStatusMessage(
   humanSide: 'P1' | 'P2',
   isAiThinking: boolean,
   showThreats: boolean,
-  currentThreats: { length: number; to: number }[],
+  currentThreats: Threat[],
 ): string {
   if (state.status === 'WIN_P1' || state.status === 'WIN_P2') {
     if (mode === 'pve' || mode === 'practice') {

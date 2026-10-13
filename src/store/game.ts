@@ -109,10 +109,13 @@ export const useGame = create<GameStore>((set, get) => ({
   },
 
   selectSquare: (sq) => {
-    const { state, mode, humanSide } = get();
+    const { state, mode } = get();
     // Só permite selecionar em modo humano
     if (mode === 'cvc') return;
-    if ((mode === 'pve' || mode === 'practice') && state.currentPlayer !== humanSide) return;
+    if (mode === 'pve' || mode === 'practice') {
+      const settings = get();
+      if (state.currentPlayer !== settings.humanSide) return;
+    }
     if (isGameOver(state)) return;
     const piece = state.board[sq - 1];
     if (piece !== state.currentPlayer) return;
@@ -125,10 +128,13 @@ export const useGame = create<GameStore>((set, get) => ({
   },
 
   attemptMove: (to) => {
-    const { state, selectedSquare, mode, humanSide } = get();
+    const { state, selectedSquare, mode } = get();
     if (!selectedSquare) return;
     if (mode === 'cvc') return;
-    if ((mode === 'pve' || mode === 'practice') && state.currentPlayer !== humanSide) return;
+    if (mode === 'pve' || mode === 'practice') {
+      const g = get();
+      if (state.currentPlayer !== g.humanSide) return;
+    }
     if (isGameOver(state)) return;
     const move: Move = { from: selectedSquare, to };
     try {
@@ -166,11 +172,22 @@ export const useGame = create<GameStore>((set, get) => ({
       }
       // Se o jogo continua e é a vez da IA
       if (!isGameOver(newState)) {
-        if ((mode === 'pve' || mode === 'practice') && newState.currentPlayer !== humanSide) {
-          set({ isAiThinking: true });
-          setTimeout(() => get().aiMove(), 500 + Math.random() * 400);
-        } else if (mode === 'cvc') {
-          setTimeout(() => get().aiMove(), 400);
+        const g = get();
+        if (g.mode === 'cvc') {
+          setTimeout(() => g.aiMove(), 400);
+          return;
+        }
+        if (g.mode === 'pve') {
+          if (newState.currentPlayer !== g.humanSide) {
+            set({ isAiThinking: true });
+            setTimeout(() => g.aiMove(), 500 + Math.random() * 400);
+          }
+        }
+        if (g.mode === 'practice') {
+          if (newState.currentPlayer !== g.humanSide) {
+            set({ isAiThinking: true });
+            setTimeout(() => g.aiMove(), 500 + Math.random() * 400);
+          }
         }
       }
     } catch (e) {
