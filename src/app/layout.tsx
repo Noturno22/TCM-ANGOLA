@@ -3,6 +3,7 @@ import { Inter, Bebas_Neue } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -18,7 +19,9 @@ const bebas = Bebas_Neue({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://tira-o-coco-do-meio.vercel.app"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://tira-o-coco-do-meio.vercel.app"
+  ),
   title: {
     default: "Tira o Cocó do Meio — Jogo de Estratégia Angolano",
     template: "%s • Tira o Cocó do Meio",
@@ -150,6 +153,7 @@ export default function RootLayout({
         {children}
         <Toaster />
         <Sonner />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
