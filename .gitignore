@@ -52,3 +52,18 @@ prompt
 server.log
 # Skills directory
 /skills/
+
+# local database (never commit)
+/db/
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# scratch / temporary artifacts
+/download/
+/upload/
+/tool-results/
+/.playwright-mcp/
+/run-continuation/
+.omo/run-continuation/
