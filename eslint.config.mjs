@@ -48,6 +48,7 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "examples/**",
     "skills",
     "apps/**",
+    "supabase/**",
     "download/**",
     "upload/**",
     "tool-results/**",
