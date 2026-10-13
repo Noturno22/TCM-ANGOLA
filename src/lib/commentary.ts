@@ -6,7 +6,6 @@
 import {
   getWinningMoves,
   getThreats,
-  getLegalMoves,
   type GameState,
   type Move,
   type PlayerId,

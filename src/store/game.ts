@@ -8,9 +8,7 @@ import {
   createGame,
   getLegalMoves,
   getThreats,
-  getWinningMoves,
   isGameOver,
-  positionKey,
   type GameState,
   type Move,
   type PlayerId,
@@ -259,7 +257,7 @@ export const useGame = create<GameStore>((set, get) => ({
   },
 
   resign: () => {
-    const { state, mode, humanSide } = get();
+    const { state, humanSide } = get();
     if (isGameOver(state)) return;
     // O humano desiste → adversário ganha
     const winner: PlayerId = humanSide === 'P1' ? 'P2' : 'P1';

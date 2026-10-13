@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useSettings } from '@/store/settings';
-import { setLanguage, getLanguage, t as translate, type Language } from '@/lib/i18n';
+import { setLanguage, t as translate, type Language } from '@/lib/i18n';
 
 /**
  * Hook para usar o sistema de i18n nos componentes React.

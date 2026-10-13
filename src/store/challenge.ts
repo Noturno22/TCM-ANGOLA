@@ -4,7 +4,6 @@
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { TOTAL_PUZZLES } from '@/lib/puzzles';
 
 interface ChallengeStore {
   /** IDs dos puzzles resolvidos */

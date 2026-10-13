@@ -19,7 +19,7 @@ interface CampaignStore {
 
 export const useCampaign = create<CampaignStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       completed: [],
       currentLevel: 1,
       attemptsByLevel: {},
