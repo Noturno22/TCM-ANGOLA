@@ -50,6 +50,17 @@ export function ProfileScreen() {
 
   const unlockedAchievements = profile.achievements.filter((a) => a.unlockedAt);
 
+  // Nome/identificador a mostrar: Google (nome) > email > telefone > genérico.
+  const meta = (user?.user_metadata ?? {}) as { full_name?: string; name?: string };
+  const displayName =
+    meta.full_name?.trim() ||
+    meta.name?.trim() ||
+    user?.email?.split('@')[0] ||
+    user?.phone ||
+    'Jogador';
+  const accountLine =
+    user?.email || user?.phone || `Nível ${profile.level} • Elo ${profile.elo}`;
+
   const handleReplay = (matchId: string) => {
     setReplayMatchId(matchId);
     navigate('replay');
@@ -68,10 +79,10 @@ export function ProfileScreen() {
           <LevelAvatar emoji="🦁" level={profile.level} size="lg" isTop={profile.elo > 1500} online />
           <div>
             <h2 className="font-display text-2xl tracking-wide">
-              {user?.email?.split('@')[0] ?? 'Jogador'}
+              {displayName}
             </h2>
             <p className="text-xs text-muted-foreground">
-              {user ? user.email : `Nível ${profile.level} • Elo ${profile.elo}`}
+              {accountLine}
             </p>
           </div>
           <div className="w-full max-w-xs">
