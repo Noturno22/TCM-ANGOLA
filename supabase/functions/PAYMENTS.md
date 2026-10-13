@@ -1,19 +1,23 @@
 # Pagamentos (carteira AOA)
 
-Slice de dinheiro real: **ledger double-entry append-only** (Postgres) + duas
-Edge Functions. O saldo só muda no servidor, através de RPCs `SECURITY DEFINER`
+Slice de dinheiro real: **ledger double-entry append-only** (Postgres) + Edge
+Functions. O saldo só muda no servidor, através de RPCs `SECURITY DEFINER`
 executáveis apenas por `service_role`.
 
 ## Componentes
 
 | Peça | Caminho |
 |---|---|
-| Schema (tabelas + RLS + RPCs) | `supabase/migrations/0002_payments.sql` |
+| Schema depósito (tabelas + RLS + RPCs) | `supabase/migrations/0002_payments.sql` |
+| Schema KYC/levantamentos (bucket + helper) | `supabase/migrations/0003_kyc_payouts.sql` |
 | Tipos/helpers do cliente | `src/lib/payments/*` |
 | UI da carteira | `src/components/payments/AoaWalletPanel.tsx` |
 | Cria intenção + checkout | `supabase/functions/create-deposit-intent` |
-| Recebe webhook do PSP | `supabase/functions/psp-webhook` |
-| Adaptadores PSP + mock | `supabase/functions/_shared/payments/` |
+| Recebe webhook do PSP (depósito) | `supabase/functions/psp-webhook` |
+| Submete KYC (metadados) | `supabase/functions/submit-kyc` |
+| Pede levantamento | `supabase/functions/request-payout` |
+| Recebe webhook do PSP (levantamento) | `supabase/functions/payout-webhook` |
+| Adaptadores PSP + mock + ledger + kyc | `supabase/functions/_shared/payments/` |
 
 ## Invariantes de segurança (não violar)
 
@@ -22,6 +26,11 @@ executáveis apenas por `service_role`.
 - `ledger_entries` é imutável (sem UPDATE/DELETE nem para `service_role`).
 - Crédito é idempotente por `idempotency_key` (unique) e por `deposit:<intent_id>`.
 - Webhooks verificam assinatura e são idempotentes por `(provider, provider_event_id)`.
+- **Levantamentos exigem KYC aprovado** (`has_approved_kyc`) e reservam os fundos
+  antes de chamar o PSP; falha do PSP é compensada com entrada de reembolso
+  (o ledger nunca é editado — só recebe novas entradas).
+- **Levantamentos estão DESLIGADOS por omissão** (`PAYOUTS_ENABLED=false`). Não
+  ligar antes de resolvido o enquadramento legal (BNA, contrato PSP, KYC/AML).
 
 ## Segredos das funções
 
@@ -29,18 +38,32 @@ executáveis apenas por `service_role`.
 supabase secrets set --project-ref <REF> \
   MOCK_WEBHOOK_SECRET=<segredo-hmac-do-mock> \
   PAYMENTS_DEFAULT_PROVIDER=mock \
-  PAYMENTS_RETURN_URL=http://localhost:3000
+  PAYMENTS_RETURN_URL=http://localhost:3000 \
+  PAYOUTS_ENABLED=false
 ```
 
 ## Deploy
 
 ```bash
 supabase functions deploy create-deposit-intent --project-ref <REF>
-supabase functions deploy psp-webhook --project-ref <REF> --no-verify-jwt
+supabase functions deploy psp-webhook         --project-ref <REF> --no-verify-jwt
+supabase functions deploy submit-kyc          --project-ref <REF>
+supabase functions deploy request-payout      --project-ref <REF>
+supabase functions deploy payout-webhook      --project-ref <REF> --no-verify-jwt
 ```
 
-`psp-webhook` usa `--no-verify-jwt` (o PSP não envia JWT de utilizador; a
-autenticação é a assinatura HMAC do próprio webhook).
+Os `*-webhook` usam `--no-verify-jwt` (o PSP não envia JWT de utilizador; a
+autenticação é a assinatura HMAC do próprio webhook). As restantes exigem JWT.
+
+## Levantamentos (payouts)
+
+Fluxo: o cliente envia documentos para o bucket privado `kyc-documents/<uid>/...`
+(RLS só permite a própria pasta) e chama `submit-kyc` com os caminhos; depois
+`request-payout` valida o pedido, reserva o valor (débito `withdrawal`) e inicia
+o levantamento no PSP. O webhook confirma (`payout.paid`) ou reembolsa
+(`payout.failed`).
+
+Estados: `requested → processing → paid` (ou `failed` / `rejected`).
 
 ## Ativar providers na UI
 
