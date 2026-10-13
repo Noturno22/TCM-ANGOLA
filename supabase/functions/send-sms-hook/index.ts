@@ -1,5 +1,6 @@
-// Supabase Auth "Send SMS" hook -> entrega por WhatsApp (Twilio).
+// Supabase Auth "Send SMS" hook -> entrega por WhatsApp via WhatsApp Cloud API (Meta).
 // Docs: https://supabase.com/docs/guides/auth/auth-hooks/send-sms-hook
+//       https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages
 //
 // Corre como Edge Function (Deno). Não faz parte do build do Next.
 
@@ -58,35 +59,64 @@ async function verifySignature(secret: string, req: Request, payload: string): P
   });
 }
 
-/** Envia o OTP por WhatsApp via Twilio (Messaging API). */
+/**
+ * Envia o OTP por WhatsApp via WhatsApp Cloud API (Meta), sem intermediários.
+ *
+ * Se `WHATSAPP_TEMPLATE_NAME` estiver definido, envia por template (obrigatório para
+ * iniciar conversa fora da janela de 24h — caso normal de OTP). Caso contrário, envia
+ * texto livre (só funciona dentro de uma conversa aberta nas últimas 24h).
+ */
 async function sendWhatsApp(to: string, otp: string): Promise<void> {
-  const sid = Deno.env.get('TWILIO_ACCOUNT_SID');
-  const token = Deno.env.get('TWILIO_AUTH_TOKEN');
-  const from = Deno.env.get('TWILIO_WHATSAPP_FROM');
-  const contentSid = Deno.env.get('TWILIO_CONTENT_SID');
-  if (!sid || !token || !from) {
-    throw new Error('Twilio não configurado (TWILIO_ACCOUNT_SID / AUTH_TOKEN / WHATSAPP_FROM).');
+  const phoneNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID');
+  const accessToken = Deno.env.get('WHATSAPP_ACCESS_TOKEN');
+  const apiVersion = Deno.env.get('WHATSAPP_API_VERSION') ?? 'v21.0';
+  const templateName = Deno.env.get('WHATSAPP_TEMPLATE_NAME');
+  const templateLang = Deno.env.get('WHATSAPP_TEMPLATE_LANG') ?? 'pt_PT';
+  if (!phoneNumberId || !accessToken) {
+    throw new Error(
+      'WhatsApp não configurado (WHATSAPP_PHONE_NUMBER_ID / WHATSAPP_ACCESS_TOKEN).',
+    );
   }
 
-  const body = new URLSearchParams({ From: from, To: `whatsapp:${to}` });
-  if (contentSid) {
-    // Template aprovado pela Meta — obrigatório para iniciar conversa fora da janela de 24h.
-    body.set('ContentSid', contentSid);
-    body.set('ContentVariables', JSON.stringify({ '1': otp }));
-  } else {
-    body.set('Body', `O teu código Tira o Cocó do Meio é ${otp}. Não o partilhes com ninguém.`);
-  }
+  // A Cloud API espera o número só com dígitos (sem "+").
+  const recipient = to.replace(/\D/g, '');
 
-  const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${btoa(`${sid}:${token}`)}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
+  const payload = templateName
+    ? {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: recipient,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: { code: templateLang },
+          components: [{ type: 'body', parameters: [{ type: 'text', text: otp }] }],
+        },
+      }
+    : {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: recipient,
+        type: 'text',
+        text: {
+          preview_url: false,
+          body: `O teu código Tira o Cocó do Meio é ${otp}. Não o partilhes com ninguém.`,
+        },
+      };
+
+  const res = await fetch(
+    `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
     },
-    body: body.toString(),
-  });
+  );
   if (!res.ok) {
-    throw new Error(`Twilio ${res.status}: ${await res.text()}`);
+    throw new Error(`WhatsApp Cloud API ${res.status}: ${await res.text()}`);
   }
 }
 
