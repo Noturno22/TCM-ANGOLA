@@ -41,7 +41,7 @@ export interface SolvedState {
 const DEFAULT_SOLVER_CONFIG: RulesConfig = {
   movementMode: 'free-blocked',
   firstPlayer: 'P1',
-  homeLineCounts: true,
+  homeLineCounts: false,
   repetitionLimit: 3,
   maxPlies: null,
   noMovesOutcome: 'lose',

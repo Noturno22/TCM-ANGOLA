@@ -8,7 +8,7 @@
  *
  * Decisões críticas:
  *  - D1: movementMode 'free-blocked' (omissão)
- *  - D2: vitória só verificada para o jogador que moveu (a posição inicial NÃO é vitória)
+ *  - D2: vitória só verificada para o jogador que moveu; a posição inicial NÃO é vitória; a linha de casa nunca conta (homeLineCounts: false)
  *  - D3: empate por 3ª ocorrência da mesma posição + mesmo jogador
  *  - D4: em free-blocked é impossível não ter movimentos legais
  */
@@ -97,7 +97,7 @@ export const WINNING_LINES: readonly Line[] = [
 export const DEFAULT_CONFIG: RulesConfig = {
   movementMode: 'adjacent-only',
   firstPlayer: 'P1',
-  homeLineCounts: true,
+  homeLineCounts: false,
   repetitionLimit: 3,
   maxPlies: null,
   noMovesOutcome: 'lose',

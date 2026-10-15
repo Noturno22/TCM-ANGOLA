@@ -27,7 +27,7 @@ describe('IA — nunca faz jogada ilegal', () => {
 });
 
 describe('IA — Perfeito vs Perfeito', () => {
-  it('P1 ganha em ≤ 3 plies com regras por omissão', () => {
+  it('P1 ganha em ≤ 5 plies (linha de casa desativada)', () => {
     let state = createGame();
     let plies = 0;
     while (!isGameOver(state) && plies < 10) {
@@ -38,7 +38,7 @@ describe('IA — Perfeito vs Perfeito', () => {
       plies++;
     }
     expect(state.winner).toBe('P1');
-    expect(plies).toBeLessThanOrEqual(3);
+    expect(plies).toBeLessThanOrEqual(5);
   });
 });
 

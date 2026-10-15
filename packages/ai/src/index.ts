@@ -332,6 +332,8 @@ function evaluate(state: GameState): number {
   const oppMoves = getLegalMoves(state, opp).length;
   score += (myMoves - oppMoves) * 2;
   // Linhas abertas (2 peças + casa vazia)
+  // Nota: com homeLineCounts=false, a linha de casa (1-2-3 do P1 / 7-8-9 do P2)
+  // nunca conta como vitória, logo é ignorada aqui também.
   for (const line of [
     [1, 2, 3],
     [4, 5, 6],
@@ -342,6 +344,12 @@ function evaluate(state: GameState): number {
     [1, 5, 9],
     [3, 5, 7],
   ] as const) {
+    if (!state.config.homeLineCounts) {
+      const isHomeLine =
+        (line[0] === 1 && line[1] === 2 && line[2] === 3) ||
+        (line[0] === 7 && line[1] === 8 && line[2] === 9);
+      if (isHomeLine) continue;
+    }
     const cells = line.map((s) => state.board[s - 1]);
     const myCount = cells.filter((c) => c === me).length;
     const oppCount = cells.filter((c) => c === opp).length;

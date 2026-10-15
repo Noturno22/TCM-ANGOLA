@@ -52,16 +52,17 @@ describe('Motor — Armadilha D2 (CRÍTICA)', () => {
     expect(state.currentPlayer).toBe('P2');
   });
 
-  it('P1 pode sair da linha de casa e voltar para ganhar', () => {
+  it('P1 reformar a linha de casa (1-2-3) NÃO é vitória (homeLineCounts=false)', () => {
     const g = createGame();
     let { state } = applyMove(g, { from: 1, to: 4 });
     expect(state.winner).toBeNull();
     state = applyMove(state, { from: 9, to: 6 }).state;
     expect(state.currentPlayer).toBe('P1');
     state = applyMove(state, { from: 4, to: 1 }).state;
-    expect(state.status).toBe('WIN_P1');
-    expect(state.winner).toBe('P1');
-    expect(state.winningLine).toEqual([1, 2, 3]);
+    // P1 está de volta em 1-2-3, mas a linha de casa nunca é vitória
+    expect(state.status).toBe('PLAYER_2_TURN');
+    expect(state.winner).toBeNull();
+    expect(state.winningLine).toBeNull();
   });
 });
 
@@ -155,12 +156,18 @@ describe('Motor — Turnos e fim de jogo', () => {
   });
 
   it('nenhum movimento após vitória', () => {
+    // Vitória numa linha NÃO-casa (4-5-6):
+    // P1 1→4, P2 9→6, P1 2→5, P2 6→9, P1 3→6 → [4,5,6]
     const g = createGame();
     let s = applyMove(g, { from: 1, to: 4 }).state;
     s = applyMove(s, { from: 9, to: 6 }).state;
-    s = applyMove(s, { from: 4, to: 1 }).state;
+    s = applyMove(s, { from: 2, to: 5 }).state;
+    s = applyMove(s, { from: 6, to: 9 }).state;
+    s = applyMove(s, { from: 3, to: 6 }).state;
+    expect(s.status).toBe('WIN_P1');
     expect(s.winner).toBe('P1');
-    expect(() => applyMove(s, { from: 9, to: 4 })).toThrow();
+    expect(s.winningLine).toEqual([4, 5, 6]);
+    expect(() => applyMove(s, { from: 9, to: 6 })).toThrow();
   });
 });
 
@@ -249,18 +256,23 @@ describe('Motor — replay', () => {
     const states = replayFrom(moves);
     expect(states).toHaveLength(4);
     expect(states[0].moveCount).toBe(0);
-    expect(states[3].status).toBe('WIN_P1');
+    // homeLineCounts=false: voltar a 1-2-3 não vence (replay só pára em movimento ilegal)
+    expect(states[3].status).toBe('PLAYER_2_TURN');
+    expect(states[3].winner).toBeNull();
   });
 });
 
 describe('Motor — getWinningMoves e getThreats', () => {
   it('deteta vitória imediata disponível', () => {
+    // Estado: P1 {3,4,5}, P2 {7,8,9}, P1 a jogar — 3→6 completa 4-5-6
     const g = createGame();
     let s = applyMove(g, { from: 1, to: 4 }).state;
     s = applyMove(s, { from: 9, to: 6 }).state;
+    s = applyMove(s, { from: 2, to: 5 }).state;
+    s = applyMove(s, { from: 6, to: 9 }).state;
     const wins = getWinningMoves(s, 'P1');
     expect(wins.length).toBeGreaterThan(0);
-    expect(wins.some((m) => m.from === 4 && m.to === 1)).toBe(true);
+    expect(wins.some((m) => m.from === 3 && m.to === 6)).toBe(true);
   });
 
   it('getThreats retorna array', () => {
@@ -273,5 +285,56 @@ describe('Motor — getWinningMoves e getThreats', () => {
 describe('Motor — Linhas vencedoras', () => {
   it('existem 8 linhas vencedoras', () => {
     expect(WINNING_LINES).toHaveLength(8);
+  });
+});
+
+describe('Motor — Linha de casa nunca vence (homeLineCounts=false)', () => {
+  it('omissão da config: DEFAULT_CONFIG.homeLineCounts é false', () => {
+    expect(DEFAULT_CONFIG.homeLineCounts).toBe(false);
+    expect(createGame().config.homeLineCounts).toBe(false);
+  });
+
+  it('P2 reformar 7-8-9 NÃO é vitória', () => {
+    const g = createGame();
+    let s = applyMove(g, { from: 1, to: 4 }).state;
+    expect(s.winner).toBeNull();
+    s = applyMove(s, { from: 9, to: 6 }).state;
+    s = applyMove(s, { from: 4, to: 1 }).state;
+    s = applyMove(s, { from: 6, to: 9 }).state;
+    expect(s.status).toBe('PLAYER_1_TURN');
+    expect(s.winner).toBeNull();
+    expect(s.winningLine).toBeNull();
+  });
+
+  it('getWinningMoves/getThreats ignoram jogadas que completam a linha de casa', () => {
+    const g = createGame();
+    let s = applyMove(g, { from: 1, to: 4 }).state;
+    s = applyMove(s, { from: 9, to: 6 }).state;
+    expect(getWinningMoves(s, 'P1')).toHaveLength(0);
+    expect(getThreats(s, 'P1')).toHaveLength(0);
+    expect(getWinningMoves(s, 'P2')).toHaveLength(0);
+    expect(getThreats(s, 'P2')).toHaveLength(0);
+  });
+
+  it('completar uma linha não-casa (4-5-6) vence normalmente', () => {
+    const g = createGame();
+    let s = applyMove(g, { from: 1, to: 4 }).state;
+    s = applyMove(s, { from: 9, to: 6 }).state;
+    s = applyMove(s, { from: 2, to: 5 }).state;
+    s = applyMove(s, { from: 6, to: 9 }).state;
+    s = applyMove(s, { from: 3, to: 6 }).state;
+    expect(s.status).toBe('WIN_P1');
+    expect(s.winner).toBe('P1');
+    expect(s.winningLine).toEqual([4, 5, 6]);
+  });
+
+  it('com homeLineCounts:true, reformar a linha de casa ainda vence', () => {
+    const g = createGame({ homeLineCounts: true });
+    let s = applyMove(g, { from: 1, to: 4 }).state;
+    s = applyMove(s, { from: 9, to: 6 }).state;
+    s = applyMove(s, { from: 4, to: 1 }).state;
+    expect(s.status).toBe('WIN_P1');
+    expect(s.winner).toBe('P1');
+    expect(s.winningLine).toEqual([1, 2, 3]);
   });
 });
