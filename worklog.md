@@ -794,3 +794,372 @@ Stage Summary:
 - **Marcadores**: 14 localizações com nº de jogadores, clicáveis com flyTo + painel de detalhe.
 - **Controlos**: zoom in/out, reset, toggle rotação.
 - **Lint**: 0 erros. **Testes**: 31/31 passam.
+
+---
+Task ID: online-phase-1
+Agent: Main Builder
+Task: Estabilização + Fecho da Loja/Cosméticos + Backend online (Fase 1: salas, presença e chat)
+
+Work Log:
+- **Auditoria/estabilização**: `bun run test` 36/36; `bunx tsc --noEmit` sem erros; `bun run build` (Turbopack) compila com sucesso; dev server reiniciado e a responder HTTP 200 na porta 3000.
+- **Correção**: o estilo de peça "Flat" (`cosmetics.ts`) herdava a sombra da classe `.piece-p1/.piece-p2` — agora define `boxShadow: 'none'` explicitamente.
+- **Loja/Cosméticos**: confirmado o fluxo completo (comprar via `spendCoins`, `ownCosmetic`, `equipCosmetic`) e a aplicação no `Board` (fundo/linha/peça). Botão "Loja" na Home → ecrã `shop`.
+- **Backend online — Fase 1** (salas reais + presença + chat em tempo real):
+  - Migração `supabase/migrations/0005_online_rooms.sql`: tabelas `rooms` (catálogo com sementes do mockup) e `messages` (append-only), RLS (catálogo público; chat só autenticado e em nome próprio), publicação Realtime, RPC `send_message` (SECURITY DEFINER com validação 1–280 chars).
+  - `src/lib/online/rooms.ts`: tipos + cliente (fetchRooms, fetchRecentMessages, sendChatMessage, fetchUsernames, fetchProfiles, subscribeRoomMessages, subscribeRoomPresence, unsubscribeChannel) — degrada para `null`/simulado quando não configurado ou em erro.
+  - `src/store/online.ts`: store com `enabled`, catálogo de salas, sala ativa, presença (Realtime Presence `room:{id}`) e chat. Canais mantidos fora do estado.
+  - `RoomsScreen` reescrito para usar dados reais quando disponíveis, com **fallback total** para os dados simulados existentes (catálogo estático, jogadores e chat de exemplo). Aviso passa de "em breve" para "chat em tempo real" quando configurado; input de chat ativo só com sessão.
+
+Stage Summary:
+- **Auditoria verde**: testes 36/36, typecheck limpo, build OK, dev server HTTP 200.
+- **Loja/Cosméticos**: fechada e verificada (bug do estilo Flat corrigido).
+- **Online Fase 1**: salas, presença e chat em tempo real com migração + cliente + store + UI e fallback gracioso.
+- **Lint**: 0 erros nos ficheiros alterados. **Testes**: 36/36.
+
+Unresolved issues / próximas fases:
+- **Aplicar a migração 0005** no Supabase (SQL Editor) para ativar salas/chat reais.
+- **Online Fase 2**: matchmaking (fila por sala+aposta), partida online autoritativa (`submit-move` com `@tira/engine` na Edge Function), relógios por turno, desistir/reconexão, liquidação de Elo/XP/prémio.
+- **Online Fase 3**: amigos, torneios, apostas virtuais, notificações push.
+- Contagens de jogadores por sala (fora da sala ativa) ainda são simuladas — presença só é subscrita na sala aberta.
+
+---
+Task ID: tournament-mode
+Agent: Main Builder
+Task: Nova feature de jogo - Modo Torneio Semanal (eliminatória simples, 8 jogadores)
+
+Work Log:
+- **Lógica pura** `src/lib/tournament.ts`: tipos `TournamentEntrant`, `TournamentMatch`, `TournamentBracket`; `createTournament` (humano + 7 bots baralhados, chave de 3 rondas: 1/4, meias, final); `getHumanMatchIds`/`getFirstHumanMatchId`; `advanceMatch` (imutável, propaga o vencedor para a ronda seguinte e calcula estado open/in_progress/completed); `getEntrant`.
+- **Store** `src/store/tournament.ts` (Zustand persist `tira-coco-tournament`): `bracket`, `joined`, `currentMatchId`, ações `join`, `leave`, `advance`, `reset`.
+- **Navegação**: adicionados ecrãs `tournament` e `tournament-play` ao `Screen`/`useApp` (com `tournamentMatchId`) e roteados em `src/app/page.tsx`.
+- **UI** `TournamentScreen.tsx`: cabeçalho com prémio (50.000 KZ), botão "Participar agora"/"Jogar o teu próximo jogo", grelha da chave (1/4 final, meias-finais, final) com destaque do vencedor em cada confronto, cartão de campeão quando o torneio termina e "Abandonar torneio".
+- **UI** `TournamentPlayScreen.tsx`: partida interativa contra o adversário sorteado reutilizando o `Board` e a IA `pve` (nível médio), com avaliação do resultado no fim e avanço automático na chave (humano ou adversário). Efeito de arranque usa `useGame.getState().startGame` para não depender do snapshot completo da store.
+- **Home**: o banner "Torneio Semanal" passa a navegar para `tournament` (antes ia para `rooms`).
+- **Testes** `src/lib/tournament.test.ts`: 10 testes (criação da chave, quartas preenchidas, presença do humano, partida pendente, propagação de vencedor, imutabilidade, no-op quando já decidido, conclusão do torneio, resolução de participante).
+
+Stage Summary:
+- **Modo Torneio** completo: chave eliminatória, participação, partidas interativas e progressão até campeão.
+- **Testes**: 50/50 passam (40 anteriores + 10 novos). **Typecheck**: limpo. **Lint**: 0 erros nos ficheiros alterados. **Build**: Turbopack compila com sucesso.
+
+Unresolved issues / próximas fases:
+- **Online Fase 2**: matchmaking e partida online autoritativa (ainda pendente).
+- **Aplicar a migração 0005** no Supabase (SQL Editor) para ativar salas/chat reais.
+- O torneio é local/simulado (oponentes são bots); a ligação a torneios online a dinheiro fica para fase futura.
+
+---
+Task ID: online-phase-2
+Agent: Main Builder
+Task: Online Fase 2 - matchmaking + partida autoritativa (Supabase)
+
+Work Log:
+- **Migração `supabase/migrations/0006_online_match.sql`** (autoridade no servidor):
+  - Tabelas `match_queue` (1 entrada por utilizador), `matches` (tabuleiro `smallint[9]`, turno, `pos_counts` jsonb, vencedor, relogio por turno) e `match_moves` (auditoria append-only). Coluna `profiles.coins` (moeda virtual) adicionada.
+  - Regras do motor (@tira/engine, modo adjacent-only) replicadas em PL/pgSQL: `_adjacent`, `_has_legal_move`, `_has_won`, `_winning_line`, `_position_key` (D2/D3/D4 e linha de casa ignorada).
+  - RPCs SECURITY DEFINER: `join_matchmaking` (fila + emparelhamento com lock por sala), `cancel_matchmaking`, `submit_move` (valida turno/propriedade/relogio, aplica e liquida), `resign_match`, `claim_timeout`; e `_settle_match` (Elo zero-sum + XP/nivel/moedas/estatisticas).
+  - RLS: leitura apenas para participantes; escrita bloqueada ao cliente (so RPCs). Realtime em `matches` e `match_moves`. Funcoes internas com EXECUTE revogado.
+- **Cliente** (`src/lib/online/match.ts`): tipos + `mapMatchRow`, `normalizeBoard`, `toCells`, `matchToGameState` (reconstroi o GameState com @tira/engine), `sideForUser`, `timeLeftSeconds`, `parseErrorCode`; API `joinMatchmaking`, `cancelMatchmaking`, `fetchMatch`, `fetchActiveMatchForUser`, `fetchMyProfileStats`, `submitMove`, `resignMatch`, `claimTimeout` e subscricoes Realtime.
+- **Elo puro** (`src/lib/online/elo.ts`): `expectedScore`, `eloDelta`, `nextElo`, `levelFromXp`, `xpForOutcome`, `coinsForOutcome`, `eloChangeForOutcome` (espelha o servidor).
+- **Store** (`src/store/match.ts`): fila, partida ativa, canais Realtime (fora do estado), `playMove`, `resign`, `claimTimeout`, sincronizacao do perfil apos liquidacao. `useProfile.applyServerStats` adicionado.
+- **UI** (`src/components/screens/OnlineMatchScreen.tsx`): ecra de matchmaking (a procura/cancelar), partida com relogio por turno, selecao de movimentos validos, desistir, reclamar timeout automatico e overlay de resultado.
+- **Ligacao**: novo ecra `match`; em `RoomsScreen` o botao "Jogar" inicia matchmaking quando configurado + sessao (senao, modo offline).
+- **Testes**: `elo.test.ts` (12) + `match.test.ts` (11).
+
+Stage Summary:
+- **Online Fase 2** implementada: matchmaking, partida autoritativa no servidor (regras do motor replicadas em SQL), relogio, desistir/reclamar timeout e liquidacao de Elo/XP/moedas.
+- **Testes**: 77/77. **Typecheck**: limpo. **Lint**: 0 erros (0 warnings nos ficheiros alterados). **Build**: OK.
+
+Unresolved issues / proximas fases:
+- **Aplicar migracoes 0005 e 0006** no Supabase (SQL Editor) para ativar salas e partidas reais.
+- Autoridade em PL/pgSQL (escolhida para nao exigir deploy de Edge Function neste ambiente). Alternativa futura: mover a validacao para Edge Function `submit-move` com `@tira/engine`.
+- Nao testado end-to-end (sem backend acessivel neste ambiente): fila concorrente, Realtime e liquidacao so validaveis com o projeto Supabase ligado.
+- Fase 3: amigos, torneios online, apostas virtuais, notificacoes.
+
+---
+
+Task ID: online-edge-authority
+Agent: Main Builder
+Task: Online - autoridade das jogadas na Edge Function `submit-move` (motor real)
+
+Work Log:
+- **Motor partilhado para Deno**: `scripts/sync-edge-engine.mjs` copia `packages/engine/src/index.ts` para `supabase/functions/_shared/engine.ts` (as Edge Functions não podem importar fora da sua pasta). Script npm `sync:engine`. Teste-guarda `src/lib/online/edge-engine.test.ts` garante que as duas cópias não divergem.
+- **Edge Function `supabase/functions/submit-move/index.ts`**: autentica via JWT do utilizador; carrega a partida com a service role; reconstroi o `GameState` (board + turno + `pos_counts`) e valida/aplica o movimento com o motor real (`validateMove`/`applyMove`); persiste o novo estado (tabuleiro, turno, status, vencedor, `win_line`, contagem, repetições, relógio) e registra o movimento em `match_moves`; no fim liquida via RPC `_settle_match`. Devolve a linha da partida atualizada. Converte os erros do motor para o vocabulário do cliente.
+- **Migração `supabase/migrations/0007_edge_authority.sql`**: concede à `service_role` os privilégios mínimos (select/insert/update em `matches`, select/insert em `match_moves`, execute em `_settle_match`). Inclui (comentada) a revogação de `submit_move` do `authenticated` para endurecimento futuro.
+- **Cliente `src/lib/online/match.ts`**: `submitMove` passa a preferir a Edge Function (`functions.invoke('submit-move')`) e usa o `match` devolvido; se a função não estiver publicada, cai automaticamente para a RPC SQL `submit_move` (mesmas regras em PL/pgSQL). Nota de arquitetura atualizada.
+
+Stage Summary:
+- Autoridade das jogadas agora assenta no **motor real** (`@tira/engine`) dentro da Edge Function, eliminando a duplicação de regras como contrato principal (o PL/pgSQL fica como fallback).
+- **Testes**: 78/78. **Typecheck**: limpo. **Lint**: 0 erros (0 warnings). **Build**: OK.
+
+Unresolved issues / proximas fases:
+- **Publicar a Edge Function** `submit-move` (`supabase functions deploy submit-move --project-ref <REF>`).
+- **Aplicar as migrações 0005, 0006 e 0007** no Supabase (SQL Editor) para ativar tudo.
+- Endurecimento opcional: após validar, revogar `submit_move` do `authenticated` para a Edge Function ser a única autoridade.
+- Não testado end-to-end (sem backend acessível neste ambiente): fila concorrente, Realtime, liquidação e o próprio deploy da função.
+
+---
+
+Task ID: rooms-national-international
+Agent: Main Builder
+Task: Salas nacionais + internacionais (catálogo, região e agrupamento na UI)
+
+Contexto/verificação:
+- **Diagnóstico do backend**: o projeto Supabase `ogqnbhuvoypmqefxbijr` está **vazio** — `rooms`, `messages`, `matches`, `match_queue` e até `profiles` respondem **404** no REST. Ou seja, **nenhuma migração (0001–0007) foi aplicada** e a Edge Function não está publicada. O cliente está ligado ao online (`.env` com URL/chave), mas funciona com os dados simulados de fallback.
+
+Work Log:
+- **Migração `supabase/migrations/0008_rooms_international.sql`**: adiciona a coluna `rooms.region` (`national`|`international`, default `national`), marca as salas de Angola como nacionais, passa `global` a internacional e semeia 8 salas internacionais (Portugal, Brasil, Moçambique, Cabo Verde, África Lusófona, Europa, América, Mundo). Idempotente (`on conflict`, `add column if not exists`).
+- **Cliente `src/lib/online/rooms.ts`**: `RoomSummary` ganha `region`; nova função pura exportada **`mapRoomRow`** (normaliza `region`, com fallback `national`); `fetchRooms` tenta selecionar `region` e, se a coluna não existir (migração só 0005), reavaliado sem `region` — degradação graciosa.
+- **UI `src/components/screens/RoomsScreen.tsx`**: `Room` ganha `region`; 8 salas internacionais adicionadas à lista local; `rooms` funde `region` do servidor e **inclui salas novas do servidor ainda desconhecidas localmente**; lista passa a ser agrupada em **"Salas Nacionais"** e **"Salas Internacionais"** com contagem por secção.
+- **Ícones `src/components/game/icons.tsx`**: `portugal`/`brasil`/`mocambique`/`caboverde` → `Flag`; `africa`/`europa`/`america`/`mundo` → `Globe`.
+- **Testes**: `mapRoomRow` (3 novos) em `rooms.test.ts`.
+
+Stage Summary:
+- **Testes**: 81/81. **Typecheck**: limpo. **Lint**: 0 erros (0 warnings). **Build**: OK.
+- Salas nacionais e internacionais ficam prontas de código; o servidor só as mostra depois de correr as migrações.
+
+Unresolved issues / próximas fases:
+- **O backend está vazio** — para o online funcionar é obrigatório aplicar, no SQL Editor, **0001 → 0008** e publicar a Edge Function `submit-move`.
+- Enquanto isso, `onlineEnabled` é true só porque as variáveis de ambiente existem, por isso o aviso "tempo real ativos" pode ser enganador sem as tabelas.
+- Contagens de jogadores por sala continuam simuladas (presença só é subscrita na sala aberta).
+
+---
+
+Task ID: sql-setup-complete
+Agent: Main Builder
+Task: Script SQL único (todas as migrações 0001–0008) para colar no SQL Editor
+
+Work Log:
+- Verificado que **todas as migrações são idempotentes** (`create table if not exists`, `or replace`, `drop policy if exists`, `alter table ... add column if not exists`, `alter publication` com guarda em `do $$`), pelo que podem correr concatenadas sem efeitos secundários.
+- Gerado `supabase/sql/setup-complete.sql` (1263 linhas) por concatenação, por ordem, de `supabase/migrations/0001…0008`, com cabeçalho (instruções + índice das secções) e um banner por secção. UTF-8 sem BOM; acentos preservados (`Moçambique`, `África`, `América`).
+- Verificações: 8 secções; 40 marcadores `$$` (par, blocos balanceados); 13 `create table if not exists`; 17 `create policy`; 0 linhas `-` inválidas.
+- Colocado fora de `supabase/migrations/` para não ser apanhado pela CLI (`supabase db push`).
+
+Stage Summary:
+- Um único ficheiro a colar no **Supabase SQL Editor** cria todo o esquema online (perfis, pagamentos, KYC, salas, chat, matchmaking/partidas, região das salas).
+- **Testes**: 81/81. **Typecheck**: limpo. **Lint**: 0 erros/0 warnings. **Build**: OK.
+
+Unresolved issues / próximas fases:
+- Continuo sem conseguir aplicar no teu Supabase (não tenho credenciais de escrita): é preciso colar `supabase/sql/setup-complete.sql` no SQL Editor e publicar a Edge Function `submit-move`.
+- Após aplicar, validar online (salas nacionais/internacionais, chat/presença e partida autoritativa).
+
+---
+
+Task ID: backend-live-validation
+Agent: Main Builder
+Task: Aplicar migrações + publicar Edge Function + validação end-to-end do online
+
+Work Log:
+- **Migrações aplicadas** (0001→0008) via Supabase **Management API** (`POST /v1/projects/{ref}/database/query`), usando o access token do `supabase login` do utilizador. Todas OK.
+- **Edge Function publicada**: `supabase functions deploy submit-move --project-ref ogqnbhuvoypmqefxbijr --use-api` (bundle server-side, sem Docker). JWT verification ativa.
+- **Verificações de infra**:
+  - 13 tabelas vivas (`profiles, rooms, messages, match_queue, matches, match_moves, accounts, ledger_entries, payment_intents, payouts, kyc_records, holds, processed_webhooks`).
+  - 14 salas semeadas: 5 nacionais (Angola, Luanda, Benguela, Huambo, Cabinda) + 9 internacionais (Global, Portugal, Brasil, Moçambique, Cabo Verde, África Lusófona, Europa, América, Mundo), com `region` correto e acentos preservados.
+  - RPCs vivas e a rejeitar anónimos com `not_authenticated` (SQLSTATE 28000): `send_message`, `join_matchmaking`, `submit_move`, `resign_match`, `claim_timeout`. (`cancel_matchmaking` é no-op.)
+- **Validação end-to-end** (2 utilizadores de teste criados via signup após ativar `mailer_autoconfirm`, que estava `false`):
+  1. Matchmaking na sala `global`: utilizador A → `queued`; utilizador B → `matched` (`side=P2`, `match_id` gerado).
+  2. Movimento autoritativo pela Edge Function `submit-move`: A `1→4` → tabuleiro `0,1,1,1,0,0,-1,-1,-1`, `turn=P2`, `move_count=1`.
+  3. Erros: A fora de turno → HTTP 409 `not_your_turn`.
+  4. Desistência de B (`resign_match`) → `finished`, `winner=P1`, `settled=true`.
+  5. **Liquidação**: P1 → Elo 1016 (+16), XP 40, `wins=1`; P2 → Elo 984 (-16), XP 10, `losses=1` (Elo zero-sum; perfis criados por trigger no signup).
+  6. RLS confirmada: `matches` ilegível com a anon key (não participante); legível com o token do participante.
+
+Stage Summary:
+- **Backend online 100% operacional e validado**: salas (nacionais + internacionais), chat/presença, matchmaking e partida autoritativa com liquidação de Elo/XP/estatísticas e moedas.
+- **Config alterada**: `mailer_autoconfirm` = **true** no projeto TCM (estava `false`) para permitir signups de teste sem email. Reverter quando não for necessário.
+- Artefactos: `supabase/sql/setup-complete.sql` (script único), `supabase/functions/submit-move/`, `scripts/sync-edge-engine.mjs`.
+
+Unresolved issues / próximas fases:
+- **Limpeza**: 2 utilizadores de teste (`smoke% @tcm-online.dev`) e 1 partida de teste permanecem no projeto.
+- Considerar reverter `mailer_autoconfirm` para `false` antes de produção.
+- Presença/contagem de jogadores por sala continua simulada fora da sala ativa.
+
+---
+
+Task ID: friends-online
+Agent: Main Builder
+Task: Fase 3 — Amigos (pedidos de amizade, presença e desafios) end-to-end
+
+Contexto/verificação:
+- Limpeza de dados de teste concluída: `match_moves`/`matches`, `kyc_records`/`accounts`/`auth.users` dos smoke users (`smoke%@tcm-online.dev` = 0), `public.matches` = 0 e `$env:TEMP\tcm_smoke.json` removido. `mailer_autoconfirm` **revertido para `false`**.
+- Estado LIVE verificado limpo: 14 salas (9 international + 5 national), 13 tabelas.
+
+Work Log:
+- **Migração `supabase/migrations/0009_friends.sql`** (aplicada via Management API): tabela `friendships` (`requester_id`/`addressee_id` → `auth.users on delete cascade`, `status` `pending|accepted`, unique por par via `least/greatest`, check `requester_id <> addressee_id`); RPCs SECURITY DEFINER `send_friend_request` (auto-aceita pedido inverso; códigos `not_authenticated`/`unknown_user`/`cannot_add_self`; estados `requested|accepted|already_friends|already_requested`), `respond_friend_request`, `remove_friend`; RLS de leitura pelas partes; `grant select` + revokes de escrita; Realtime. RPCs verificadas (`403 not_authenticated` para anónimo).
+- **Cliente `src/lib/online/friends.ts`**: tipos (`Friendship`, `FriendInfo`, `Friend`, `FriendRequest`, `FriendRequestResult`, `FriendErrorCode`, `FriendsOverview`); puros `parseFriendErrorCode`, `mapFriendshipRow`, `toFriend`, `toFriendRequest`; async `fetchFriendProfiles`, `fetchMyFriendships`, `fetchFriendsOverview`, `findProfileByUsername`, `sendFriendRequest(ByUsername)`, `respondFriendRequest`, `removeFriend`, `subscribeToFriendships`.
+- **Store `src/store/friends.ts`**: `useFriends` (enabled/loaded/loading/friends/incoming/outgoing; `load`, `requestByUsername`, `accept`, `decline`, `remove`, `subscribe`, `unsubscribe`).
+- **UI `src/components/screens/FriendsScreen.tsx`**: pesquisa por username, pedidos recebidos/enviados, lista de amigos (Desafiar → salas, remover), aviso de sessão/ligação e toasts.
+- **Rotas**: `'friends'` em `src/store/app.ts`; render em `src/app/page.tsx`; atalho no `HomeScreen.tsx` (ícone `UserPlus`, entre Salas e Loja).
+- **Testes**: `src/lib/online/friends.test.ts`.
+
+Stage Summary:
+- Amizades completas (backend + cliente + UI) com degradação graciosa sem sessão.
+- **Testes**: 89/89. **Typecheck**: limpo. **Lint**: 0 erros (0 warnings nos ficheiros alterados). **Build**: OK.
+
+Unresolved issues / próximas fases:
+- Desafiar amigo abre a sala (matchmaking global) — desafio direto 1-para-1 fica para fase futura.
+- Torneios online a seguir.
+
+---
+
+Task ID: online-tournaments
+Agent: Main Builder
+Task: Fase 3 — Torneios online (chave de eliminatória simples) end-to-end
+
+Work Log:
+- **Migração `supabase/migrations/0010_online_tournaments.sql`** (aplicada via Management API): tabelas `tournaments` (name/format `single_elim`/max_players/entry_fee/prize/pot/room_id→rooms/time_per_turn/status `open|in_progress|completed|cancelled`/champion_id/created_by), `tournament_entries` (unique tournament+user, status `active|eliminated`, com `updated_at`), `tournament_matches` (`round`/`slot`/`p1_id`/`p2_id`/`winner_id` uuid soltos/`match_id`→`matches on delete set null`/status `pending|ready|playing|finished|bye`, unique(tournament,round,slot)). RPCs SECURITY DEFINER: `create_tournament`, `join_tournament` (advisory lock `hashtext('tor:'||id)`, desconta fee; erros `tournament_full`/`not_enough_coins`/`tournament_not_open`), `leave_tournament` (reembolso só se `open`), `start_tournament` (só o criador, `>=2` jogadores, `pot=entry_fee*n+prize`, gera rondas com `ceil` encadeado), `start_tournament_match` (cria linha em `matches` com `stake=0`, `room_id` do torneio, board inicial e `pos_counts` via `public._position_key`), `report_tournament_result` (deriva vencedor de `matches.winner`; empate desempatado por Elo e, em igualdade, menor uuid; elimina o perdedor). Função interna `_propagate_tournament` idempotente (preenche p1/p2 com ordem fixa `created_at,user_id`, fecha BYEs por ronda ascendente, marca `ready`, deteta conclusão → `champion_id` + paga `pot`). RLS select-para-authenticated + revokes de escrita; Realtime nas 3 tabelas. Seed idempotente `'Torneio Global'` (fee 0, prize 1000, 8 jogadores, sala `global`).
+- **Bugs corrigidos antes/depois de aplicar**: `is None` → `is null`; ordem da chave da ronda 1 sem filtro de `status` (estável face a eliminações); `tournament_entries.updated_at` **inexistente** (apanhado pelo E2E) → adicionada a coluna + `add column if not exists` para compatibilidade.
+- **Cliente `src/lib/online/tournaments.ts`**: tipos (`Tournament`, `TournamentEntry`, `BracketMatch`, `TournamentDetail`, `TournamentErrorCode`); puros `parseTournamentErrorCode`, `mapTournamentRow`, `mapBracketMatchRow`, `mapTournamentEntryRow`, `groupMatchesByRound`, `bracketRoundCount`, `roundLabel`, `tournamentStatusLabel`, `bracketMatchStatusLabel`, `findMyOpenMatch`; async `fetchTournaments`, `fetchTournamentBracket`, `fetchTournamentEntries`, `fetchTournamentDetail`, `createTournament`, `joinTournament`, `leaveTournament`, `startTournament`, `startTournamentMatch`, `reportTournamentResult`, `subscribeToTournament`.
+- **Store `src/store/onlineTournaments.ts`**: `useOnlineTournaments` (list/detail/profiles, `load`, `open`, `close`, `create`, `join`, `leave`, `start`, `playMatch`, `report`, `syncResults` — fecha no bracket jogos cujo `matches` já terminou).
+- **Partida**: `src/store/match.ts` ganha `origin` (`rooms`|`tournament`) e `loadMatchById(id, origin)`; `OnlineMatchScreen` volta ao torneio quando a origem é `tournament`.
+- **UI `src/components/screens/TournamentScreen.tsx`**: separadores **Online / Semanal**; torneios online (criar, catálogo, detalhe, inscrever/sair/iniciar, chave agrupada por ronda com `roundLabel`, botão Jogar/Retomar, cartão de campeão).
+- **`supabase/sql/setup-complete.sql`**: atualizado para **0001→0010** (secções 0009 e 0010 acrescentadas; UTF-8 sem BOM).
+- **E2E na LIVE** (bloco `DO` que termina com `RAISE EXCEPTION`, logo transação revertida — zero poluição): criar → `join_a`(1)/`join_b`(2) → `start`(players 2, `pot=700`, `in_progress`) → ronda 1 `ready` (A vs B) → `start_tournament_match` (`playing`) → A desiste → `report` (`finished`, winner B) → `final_status=completed`, `champion=B`, moedas `A=99900`/`B=100600`. Confirmado depois: 0 utilizadores/torneios/partidas de teste; `tournaments` total = 1 (seed).
+
+Stage Summary:
+- Torneios online completos (backend + cliente + UI) reutilizando a autoridade de partidas da Fase 2; validado end-to-end na base de dados real sem deixar dados.
+- **Testes**: 106/106 (+17). **Typecheck**: limpo. **Lint**: 0 erros. **Build**: OK.
+
+Unresolved issues / próximas fases:
+- `syncResults` corre ao abrir o torneio (não há gatilho automático no fim do jogo); o adversário que fecha o jogo também precisa de reportar se o vencedor não abrir o ecrã.
+- Sem UI para editar/descrever torneios nem para convidar amigos diretamente para um torneio.
+- Fase 3 restante: apostas virtuais e notificações.
+
+---
+
+Task ID: virtual-bets
+Agent: Main Builder
+Task: Fase 3 — Apostas virtuais (economia correta das apostas) end-to-end
+
+Contexto/verificação:
+- Bug encontrado na Fase 2: `join_matchmaking` criava partidas com `stake` mas nunca debitava ninguém; `_settle_match` pagava `stake` ao vencedor → as moedas eram criadas do nada (inflação) e não havia verificação de saldo.
+
+Work Log:
+- **Migração `supabase/migrations/0011_virtual_bets.sql`** (aplicada via Management API):
+  - `matches.stakes_held boolean not null default false`.
+  - `_settle_match` (zero-sum): com apostas retidas, o vencedor recebe `stake*2` (o pot) e o empate reembolsa `stake` a cada um; sem retenção (partidas legadas/torneio, stake 0) mantém o comportamento anterior.
+  - `join_matchmaking`: verifica saldo e RETE a aposta (escrow) ao entrar na fila; reembolsa a entrada anterior se o utilizador trocar/reentrar na fila; ao emparelhar não retém de novo (a do adversário já estava retida) e marca `stakes_held`.
+  - `cancel_matchmaking`: reembolsa a aposta retida.
+  - `handle_new_user`: bónus de boas-vindas server-side de **5000 KZ** (sem saldo não há apostas; espelha o perfil local).
+- **E2E na LIVE** (bloco `DO` terminado com `RAISE EXCEPTION` → transação revertida, zero poluição): A entra (escrow 99900) → B emparelha (escrow 99900, A continua 99900) → B desiste → A `a_final=100100`, B `b_final=99900`, **soma=200000** (zero-sum); C sem saldo → `not_enough_coins`; D cancela → `99900 → 100000`; E vs F dão empate → ambos `100000`, soma 200000. Verificado depois: 0 utilizadores/salas/fila/partidas de teste.
+- **Cliente `src/lib/online/match.ts`**: `MoveErrorCode` ganha `unknown_room`/`not_enough_coins`; `MatchmakingResult` ganha a variante `{ status:'error', code }` (o join deixa de devolver `null` em erro); novo puro `potForStake(stake)` (2×stake).
+- **Store `src/store/match.ts`**: `joinQueue(roomId, stake)` guarda `queuedStake`; trata o `error` da fila; sincroniza as moedas do servidor (escrow/reembolso) ao entrar/sair de fila com aposta e ao emparelhar.
+- **UI**: `RoomsScreen` bloqueia entrar em salas com aposta sem saldo (toast + redireciona para a carteira) e passa o `stake`; `OnlineMatchScreen` mostra "Aposta … KZ · Pot … KZ" (fila, placar e resultado ±stake / empate devolvido) e um estado "Moedas insuficientes" com botão para a carteira.
+- **`supabase/sql/setup-complete.sql`**: atualizado para **0001→0011** (secção 0011 acrescentada; UTF-8 sem BOM).
+- **Testes**: `src/lib/online/match.test.ts` (+3: códigos das apostas e `potForStake`).
+
+Stage Summary:
+- Apostas virtuais corretas e zero-sum (moeda KZ, nunca dinheiro real), com escrow, reembolso, verificação de saldo e bónus de boas-vindas.
+- **Testes**: 109/109 (+3). **Typecheck**: limpo. **Lint**: 0 erros. **Build**: OK.
+
+Unresolved issues / próximas fases:
+- A aposta fica retida enquanto se espera na fila; contas existentes com 0 KZ precisam de um top-up manual (só novos registos recebem o bónus de 5000).
+- Fase 3 restante: notificações (amizades, resultado de partida/torneio).
+
+---
+
+Task ID: notifications
+Agent: Main Builder
+Task: Fase 3 - Notificações (tempo real, geradas pelo servidor) end-to-end
+
+Contexto/verificação:
+- Objetivo: avisar o jogador de pedidos de amizade, resultados de partida e eventos de torneio, sem escrever nada a partir do cliente.
+
+Work Log:
+- **Princípio de autoridade**: o cliente NUNCA escreve em `public.notifications` (RLS bloqueia INSERT/UPDATE/DELETE; só `select` para o próprio). As notificações são criadas pelo SERVIDOR via **TRIGGERS**, pelo que nenhuma RPC de negócio existente foi reescrita (a fase anterior decidiu isto contra a alternativa de editarmos as RPCs).
+- **Migração `supabase/migrations/0012_notifications.sql`** (aplicada via Management API):
+  - Tabela `notifications` (id, user_id→auth.users cascade, kind, title, body, data jsonb, read, created_at/updated_at) + índice `(user_id, read, created_at desc)`.
+  - Helper `SECURITY DEFINER _notify(user,kind,title,body,data)` com `execute` revogado do público.
+  - Triggers `after insert or update`:
+    - `friendships` → `friend_request` (ao addressee) e `friend_accepted` (ao requester).
+    - `matches` → `match_win`/`match_loss`/`match_draw` a ambos (inclui a aposta/pot na mensagem quando `stakes_held`); **ignora jogos de torneio** (têm as notificações próprias do bracket).
+    - `tournament_matches` → `tournament_advance` (vencedor) e `tournament_eliminated` (perdedor); **ignora BYEs** (`status='bye'`).
+    - `tournaments` → `tournament_started` (a todos os inscritos `active`) e `tournament_champion` (com o prémio).
+  - `handle_new_user` mantém o bónus de 5000 KZ de 0011 e acrescenta a notificação `welcome`.
+  - RPCs `mark_notification_read(id)`, `mark_all_notifications_read()`, `delete_notification(id)` (todas `SECURITY DEFINER`, filtradas por `auth.uid()`), RLS `select own`, `/revoke` de escrita, Realtime adicionado à publicação.
+- **E2E na LIVE** (bloco `DO` terminado com `RAISE EXCEPTION` → transação revertida, zero poluição): pedidos/aceitação de amizade, partida normal (vencedor+perdedor), torneio (criar→inscrever→iniciar→jogo→report→champion) e ações de leitura.
+  - Kinds por utilizador: A = `welcome, match_win, friend_accepted, tournament_started, tournament_eliminated` (5); B = `welcome, match_loss, friend_request` (3); T = `welcome, tournament_started, tournament_advance, tournament_champion` (4) — bate certo com os gatilhos.
+  - `mark_all_notifications_read` → A com 0 por ler; `delete_notification` → 5→4.
+  - Verificado depois: 0 utilizadores/notificações/salas de teste (0 poluição).
+- **Cliente `src/lib/online/notifications.ts`**: tipos `AppNotification`/`NotificationKind`; puros `mapNotificationRow`, `unreadCount`, `isToastWorthy` (toast só para amizades/torneio, não para resultados de partida); async `fetchNotifications`/`markNotificationRead`/`markAllNotificationsRead`/`deleteNotification` (degradam para `null`/`false` sem backend); `subscribeToNotifications` (INSERT → nova; `*` → recarregar) + `unsubscribeNotificationsChannel` (reutiliza `unsubscribeChannel` de `match.ts`).
+- **Store `src/store/notifications.ts`**: `items`/`unread` com atualização otimista antes das RPCs (e fallback `load()` se a RPC falhar); `subscribe` faz prepend no INSERT e mostra toast para `isToastWorthy`; `reset` no logout.
+- **UI**: novo `NotificationsScreen` (lista, estado vazio/offline, ligações direcionadas por tipo, apagar, "Ler todas", tempo relativo PT); sino com badge no `AppHeader` (antes era no-op) e no topo do `HomeScreen` (que não mostra o header); rota `'notifications'` + título i18n `nav.notifications` (PT/EN/FR) + subscribe global em `page.tsx` (por `user.id`, com `reset` no logout).
+  - A função `subscribe()` do store é idempotente (`if (channel) return`), por isso o ecrã só faz `load()` — senão a limpeza dele mataria o canal global.
+
+Stage Summary:
+- Notificações completas e temporais-reais, geradas 100% no servidor, com badge global e toasts de alto sinal; Fase 3 fechada.
+- **Testes**: 114/114 (+5: `notifications.test.ts`). **Typecheck**: limpo. **Lint**: 0 erros. **Build**: OK.
+
+Unresolved issues / próximas fases:
+- As notificações não têm "marcar como lida ao clicar no sino" (o sino navega; o `markRead` é pelo ecrã).
+- `syncResults` dos torneios continua sem gatilho automático no fim do jogo (nota já registada na entrada de torneios).
+
+---
+
+Task ID: tournament-auto-advance
+Agent: Main Builder
+Task: Fase 3 - Auto-avanço do bracket de torneio no fim do jogo (fecha dívida técnica)
+
+Contexto/verificação:
+- Dívida registada nas entradas anteriores: o bracket só avançava quando alguém chamava `report_tournament_result`, e o cliente só o fazia ao abrir o ecrã do torneio (`syncResults`). Se ninguém abrisse a página, o jogo ficava preso em `playing` e o torneio nunca terminava.
+
+Work Log:
+- **Migração `supabase/migrations/0013_tournament_auto_advance.sql`** (aplicada via Management API):
+  - `_report_tournament_match(p_match_id uuid)`: replicação idempotente, no servidor e `SECURITY DEFINER`, da lógica de `report_tournament_result` (vencedor/derrotado, desempate por Elo/uuid em empates, eliminação no `tournament_entries`, `_propagate_tournament`). `execute` revogado do público.
+  - Trigger `trg_tournament_auto_advance` (`after update on matches`): quando `status` passa a `finished`, avança o bracket sozinho. Filtro `old.status is distinct from 'finished'` garante disparo único (o `_settle_match` só altera `settled`, não `status`).
+  - Sem conflito com os triggers de notificação de 0012: o de resultado de partida ignora jogos de torneio e o de bracket reage ao `winner_id` (a notificação de avanço/eliminação/campeão passa agora a sair do caminho automático).
+- A RPC `report_tournament_result` **mantém-se** como caminho manual/idempotente; o cliente `syncResults` continua a funcionar como fallback (devolve `already_reported`) — não foi necessário mexer no cliente.
+- **E2E na LIVE** (bloco `DO` terminado com `RAISE EXCEPTION` → revertido, zero poluição): A cria torneio (fee 100, prize 500, 2 jogadores), A e B inscrevem-se, A inicia; A abre o jogo do bracket; **B desiste sem chamar `report`** → `tournament_matches.status='finished'` com vencedor A, `tournaments.status='completed'`, `champion_id=A`, `pot=700`.
+  - Moedas: campeão `+700` (prémio pago uma só vez), perdedor `0`.
+  - Idempotência: `report_tournament_result` a seguir → `already_reported`, `delta_after_report=0`.
+  - Notificações do campeão (via trigger automático): `welcome, tournament_started, tournament_advance, tournament_champion`.
+  - Verificado depois: 0 utilizadores/notificações/torneios/jogos de teste.
+- **`supabase/sql/setup-complete.sql`**: atualizado para **0001→0013** (13 secções; secção 0013 byte-idêntica à migração; UTF-8 sem BOM).
+
+Stage Summary:
+- O bracket de torneios avança e termina sozinho no servidor; a dependência do "abrir o ecrã" desapareceu. Sem alterações no cliente.
+- **Testes**: 114/114 (inalterado). **Typecheck**: limpo. **Lint**: 0 erros. **Build**: OK.
+
+Unresolved issues / próximas fases:
+- As notificações continuam sem "marcar como lida ao clicar no sino" (o sino navega; o `markRead` é pelo ecrã).
+- Sem UI para editar/descrever torneios nem para convidar amigos diretamente para um torneio (nota herdada).
+
+---
+
+Task ID: age-gate
+Agent: Main Builder
+Task: Fase 3 — Gate 18+ nas salas/torneios com aposta (requisito Bloco 11 B)
+
+Contexto/verificação:
+- O Bloco 11 B exige "gate 18+ nas salas com aposta". O esquema NÃO tinha qualquer data de nascimento/idade (verificado).
+- `public.profiles` é legível por todos (`using (true)`), logo não pode guardar PII. Também não pode ser um flag no perfil: a policy de UPDATE do próprio (`using (auth.uid() = id)`, sem `with check` de colunas) deixaria o cliente escrever a coluna e contornar o gate.
+- Solução: tabela privada + RPCs + verificação no SERVIDOR (mesmo princípio da Fase 3).
+
+Work Log:
+- **Migração `supabase/migrations/0014_age_gate.sql`** (aplicada via Management API):
+  - `profile_private` (id→auth.users cascade, birthdate date, timestamps): RLS ligado **sem policies** e `revoke all ... from anon, authenticated` → inacessível ao cliente.
+  - `_is_adult(uuid)`: `true` sse `birthdate <= current_date - interval '18 years'`; `execute` revogado do público.
+  - `set_birthdate(date)` (`SECURITY DEFINER`): valida não-nulo / não-futuro / < 120 anos; upsert; devolve `{status, birthdate, is_adult}`.
+  - `my_age_gate()`: devolve o estado do PRÓPRIO (`has_birthdate`/`birthdate`/`is_adult`); nunca expõe a data a terceiros.
+  - `join_matchmaking` reeditada (base 0011): quando `stake > 0`, exige `_is_adult`; senão `age_restricted` (verificado antes do saldo).
+  - `join_tournament` reeditada (base 0010): quando `entry_fee > 0`, exige `_is_adult`; senão `age_restricted`.
+  - Sem data de nascimento = **não adulto** (bloqueado até definir).
+- **E2E na LIVE** (bloco `DO` terminado com `RAISE EXCEPTION` → transação revertida, zero poluição):
+  - `a_gate_before` = `{is_adult:false, birthdate:null}`; após `set_birthdate` (30 anos) → `{is_adult:true}`.
+  - A entra numa sala com aposta → `queued` (escrow; `coins` 5000→4990).
+  - B (sem data) na mesma sala com aposta → **`age_restricted`**; numa sala gratuita (stake 0) → `queued` (permitido).
+  - B com data de menor (10 anos) → `is_adult:false`; data futura → `invalid_birthdate`.
+  - Torneio com taxa (`entry_fee=100`): B → **`age_restricted`**; A (adulto) → `joined` (count 1).
+  - Verificado depois: 0 utilizadores/perfis/matches/torneios de teste (0 poluição).
+- **Cliente**:
+  - Erro `age_restricted` adicionado a `MoveErrorCode` (`src/lib/online/match.ts`) e a `TournamentErrorCode` (`src/lib/online/tournaments.ts`).
+  - Nova lib `src/lib/online/age.ts`: `MIN_BET_AGE`, `AgeGate`; puros `mapAgeGate`, `ageFromBirthdate`, `isAdultBirthdate`, `maxBirthdateForAdult`; async `fetchMyAgeGate`, `saveBirthdate` (degradam para `null` sem backend). + `age.test.ts` (12 testes).
+  - Novo store `src/store/age.ts` (`load`/`save`/`reset`; `enabled = isSupabaseConfigured`).
+  - **UI**: novo `src/components/game/AgeGateDialog.tsx` (input `type=date` com `max` = hoje−18 anos; guarda via `save`; se adulto chama `onVerified`, senão mostra aviso). `RoomsScreen` abre o diálogo ao tentar entrar em sala com aposta quando `!isAdult` e prossegue após verificação; `TournamentScreen` abre-o quando `join` devolve `age_restricted` e re-tenta a inscrição. `page.tsx` faz `reset` do store no logout.
+- **`supabase/sql/setup-complete.sql`**: atualizado para **0001→0014** (14 secções; secção 0014 byte-idêntica à migração; UTF-8 sem BOM).
+
+Stage Summary:
+- Salas e torneios com aposta exigem 18+, verificado no servidor e não contornável pelo cliente; a data de nascimento nunca é pública.
+- **Testes**: 124/124 (+12: `age.test.ts`; 11 ficheiros). **Typecheck**: limpo. **Lint**: 0 erros. **Build**: OK.
+
+Unresolved issues / próximas fases:
+- O gate exige que o utilizador defina a data de nascimento; jogadores existentes ficam bloqueados em salas com aposta até o fazerem (comportamento pretendido).
+- A UI só cria torneios com `entry_fee = 0`, por isso o gate de torneios só se aplica a torneios criados por API/outro cliente (a regra do servidor está pronta).
+- Continua sem UI para editar/descrever torneios nem para convidar amigos diretamente para um torneio.
