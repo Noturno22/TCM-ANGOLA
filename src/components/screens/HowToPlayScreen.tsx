@@ -55,8 +55,8 @@ const SECTIONS: Section[] = [
     color: 'p1',
     body: (
       <ul className="space-y-1.5">
-        <li>• <span className="text-p1 font-semibold">Jogador 1 (verde ▲)</span> — casas 1, 2, 3 (topo)</li>
-        <li>• <span className="text-p2 font-semibold">Jogador 2 (vermelho ●)</span> — casas 7, 8, 9 (base)</li>
+        <li>• <span className="text-p1 font-semibold">Jogador 1 (verde, triângulo)</span> — casas 1, 2, 3 (topo)</li>
+        <li>• <span className="text-p2 font-semibold">Jogador 2 (vermelho, círculo)</span> — casas 7, 8, 9 (base)</li>
         <li>• Casas 4, 5, 6 começam vazias</li>
       </ul>
     ),

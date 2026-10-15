@@ -12,7 +12,9 @@ import {
   Play,
   ClipboardPaste,
   QrCode,
+  Handshake,
 } from 'lucide-react';
+import { PlayerDot } from '@/components/game/icons';
 import { useApp } from '@/store/app';
 import { useProfile } from '@/store/profile';
 import { encodeMatch, decodeMatch, describeSharedMatch, type SharedMatch } from '@/lib/share';
@@ -148,7 +150,7 @@ export function ShareScreen() {
                     'w-10 h-10 rounded-lg flex items-center justify-center text-lg shrink-0',
                     selectedMatch.result === 'P1' ? 'bg-p1/15' : selectedMatch.result === 'P2' ? 'bg-p2/15' : 'bg-muted',
                   )}>
-                    {selectedMatch.result === 'DRAW' ? '🤝' : selectedMatch.result === 'P1' ? '🟢' : '🔴'}
+                    {selectedMatch.result === 'DRAW' ? <Handshake className="w-5 h-5" /> : <PlayerDot player={selectedMatch.result === 'P1' ? 'P1' : 'P2'} />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">vs {selectedMatch.opponent}</p>
@@ -299,8 +301,8 @@ export function ShareScreen() {
                       importPreview.isOver && importPreview.final.winner === 'P1' ? 'bg-p1/15' :
                       importPreview.isOver && importPreview.final.winner === 'P2' ? 'bg-p2/15' : 'bg-muted',
                     )}>
-                      {importPreview.isOver && importPreview.final.winner === 'P1' ? '🟢' :
-                       importPreview.isOver && importPreview.final.winner === 'P2' ? '🔴' : '🤝'}
+                      {!importPreview.isOver ? <Handshake className="w-5 h-5" /> :
+                       <PlayerDot player={importPreview.final.winner === 'P1' ? 'P1' : 'P2'} />}
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">{importPreview.description}</p>

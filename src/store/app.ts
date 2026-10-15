@@ -18,7 +18,10 @@ export type Screen =
   | 'rankings'
   | 'settings'
   | 'rooms'
+  | 'friends'
+  | 'notifications'
   | 'wallet'
+  | 'shop'
   | 'replay'
   | 'achievements'
   | 'challenge'
@@ -29,7 +32,10 @@ export type Screen =
   | 'lightning'
   | 'watch'
   | 'campaign'
-  | 'campaign-play';
+  | 'campaign-play'
+  | 'tournament'
+  | 'tournament-play'
+  | 'match';
 
 interface AppState {
   screen: Screen;
@@ -40,6 +46,8 @@ interface AppState {
   shareCode: string | null;
   /** ID do nível de campanha a jogar */
   campaignLevelId: number | null;
+  /** ID da partida de torneio atual */
+  tournamentMatchId: string | null;
 
   navigate: (screen: Screen) => void;
   back: () => void;
@@ -47,6 +55,7 @@ interface AppState {
   setReplayMatchId: (id: string | null) => void;
   setShareCode: (code: string | null) => void;
   setCampaignLevelId: (id: number | null) => void;
+  setTournamentMatchId: (id: string | null) => void;
 }
 
 export const useApp = create<AppState>((set, get) => ({
@@ -55,6 +64,7 @@ export const useApp = create<AppState>((set, get) => ({
   replayMatchId: null,
   shareCode: null,
   campaignLevelId: null,
+  tournamentMatchId: null,
 
   navigate: (screen) =>
     set((s) => ({
@@ -80,4 +90,5 @@ export const useApp = create<AppState>((set, get) => ({
   setReplayMatchId: (id) => set({ replayMatchId: id }),
   setShareCode: (code) => set({ shareCode: code }),
   setCampaignLevelId: (id) => set({ campaignLevelId: id }),
+  setTournamentMatchId: (id) => set({ tournamentMatchId: id }),
 }));

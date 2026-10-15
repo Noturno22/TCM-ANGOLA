@@ -10,11 +10,13 @@ import {
   RefreshCw,
   MessageCircle,
   ChevronRight,
+  Handshake,
 } from 'lucide-react';
 import { createGame, applyMove, isGameOver, type GameState, type Move } from '@tira/engine';
 import { chooseMove, type Difficulty } from '@tira/ai';
 import { Board } from '@/components/game/Board';
 import { GameButton, GameCard } from '@/components/game/ui';
+import { PlayerDot, SpeedIcon } from '@/components/game/icons';
 import { playSound } from '@/lib/sound';
 import { commentOnMove, commentOnStart, type Commentary } from '@/lib/commentary';
 import { cn } from '@/lib/utils';
@@ -161,7 +163,7 @@ export function WatchScreen() {
           {/* Configuração das IAs */}
           <div className="space-y-4 text-left mb-6">
             <div>
-              <h3 className="font-display text-lg mb-2 text-center">🟢 Jogador 1</h3>
+              <h3 className="font-display text-lg mb-2 text-center"><PlayerDot player="P1" className="inline-block align-middle mr-1.5" />Jogador 1</h3>
               <div className="grid grid-cols-2 gap-2">
                 {(['easy', 'medium', 'hard', 'perfect'] as Difficulty[]).map((d) => (
                   <button
@@ -179,7 +181,7 @@ export function WatchScreen() {
               </div>
             </div>
             <div>
-              <h3 className="font-display text-lg mb-2 text-center">🔴 Jogador 2</h3>
+              <h3 className="font-display text-lg mb-2 text-center"><PlayerDot player="P2" className="inline-block align-middle mr-1.5" />Jogador 2</h3>
               <div className="grid grid-cols-2 gap-2">
                 {(['easy', 'medium', 'hard', 'perfect'] as Difficulty[]).map((d) => (
                   <button
@@ -200,9 +202,9 @@ export function WatchScreen() {
               <h3 className="font-display text-lg mb-2 text-center">Velocidade</h3>
               <div className="grid grid-cols-3 gap-2">
                 {([
-                  { id: 'slow' as const, label: 'Lenta', emoji: '🐢' },
-                  { id: 'normal' as const, label: 'Normal', emoji: '🚶' },
-                  { id: 'fast' as const, label: 'Rápida', emoji: '⚡' },
+                  { id: 'slow' as const, label: 'Lenta' },
+                  { id: 'normal' as const, label: 'Normal' },
+                  { id: 'fast' as const, label: 'Rápida' },
                 ]).map((s) => (
                   <button
                     key={s.id}
@@ -213,7 +215,7 @@ export function WatchScreen() {
                       speed === s.id ? 'border-gold bg-gold/10' : 'border-border/40',
                     )}
                   >
-                    <div className="text-lg">{s.emoji}</div>
+                    <div className="flex justify-center"><SpeedIcon speed={s.id} className="w-4 h-4" /></div>
                     <div className={cn('text-[10px] font-medium', speed === s.id && 'text-gold')}>{s.label}</div>
                   </button>
                 ))}
@@ -239,10 +241,10 @@ export function WatchScreen() {
       <GameCard className="p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🟢</span>
+            <PlayerDot player="P1" className="w-3 h-3" />
             <span className="text-xs font-semibold">{diffLabel(difficulty1)}</span>
             <span className="text-[10px] text-muted-foreground">vs</span>
-            <span className="text-lg">🔴</span>
+            <PlayerDot player="P2" className="w-3 h-3" />
             <span className="text-xs font-semibold">{diffLabel(difficulty2)}</span>
           </div>
           <div className="flex items-center gap-2">
@@ -280,7 +282,7 @@ export function WatchScreen() {
               >
                 <div className="text-center">
                   <div className="text-5xl mb-2">
-                    {state.winner === 'P1' ? '🟢' : state.winner === 'P2' ? '🔴' : '🤝'}
+                    {state.winner === 'P1' ? <PlayerDot player="P1" className="w-10 h-10 inline-block" /> : state.winner === 'P2' ? <PlayerDot player="P2" className="w-10 h-10 inline-block" /> : <Handshake className="w-10 h-10 inline-block text-gold" />}
                   </div>
                   <h3 className="font-display text-2xl text-gold">
                     {state.winner ? `${state.winner === 'P1' ? 'Jogador 1' : 'Jogador 2'} vence!` : 'Empate!'}

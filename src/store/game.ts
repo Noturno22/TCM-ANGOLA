@@ -16,8 +16,7 @@ import {
 } from '@tira/engine';
 import { chooseMove, type Difficulty } from '@tira/ai';
 import { useProfile, type MatchRecord } from './profile';
-import { playSound } from '@/lib/sound';
-import { setMusicIntensity } from '@/lib/sound';
+import { playSound, setMusicState, type MusicState } from '@/lib/sound';
 
 export type GameMode = 'pvp' | 'pve' | 'cvc' | 'practice';
 
@@ -52,6 +51,7 @@ interface GameStore {
   selectSquare: (sq: Square) => void;
   attemptMove: (to: Square) => void;
   resign: () => void;
+  forfeit: (loser: PlayerId) => void;
   restart: () => void;
   undo: () => void;
   toggleThreats: () => void;
@@ -99,7 +99,7 @@ export const useGame = create<GameStore>((set, get) => ({
       showThreats,
     });
     playSound('start');
-    setMusicIntensity('calm');
+    setMusicState('match');
     // Se a IA joga primeiro (cvc, ou pve com humanSide=P2)
     if (mode === 'cvc' || ((mode === 'pve' || mode === 'practice') && humanSide === 'P2')) {
       setTimeout(() => get().aiMove(), 500);
@@ -152,21 +152,18 @@ export const useGame = create<GameStore>((set, get) => ({
         currentThreats: threats,
       });
       playSound('move');
-      // Sons de fim de jogo / ameaça + intensidade musical dinâmica
+      setMusicState('move');
       if (isGameOver(newState)) {
         if (newState.winner) {
           playSound('win');
-          setMusicIntensity('victory');
+          setMusicState(endMusicStateFor(newState.winner, mode, get().humanSide));
         } else {
           playSound('draw');
-          setMusicIntensity('calm');
+          setMusicState('idle');
         }
         recordCurrentMatch(get(), newState);
       } else if (threats.length > 0) {
         playSound('threat');
-        setMusicIntensity('tension');
-      } else {
-        setMusicIntensity('calm');
       }
       // Se o jogo continua e é a vez da IA
       if (!isGameOver(newState)) {
@@ -231,20 +228,18 @@ export const useGame = create<GameStore>((set, get) => ({
       currentThreats: threats,
     });
     playSound('move');
+    setMusicState('move');
     if (isGameOver(newState)) {
       if (newState.winner) {
         playSound('win');
-        setMusicIntensity('victory');
+        setMusicState(endMusicStateFor(newState.winner, mode, humanSide));
       } else {
         playSound('draw');
-        setMusicIntensity('calm');
+        setMusicState('idle');
       }
       recordCurrentMatch(get(), newState);
     } else if (threats.length > 0) {
       playSound('threat');
-      setMusicIntensity('tension');
-    } else {
-      setMusicIntensity('calm');
     }
     if (!isGameOver(newState)) {
       if (mode === 'cvc') {
@@ -268,7 +263,23 @@ export const useGame = create<GameStore>((set, get) => ({
       winningLine: null,
     };
     set({ state: newState, winner, isAiThinking: false });
+    setMusicState('loss');
     recordCurrentMatch(get(), newState, 'RESIGN');
+  },
+
+  forfeit: (loser) => {
+    const { state, mode, humanSide } = get();
+    if (isGameOver(state)) return;
+    const winner: PlayerId = loser === 'P1' ? 'P2' : 'P1';
+    const newState: GameState = {
+      ...state,
+      status: winner === 'P1' ? 'WIN_P1' : 'WIN_P2',
+      winner,
+      winningLine: null,
+    };
+    set({ state: newState, winner, isAiThinking: false, selectedSquare: null, validTargets: [] });
+    setMusicState(endMusicStateFor(winner, mode, humanSide));
+    recordCurrentMatch(get(), newState, 'FORFEIT');
   },
 
   restart: () => {
@@ -302,6 +313,19 @@ export const useGame = create<GameStore>((set, get) => ({
 
   toggleThreats: () => set((s) => ({ showThreats: !s.showThreats })),
 }));
+
+/**
+ * Estado musical de fim de jogo pela perspetiva do humano.
+ * - pve/practice: 'win' se humanSide venceu, 'loss' caso contrário.
+ * - pvp: o vencedor é sempre um humano local → 'win'.
+ * - cvc: sem jogador humano determinável → 'win' (espetáculo, sem derrota pessoal).
+ */
+function endMusicStateFor(winner: PlayerId, mode: GameMode, humanSide: PlayerId): MusicState {
+  if (mode === 'pve' || mode === 'practice') {
+    return winner === humanSide ? 'win' : 'loss';
+  }
+  return 'win';
+}
 
 /** Regista a partida no perfil. */
 function recordCurrentMatch(

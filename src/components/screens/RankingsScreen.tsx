@@ -27,7 +27,6 @@ export function RankingsScreen() {
       elo: profile.elo,
       level: profile.level,
       wins: profile.wins,
-      avatar: '🦁',
       isMe: true,
     };
     // Filtrar amigos (simulado: 4 primeiros + tu)
@@ -118,7 +117,7 @@ export function RankingsScreen() {
               </div>
               {/* Avatar */}
               <LevelAvatar
-                emoji={entry.avatar}
+                  name={entry.name}
                 level={entry.level}
                 size={isFirst ? 'lg' : 'md'}
                 isTop={isFirst}
@@ -160,7 +159,7 @@ export function RankingsScreen() {
                   <div className="w-7 text-center font-display text-lg text-muted-foreground">
                     {pos}
                   </div>
-                  <LevelAvatar emoji={entry.avatar} level={entry.level} size="sm" />
+                  <LevelAvatar name={entry.name} level={entry.level} size="sm" />
                   <div className="flex-1 min-w-0">
                     <p
                       className={cn(

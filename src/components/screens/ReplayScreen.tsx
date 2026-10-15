@@ -170,8 +170,8 @@ function ReplayView({ match }: { match: MatchRecord; isShared?: boolean }) {
   const modeLabel =
     match.mode === 'pvp' ? '2 Jogadores' : match.mode === 'pve' ? 'vs IA' : 'IA vs IA';
 
-  const resultEmoji =
-    match.result === 'DRAW' ? '🤝' : match.result === 'P1' ? '🟢' : '🔴';
+  const resultNode =
+    match.result === 'DRAW' ? <Handshake className="w-5 h-5 text-gold" /> : <span className={`inline-block w-2.5 h-2.5 rounded-full ${match.result === 'P1' ? 'bg-p1' : 'bg-p2'}`} />;
   const resultLabel =
     match.result === 'DRAW'
       ? 'Empate'
@@ -199,7 +199,7 @@ function ReplayView({ match }: { match: MatchRecord; isShared?: boolean }) {
         </div>
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/30">
           <div className="flex items-center gap-2">
-            <span className="text-lg">{resultEmoji}</span>
+            <span className="text-lg">{resultNode}</span>
             <div>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Resultado</p>
               <p className="text-sm font-semibold">{resultLabel}</p>
@@ -244,7 +244,7 @@ function ReplayView({ match }: { match: MatchRecord; isShared?: boolean }) {
             <span className="text-muted-foreground">Posição inicial</span>
           ) : (
             <span className={current.currentPlayer === 'P1' ? 'text-p1' : 'text-p2'}>
-              {current.currentPlayer === 'P1' ? '🟢' : '🔴'} Vez do Jogador{' '}
+              <span className={`inline-block w-2 h-2 rounded-full align-middle mr-1 ${current.currentPlayer === 'P1' ? 'bg-p1' : 'bg-p2'}`} /> Vez do Jogador{' '}
               {current.currentPlayer === 'P1' ? '1' : '2'}
             </span>
           )}

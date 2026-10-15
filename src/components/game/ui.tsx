@@ -4,19 +4,21 @@ import * as React from 'react';
 import { Button as ShadButton } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Crown, Coins } from 'lucide-react';
+import { Crown, Coins, User, Bot } from 'lucide-react';
 import { playSound } from '@/lib/sound';
 
-// ============ Botões — limpos e sólidos como chess.com ============
-type GameVariant = 'p1' | 'p2' | 'gold' | 'orange' | 'outline' | 'ghost';
+// ============ Botões ============
+// `gold` é o acento de marca. `p1`/`p2` são semânticos das peças do jogo.
+type GameVariant = 'primary' | 'p1' | 'p2' | 'gold' | 'orange' | 'outline' | 'ghost';
 
 const variantClasses: Record<GameVariant, string> = {
-  p1: 'bg-p1 text-white hover:brightness-110 shadow-sm-clean',
-  p2: 'bg-p2 text-white hover:brightness-110 shadow-sm-clean',
-  gold: 'bg-gold text-white hover:brightness-110 shadow-sm-clean',
-  orange: 'bg-orange text-white hover:brightness-110 shadow-sm-clean',
-  outline: 'border border-border bg-surface text-foreground hover:bg-surface-2',
-  ghost: 'bg-transparent text-foreground hover:bg-surface-2',
+  primary: 'bg-gold text-primary-foreground hover:brightness-105 shadow-md-clean',
+  gold: 'bg-gold text-primary-foreground hover:brightness-105 shadow-md-clean',
+  p1: 'bg-p1 text-white hover:brightness-105 shadow-md-clean',
+  p2: 'bg-p2 text-white hover:brightness-105 shadow-md-clean',
+  orange: 'bg-orange text-primary-foreground hover:brightness-105 shadow-md-clean',
+  outline: 'border-2 border-gold/60 bg-surface text-foreground hover:bg-gold/10 hover:border-gold',
+  ghost: 'bg-surface-2 text-foreground hover:bg-gold/15 hover:text-gold border border-border',
 };
 
 type GameButtonProps = React.ComponentProps<'button'> & {
@@ -34,7 +36,7 @@ export function GameButton({
     <ShadButton
       variant="default"
       className={cn(
-        'h-11 px-5 rounded-lg font-semibold text-sm transition-all',
+        'h-12 px-6 rounded-xl font-semibold text-base-sm transition-all',
         'active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none',
         variantClasses[variant],
         className,
@@ -50,7 +52,7 @@ export function GameButton({
   );
 }
 
-// ============ Card — limpo e simples ============
+// ============ Card ============
 export function GameCard({
   className,
   children,
@@ -60,10 +62,10 @@ export function GameCard({
   return (
     <Card
       className={cn(
-        'relative rounded-xl bg-card border border-border overflow-hidden',
-        glow === 'p1' && 'border-p1/30',
-        glow === 'p2' && 'border-p2/30',
-        glow === 'gold' && 'border-gold/30',
+        'relative rounded-2xl bg-card border border-border overflow-hidden',
+        glow === 'p1' && 'border-p1/35',
+        glow === 'p2' && 'border-p2/35',
+        glow === 'gold' && 'border-gold/35',
         className,
       )}
       {...props}
@@ -73,7 +75,7 @@ export function GameCard({
   );
 }
 
-// ============ Pill de saldo — simples e limpo ============
+// ============ Pill de saldo ============
 export function BalancePill({
   coins,
   onClick,
@@ -85,61 +87,83 @@ export function BalancePill({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-1.5 rounded-lg bg-surface-2 border border-border px-2.5 py-1.5 hover:bg-surface transition-colors"
+      className="flex items-center gap-2 rounded-full bg-surface-2 border border-border pl-3 pr-1.5 py-2 hover:bg-surface transition-colors min-h-[44px]"
       aria-label={`Saldo: ${coins} Kwanza. Abrir carteira.`}
     >
       <Coins className="w-4 h-4 text-gold" />
       <span className="text-sm font-semibold text-foreground tabular-nums">
         {coins.toLocaleString('pt-PT')}
       </span>
-      <span className="text-[10px] text-muted-foreground font-medium">KZ</span>
-      <span className="ml-0.5 w-4 h-4 rounded-full bg-gold text-white flex items-center justify-center text-xs font-bold leading-none">
+      <span className="text-[12px] text-muted-foreground font-medium">KZ</span>
+      <span className="ml-0.5 w-6 h-6 rounded-full bg-gold text-primary-foreground flex items-center justify-center text-base font-bold leading-none">
         +
       </span>
     </button>
   );
 }
 
-// ============ Avatar com badge de nível ============
+// ============ Avatar com badge de nível (SVG, sem emoji) ============
 export function LevelAvatar({
-  emoji,
+  name,
+  kind = 'human',
   level,
   size = 'md',
   isTop = false,
   online,
 }: {
-  emoji: string;
+  name?: string;
+  kind?: 'human' | 'ai';
+  /** @deprecated usar `name`. Mantido só para compatibilidade de tipos. */
+  emoji?: string;
   level: number;
   size?: 'sm' | 'md' | 'lg';
   isTop?: boolean;
   online?: boolean;
 }) {
   const dims = {
-    sm: 'w-9 h-9 text-lg',
-    md: 'w-12 h-12 text-2xl',
-    lg: 'w-16 h-16 text-3xl',
+    sm: 'w-9 h-9',
+    md: 'w-12 h-12',
+    lg: 'w-16 h-16',
+  };
+  const icon = {
+    sm: 'w-4 h-4',
+    md: 'w-5 h-5',
+    lg: 'w-7 h-7',
+  };
+  const text = {
+    sm: 'text-sm',
+    md: 'text-lg',
+    lg: 'text-2xl',
   };
   const badge = {
-    sm: 'w-4 h-4 text-[8px]',
-    md: 'w-5 h-5 text-[10px]',
-    lg: 'w-7 h-7 text-xs',
+    sm: 'w-4 h-4 text-[11px]',
+    md: 'w-5 h-5 text-[12px]',
+    lg: 'w-6 h-6 text-sm',
   };
+  const initial = name?.trim().charAt(0).toUpperCase();
+
   return (
     <div className="relative inline-block">
       <div
         className={cn(
-          'rounded-full bg-gradient-to-br from-surface-2 to-surface border-2 border-gold/60 flex items-center justify-center',
+          'rounded-full bg-surface-2 border border-gold/40 flex items-center justify-center text-gold',
           dims[size],
         )}
       >
         {isTop && (
           <Crown className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 text-gold fill-gold" />
         )}
-        <span>{emoji}</span>
+        {kind === 'ai' ? (
+          <Bot className={icon[size]} />
+        ) : initial ? (
+          <span className={cn('font-display leading-none', text[size])}>{initial}</span>
+        ) : (
+          <User className={icon[size]} />
+        )}
       </div>
       <div
         className={cn(
-          'absolute -bottom-1 -right-1 rounded-full bg-gold text-background font-bold flex items-center justify-center border border-background',
+          'absolute -bottom-1 -right-1 rounded-full bg-gold text-primary-foreground font-bold flex items-center justify-center border-2 border-card',
           badge[size],
         )}
       >
@@ -148,7 +172,7 @@ export function LevelAvatar({
       {online !== undefined && (
         <span
           className={cn(
-            'absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-background',
+            'absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-card',
             online ? 'bg-p1' : 'bg-muted-foreground',
           )}
         />
@@ -159,7 +183,6 @@ export function LevelAvatar({
 
 // ============ Barra de XP ============
 export function XpBar({ xp, level }: { xp: number; level: number }) {
-  // XP necessário por nível: 500 + level*250
   const needed = 500 + level * 250;
   let cumulative = 0;
   for (let l = 1; l < level; l++) cumulative += 500 + l * 250;
@@ -167,15 +190,15 @@ export function XpBar({ xp, level }: { xp: number; level: number }) {
   const pct = Math.min(100, (current / needed) * 100);
   return (
     <div className="w-full">
-      <div className="flex justify-between text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">
+      <div className="flex justify-between text-[12px] text-muted-foreground mb-1.5 font-medium">
         <span>Nível {level}</span>
-        <span>
+        <span className="tabular-nums">
           {current.toLocaleString('pt-PT')} / {needed.toLocaleString('pt-PT')} XP
         </span>
       </div>
       <div className="h-2 rounded-full bg-surface-2 overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-p1 to-gold rounded-full transition-all duration-500"
+          className="h-full bg-gold rounded-full transition-all duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -198,10 +221,10 @@ export function FilterChip({
       type="button"
       onClick={onClick}
       className={cn(
-        'px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap',
+        'px-4 py-2.5 rounded-full text-[14px] font-medium transition-all whitespace-nowrap border min-h-[44px]',
         active
-          ? 'bg-gold text-background'
-          : 'bg-surface-2 text-muted-foreground hover:text-foreground',
+          ? 'bg-gold text-primary-foreground border-gold'
+          : 'bg-surface-2 text-muted-foreground border-transparent hover:text-foreground hover:bg-surface',
       )}
     >
       {children}
@@ -214,11 +237,11 @@ export function ResultBadge({ result }: { result: 'P1' | 'P2' | 'DRAW' }) {
   const cfg = {
     P1: { label: 'Vitória', cls: 'bg-p1/15 text-p1 border-p1/30' },
     P2: { label: 'Derrota', cls: 'bg-p2/15 text-p2 border-p2/30' },
-    DRAW: { label: 'Empate', cls: 'bg-muted text-muted-foreground border-border' },
+    DRAW: { label: 'Empate', cls: 'bg-surface-2 text-muted-foreground border-border' },
   };
   const c = cfg[result];
   return (
-    <span className={cn('px-2 py-0.5 rounded text-[10px] font-semibold uppercase border', c.cls)}>
+    <span className={cn('px-2 py-0.5 rounded-md text-[12px] font-semibold border', c.cls)}>
       {c.label}
     </span>
   );
@@ -232,7 +255,7 @@ export function GameLogo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
     lg: 'w-20 h-20',
   };
   return (
-    <div className={cn('relative rounded-lg overflow-hidden border-2 border-gold shadow-sm-clean', dims[size])}>
+    <div className={cn('relative rounded-xl overflow-hidden border border-gold/50 shadow-md-clean', dims[size])}>
       <div className="w-full h-full grid grid-cols-3 grid-rows-3 gap-px bg-border">
         {/* P1 (verde) no topo */}
         <div className="bg-p1" />
@@ -265,7 +288,7 @@ export function SectionTitle({
 }) {
   return (
     <div className="flex items-center justify-between mb-3">
-      <h3 className="font-display text-lg tracking-wide text-foreground">{title}</h3>
+      <h3 className="text-[16px] font-semibold tracking-tight text-foreground">{title}</h3>
       {action}
     </div>
   );

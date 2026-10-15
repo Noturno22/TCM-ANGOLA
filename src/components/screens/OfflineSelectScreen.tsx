@@ -2,20 +2,21 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Bot, Cpu, ChevronRight, BookOpen, Info, HelpCircle, Sparkles } from 'lucide-react';
+import { Users, Bot, Cpu, ChevronRight, BookOpen, Info, HelpCircle, Sparkles, Lock, Check, Zap } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useGame } from '@/store/game';
 import type { Difficulty } from '@tira/ai';
 import type { PlayerId } from '@tira/engine';
 import { useProgression, getUnlockRequirement, getUnlockText } from '@/store/progression';
 import { GameButton, GameCard } from '@/components/game/ui';
+import { DifficultyIcon, TimeModeIcon } from '@/components/game/icons';
 import { cn } from '@/lib/utils';
 
-const DIFFICULTIES: { id: Difficulty; label: string; desc: string; emoji: string; color: string }[] = [
-  { id: 'easy', label: 'Fácil', desc: 'Para iniciantes. A IA comete erros.', emoji: '😊', color: 'text-p1' },
-  { id: 'medium', label: 'Médio', desc: 'Bloqueia ameaças e valoriza o centro.', emoji: '🧠', color: 'text-gold' },
-  { id: 'hard', label: 'Difícil', desc: 'Minimax + Alpha-Beta. Muito forte.', emoji: '💎', color: 'text-orange' },
-  { id: 'perfect', label: 'Perfeito', desc: 'Análise retrógrada. Imbatível.', emoji: '👑', color: 'text-p2' },
+const DIFFICULTIES: { id: Difficulty; label: string; desc: string; color: string }[] = [
+  { id: 'easy', label: 'Fácil', desc: 'Para iniciantes. A IA comete erros.', color: 'text-p1' },
+  { id: 'medium', label: 'Médio', desc: 'Bloqueia ameaças e valoriza o centro.', color: 'text-gold' },
+  { id: 'hard', label: 'Difícil', desc: 'Minimax + Alpha-Beta. Muito forte.', color: 'text-orange' },
+  { id: 'perfect', label: 'Perfeito', desc: 'Análise retrógrada. Imbatível.', color: 'text-p2' },
 ];
 
 export function OfflineSelectScreen() {
@@ -41,10 +42,10 @@ export function OfflineSelectScreen() {
     else if (!isUnlocked(difficulty)) setDifficulty('easy');
   }
 
-  const TIME_OPTIONS: { id: 'normal' | 'quick' | 'none'; label: string; desc: string; seconds: number; emoji: string }[] = [
-    { id: 'normal', label: 'Normal', desc: '45s por jogada', seconds: 45, emoji: '🕐' },
-    { id: 'quick', label: 'Rápida', desc: '15s por jogada — adrenalina!', seconds: 15, emoji: '⚡' },
-    { id: 'none', label: 'Sem relógio', desc: 'Pensa com calma, sem pressão', seconds: 0, emoji: '🧘' },
+  const TIME_OPTIONS: { id: 'normal' | 'quick' | 'none'; label: string; desc: string; seconds: number }[] = [
+    { id: 'normal', label: 'Normal', desc: '45s por jogada', seconds: 45 },
+    { id: 'quick', label: 'Rápida', desc: '15s por jogada — adrenalina!', seconds: 15 },
+    { id: 'none', label: 'Sem relógio', desc: 'Pensa com calma, sem pressão', seconds: 0 },
   ];
 
   const handleStart = () => {
@@ -136,7 +137,11 @@ export function OfflineSelectScreen() {
                     )}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg">{unlocked ? d.emoji : '🔒'}</span>
+                      {unlocked ? (
+                        <DifficultyIcon difficulty={d.id} className={cn('w-5 h-5', d.color)} />
+                      ) : (
+                        <Lock className="w-4 h-4 text-muted-foreground" />
+                      )}
                       <span className={cn('font-semibold text-sm', unlocked ? d.color : 'text-muted-foreground')}>{d.label}</span>
                     </div>
                     {unlocked ? (
@@ -147,8 +152,9 @@ export function OfflineSelectScreen() {
                       </p>
                     )}
                     {unlocked && wins > 0 && (
-                      <span className="absolute top-1 right-1 text-[9px] text-muted-foreground/60">
-                        {wins}✓
+                      <span className="absolute top-1 right-1 flex items-center gap-0.5 text-[9px] text-muted-foreground/60">
+                        {wins}
+                        <Check className="w-3 h-3" />
                       </span>
                     )}
                   </button>
@@ -201,7 +207,7 @@ export function OfflineSelectScreen() {
                       : 'border-border/40 bg-surface/40',
                   )}
                 >
-                  <span className="text-lg mr-2">{d.emoji}</span>
+                  <DifficultyIcon difficulty={d.id} className="inline-block w-5 h-5 mr-2 align-text-bottom" />
                   <span className="text-sm font-semibold">{d.label}</span>
                 </button>
               ))}
@@ -233,7 +239,7 @@ export function OfflineSelectScreen() {
                   )}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-lg">{d.emoji}</span>
+                    <DifficultyIcon difficulty={d.id} className={cn('w-5 h-5', d.color)} />
                     <span className={cn('font-semibold text-sm', d.color)}>{d.label}</span>
                   </div>
                   <p className="text-[10px] text-muted-foreground leading-tight">{d.desc}</p>
@@ -313,7 +319,7 @@ export function OfflineSelectScreen() {
                     : 'border-border/40 bg-surface/40 hover:border-border',
                 )}
               >
-                <div className="text-xl mb-1">{t.emoji}</div>
+                <div className="flex justify-center mb-1"><TimeModeIcon mode={t.id} className="w-5 h-5" /></div>
                 <div className={cn(
                   'font-semibold text-xs',
                   timeMode === t.id ? 'text-gold' : 'text-foreground',
@@ -326,7 +332,7 @@ export function OfflineSelectScreen() {
           </div>
           {timeMode === 'quick' && (
             <p className="text-[11px] text-orange mt-2 text-center animate-fade-in">
-              ⚡ Modo Rápido: pensa rápido ou perde!
+              <Zap className="inline w-3.5 h-3.5 -mt-0.5 mr-1" />Modo Rápido: pensa rápido ou perde!
             </p>
           )}
         </GameCard>

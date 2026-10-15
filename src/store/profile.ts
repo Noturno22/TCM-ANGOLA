@@ -23,7 +23,7 @@ export interface MatchRecord {
   moves: Move[];
   moveCount: number;
   durationSec: number;
-  reason?: 'LINE' | 'REPETITION' | 'RESIGN';
+  reason?: 'LINE' | 'REPETITION' | 'RESIGN' | 'FORFEIT';
 }
 
 export interface Achievement {
@@ -54,25 +54,28 @@ interface ProfileStore extends ProfileStats {
   recordMatch: (m: Omit<MatchRecord, 'id' | 'date'>) => MatchRecord;
   addXp: (amount: number) => void;
   addCoins: (amount: number) => void;
+  spendCoins: (amount: number) => boolean;
   unlockAchievement: (id: string) => void;
   resetProfile: () => void;
+  /** Sincroniza números vindos do servidor (modo online autoritativo). */
+  applyServerStats: (stats: { elo?: number; xp?: number; coins?: number }) => void;
 }
 
 const XP_PER_LEVEL = (level: number) => 500 + level * 250;
 
 export const ACHIEVEMENTS: Achievement[] = [
-  { id: 'first_win', title: 'Primeira Vitória', description: 'Ganha a tua primeira partida', icon: '🏆', unlockedAt: null },
-  { id: 'streak_5', title: 'Série de 5', description: 'Vence 5 partidas seguidas', icon: '🔥', unlockedAt: null },
-  { id: 'center_master', title: 'Dominador do Centro', description: 'Ganha com uma linha que passe pelo centro', icon: '🎯', unlockedAt: null },
-  { id: 'block_master', title: 'Mestre do Bloqueio', description: 'Ganha após bloquear 3 ameaças numa partida', icon: '🛡️', unlockedAt: null },
-  { id: 'comeback', title: 'Virada', description: 'Ganha após o adversário ter ameaça dupla', icon: '⚡', unlockedAt: null },
-  { id: 'fast_win', title: 'Vitória Relâmpago', description: 'Ganha em 3 jogadas', icon: '⚡', unlockedAt: null },
-  { id: 'beat_medium', title: 'Estrategista', description: 'Vence a IA Média', icon: '🧠', unlockedAt: null },
-  { id: 'beat_hard', title: 'Tático', description: 'Vence a IA Difícil', icon: '💎', unlockedAt: null },
-  { id: 'beat_perfect', title: 'Lendário', description: 'Vence a IA Perfeita (quase impossível!)', icon: '👑', unlockedAt: null },
-  { id: 'played_10', title: 'Veterano', description: 'Joga 10 partidas', icon: '⚔️', unlockedAt: null },
-  { id: 'played_50', title: 'Mestre', description: 'Joga 50 partidas', icon: '🎖️', unlockedAt: null },
-  { id: 'draw_master', title: 'Diplomata', description: 'Empata 5 partidas', icon: '🤝', unlockedAt: null },
+  { id: 'first_win', title: 'Primeira Vitória', description: 'Ganha a tua primeira partida', icon: 'trophy', unlockedAt: null },
+  { id: 'streak_5', title: 'Série de 5', description: 'Vence 5 partidas seguidas', icon: 'flame', unlockedAt: null },
+  { id: 'center_master', title: 'Dominador do Centro', description: 'Ganha com uma linha que passe pelo centro', icon: 'target', unlockedAt: null },
+  { id: 'block_master', title: 'Mestre do Bloqueio', description: 'Ganha após bloquear 3 ameaças numa partida', icon: 'shield', unlockedAt: null },
+  { id: 'comeback', title: 'Virada', description: 'Ganha após o adversário ter ameaça dupla', icon: 'zap', unlockedAt: null },
+  { id: 'fast_win', title: 'Vitória Relâmpago', description: 'Ganha em 3 jogadas', icon: 'zap', unlockedAt: null },
+  { id: 'beat_medium', title: 'Estrategista', description: 'Vence a IA Média', icon: 'brain', unlockedAt: null },
+  { id: 'beat_hard', title: 'Tático', description: 'Vence a IA Difícil', icon: 'gem', unlockedAt: null },
+  { id: 'beat_perfect', title: 'Lendário', description: 'Vence a IA Perfeita (quase impossível!)', icon: 'crown', unlockedAt: null },
+  { id: 'played_10', title: 'Veterano', description: 'Joga 10 partidas', icon: 'swords', unlockedAt: null },
+  { id: 'played_50', title: 'Mestre', description: 'Joga 50 partidas', icon: 'medal', unlockedAt: null },
+  { id: 'draw_master', title: 'Diplomata', description: 'Empata 5 partidas', icon: 'handshake', unlockedAt: null },
 ];
 
 const INITIAL_STATS: ProfileStats = {
@@ -193,6 +196,14 @@ export const useProfile = create<ProfileStore>()(
         set((s) => ({ coins: Math.max(0, s.coins + amount) }));
       },
 
+      spendCoins: (amount) => {
+        if (amount <= 0) return true;
+        if (get().coins < amount) return false;
+        playSound('bonus');
+        set((s) => ({ coins: Math.max(0, s.coins - amount) }));
+        return true;
+      },
+
       unlockAchievement: (id) => {
         const prev = get().achievements.find((a) => a.id === id)?.unlockedAt;
         set((s) => ({
@@ -211,6 +222,17 @@ export const useProfile = create<ProfileStore>()(
 
       resetProfile: () =>
         set({ ...INITIAL_STATS, matches: [], achievements: ACHIEVEMENTS.map((a) => ({ ...a })) }),
+
+      applyServerStats: ({ elo, xp, coins }) =>
+        set((s) => {
+          const nextXp = xp ?? s.xp;
+          return {
+            elo: elo ?? s.elo,
+            xp: nextXp,
+            level: xp === undefined ? s.level : levelFromXp(nextXp),
+            coins: coins ?? s.coins,
+          };
+        }),
     }),
     {
       name: 'tira-coco-profile',
@@ -229,18 +251,17 @@ export function getSimulatedRankings(): {
   elo: number;
   level: number;
   wins: number;
-  avatar: string;
 }[] {
   return [
-    { name: 'KwanzaMaster', elo: 1840, level: 24, wins: 312, avatar: '👑' },
-    { name: 'JJ_Manuel', elo: 1720, level: 21, wins: 281, avatar: '🦁' },
-    { name: 'Luanda_Pro', elo: 1680, level: 19, wins: 256, avatar: '⚡' },
-    { name: 'Muxima', elo: 1590, level: 18, wins: 234, avatar: '🌟' },
-    { name: 'Capoeira', elo: 1510, level: 17, wins: 198, avatar: '🦅' },
-    { name: 'Benguela_Bull', elo: 1450, level: 16, wins: 176, avatar: '🐂' },
-    { name: 'Ngola', elo: 1390, level: 15, wins: 154, avatar: '🛡️' },
-    { name: 'Soba', elo: 1320, level: 14, wins: 132, avatar: '🎭' },
-    { name: 'Quibala', elo: 1270, level: 13, wins: 118, avatar: '🎯' },
-    { name: 'Muxito', elo: 1210, level: 12, wins: 98, avatar: '🔥' },
+    { name: 'KwanzaMaster', elo: 1840, level: 24, wins: 312 },
+    { name: 'JJ_Manuel', elo: 1720, level: 21, wins: 281 },
+    { name: 'Luanda_Pro', elo: 1680, level: 19, wins: 256 },
+    { name: 'Muxima', elo: 1590, level: 18, wins: 234 },
+    { name: 'Capoeira', elo: 1510, level: 17, wins: 198 },
+    { name: 'Benguela_Bull', elo: 1450, level: 16, wins: 176 },
+    { name: 'Ngola', elo: 1390, level: 15, wins: 154 },
+    { name: 'Soba', elo: 1320, level: 14, wins: 132 },
+    { name: 'Quibala', elo: 1270, level: 13, wins: 118 },
+    { name: 'Muxito', elo: 1210, level: 12, wins: 98 },
   ];
 }

@@ -6,9 +6,9 @@
 export type Language = 'pt' | 'en' | 'fr';
 
 export const LANGUAGES: { id: Language; label: string; flag: string }[] = [
-  { id: 'pt', label: 'Português', flag: '🇵🇹' },
-  { id: 'en', label: 'English', flag: '🇬🇧' },
-  { id: 'fr', label: 'Français', flag: '🇫🇷' },
+  { id: 'pt', label: 'Português', flag: 'PT' },
+  { id: 'en', label: 'English', flag: 'EN' },
+  { id: 'fr', label: 'Français', flag: 'FR' },
 ];
 
 type Dict = Record<string, string>;
@@ -25,6 +25,7 @@ const pt: Dict = {
   'nav.prizes': 'Prémios',
   'nav.profile': 'Perfil',
   'nav.back': 'Voltar',
+  'nav.notifications': 'Notificações',
   'home.online': 'JOGAR ONLINE',
   'home.online.desc': 'Encontre jogadores em tempo real',
   'home.offline': 'JOGAR OFFLINE',
@@ -152,6 +153,7 @@ const en: Dict = {
   'nav.prizes': 'Prizes',
   'nav.profile': 'Profile',
   'nav.back': 'Back',
+  'nav.notifications': 'Notifications',
   'home.online': 'PLAY ONLINE',
   'home.online.desc': 'Find players in real time',
   'home.offline': 'PLAY OFFLINE',
@@ -279,6 +281,7 @@ const fr: Dict = {
   'nav.prizes': 'Prix',
   'nav.profile': 'Profil',
   'nav.back': 'Retour',
+  'nav.notifications': 'Notifications',
   'home.online': 'JOUER EN LIGNE',
   'home.online.desc': 'Trouvez des joueurs en temps réel',
   'home.offline': 'JOUER HORS LIGNE',

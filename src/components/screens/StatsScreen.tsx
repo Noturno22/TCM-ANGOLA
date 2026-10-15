@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Trophy, Target, Clock, BarChart3, Zap } from 'lucide-react';
+import { TrendingUp, Trophy, Target, Clock, BarChart3, Zap, Flame } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useProfile, type MatchRecord } from '@/store/profile';
 import { GameCard, GameButton, SectionTitle } from '@/components/game/ui';
@@ -96,7 +96,7 @@ export function StatsScreen() {
           action={
             <div className="flex gap-3 text-[10px]">
               <span className="text-p1">{stats.activeDays} dias ativos</span>
-              <span className="text-gold">🔥 {stats.currentStreakDays}d streak</span>
+              <span className="text-gold flex items-center gap-0.5"><Flame className="w-3 h-3" />{stats.currentStreakDays}d streak</span>
             </div>
           }
         />

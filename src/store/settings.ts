@@ -4,30 +4,38 @@
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import {
+  FREE_BACKGROUND_ID,
+  FREE_LINE_STYLE_ID,
+  FREE_PIECE_STYLE_ID,
+} from '@/lib/cosmetics';
 
-export type ThemeMode = 'dark' | 'light';
+export type CosmeticKind = 'background' | 'line' | 'piece';
 
 export interface Settings {
-  theme: ThemeMode;
   soundEnabled: boolean;
   musicEnabled: boolean;
-  symbolsOnPieces: boolean; // ▲ no P1, ● no P2 (spec §27)
+  symbolsOnPieces: boolean; // triângulo no P1, círculo no P2 (spec §27)
   reduceMotion: boolean;
   colorblindMode: boolean;
   vibration: boolean;
   language: 'pt' | 'en' | 'fr';
   aiThinkingDelay: number; // ms (400-900, spec §6)
+  backgroundId: string;
+  lineStyleId: string;
+  pieceStyleId: string;
+  ownedCosmetics: string[];
+  theme: 'light' | 'dark';
 }
 
 interface SettingsStore extends Settings {
-  setTheme: (t: ThemeMode) => void;
-  toggleTheme: () => void;
   set: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
   reset: () => void;
+  ownCosmetic: (id: string) => void;
+  equipCosmetic: (kind: CosmeticKind, id: string) => void;
 }
 
 const DEFAULTS: Settings = {
-  theme: 'light',
   soundEnabled: true,
   musicEnabled: false,
   symbolsOnPieces: true,
@@ -36,17 +44,31 @@ const DEFAULTS: Settings = {
   vibration: true,
   language: 'pt',
   aiThinkingDelay: 650,
+  backgroundId: FREE_BACKGROUND_ID,
+  lineStyleId: FREE_LINE_STYLE_ID,
+  pieceStyleId: FREE_PIECE_STYLE_ID,
+  ownedCosmetics: [FREE_BACKGROUND_ID, FREE_LINE_STYLE_ID, FREE_PIECE_STYLE_ID],
+  theme: 'dark',
 };
 
 export const useSettings = create<SettingsStore>()(
   persist(
     (set) => ({
       ...DEFAULTS,
-      setTheme: (t) => set({ theme: t }),
-      toggleTheme: () =>
-        set((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
       set: (key, value) => set({ [key]: value } as Partial<Settings>),
-      reset: () => set(DEFAULTS),
+      reset: () => set({ ...DEFAULTS }),
+      ownCosmetic: (id) =>
+        set((s) =>
+          s.ownedCosmetics.includes(id) ? s : { ownedCosmetics: [...s.ownedCosmetics, id] },
+        ),
+      equipCosmetic: (kind, id) =>
+        set(
+          kind === 'background'
+            ? { backgroundId: id }
+            : kind === 'line'
+              ? { lineStyleId: id }
+              : { pieceStyleId: id },
+        ),
     }),
     {
       name: 'tira-coco-settings',

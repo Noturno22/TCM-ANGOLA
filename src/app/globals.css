@@ -48,119 +48,128 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 10px);
 }
 
 /* ============================================================
-   TEMA CLARO (padrão — limpo como chess.com)
-   Fundo branco, cores sólidas, sombras subtis
+   TEMA ÚNICO — DARK
+   Uma só cor de marca (gold). Verde (p1) e vermelho (p2) são
+   exclusivamente semânticos das peças do jogo.
    ============================================================ */
-:root,
-.light {
-  --radius: 0.5rem;
+:root {
+  --radius: 0.75rem;
+  color-scheme: dark;
 
-  /* Fundo branco limpo */
-  --background: oklch(0.985 0.002 120);
-  --foreground: oklch(0.22 0.01 165);
+  /* Fundo e superfícies — escala de elevação fria e neutra */
+  --background: oklch(0.15 0.012 160);
+  --foreground: oklch(0.97 0.006 160);
+  --surface: oklch(0.195 0.013 160);
+  --surface-2: oklch(0.245 0.015 160);
+  --board-surface: oklch(0.21 0.014 160);
+  --board-line: oklch(0.6 0.012 160);
+  --card: oklch(0.2 0.013 160);
+  --card-foreground: oklch(0.97 0.006 160);
+  --popover: oklch(0.21 0.013 160);
+  --popover-foreground: oklch(0.97 0.006 160);
 
-  /* Superfícies — branco puro e cinza muito claro */
-  --surface: oklch(1 0 0);
-  --surface-2: oklch(0.96 0.003 120);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.01 165);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.01 165);
+  /* Marca — gold (único acento) */
+  --gold: oklch(0.83 0.14 85);
+  --gold-soft: oklch(0.83 0.14 85 / 0.14);
 
-  /* Verde — P1 (peças verdes, como chess.com) */
-  --p1: oklch(0.58 0.14 150);
-  --p1-soft: oklch(0.58 0.14 150 / 0.1);
+  /* Peças do jogo — semânticas */
+  --p1: oklch(0.72 0.16 155);
+  --p1-soft: oklch(0.72 0.16 155 / 0.16);
+  --p2: oklch(0.66 0.2 27);
+  --p2-soft: oklch(0.66 0.2 27 / 0.16);
+  --orange: oklch(0.76 0.15 60);
+  --orange-soft: oklch(0.76 0.15 60 / 0.14);
 
-  /* Vermelho — P2 */
-  --p2: oklch(0.55 0.19 25);
-  --p2-soft: oklch(0.55 0.19 25 / 0.1);
+  --primary: var(--gold);
+  --primary-foreground: oklch(0.18 0.03 80);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--surface-2);
+  --muted-foreground: oklch(0.71 0.012 160);
+  --accent: var(--surface-2);
+  --accent-foreground: var(--foreground);
+  --destructive: var(--p2);
+  --border: oklch(1 0 0 / 0.09);
+  --input: oklch(1 0 0 / 0.1);
+  --ring: var(--gold);
 
-  /* Dourado — acentos */
-  --gold: oklch(0.7 0.15 75);
-  --gold-soft: oklch(0.7 0.15 75 / 0.1);
+  --chart-1: oklch(0.83 0.14 85);
+  --chart-2: oklch(0.72 0.16 155);
+  --chart-3: oklch(0.66 0.2 27);
+  --chart-4: oklch(0.76 0.15 60);
+  --chart-5: oklch(0.7 0.1 250);
 
-  /* Laranja */
-  --orange: oklch(0.65 0.16 55);
-  --orange-soft: oklch(0.65 0.16 55 / 0.1);
-
-  --primary: oklch(0.58 0.14 150);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.95 0.003 120);
-  --secondary-foreground: oklch(0.22 0.01 165);
-  --muted: oklch(0.95 0.003 120);
-  --muted-foreground: oklch(0.5 0.01 120);
-  --accent: oklch(0.95 0.003 120);
-  --accent-foreground: oklch(0.22 0.01 165);
-  --destructive: oklch(0.55 0.19 25);
-  --border: oklch(0.88 0.003 120);
-  --input: oklch(0.92 0.003 120);
-  --ring: oklch(0.58 0.14 150);
-  --chart-1: oklch(0.58 0.14 150);
-  --chart-2: oklch(0.55 0.19 25);
-  --chart-3: oklch(0.7 0.15 75);
-  --chart-4: oklch(0.65 0.16 55);
-  --chart-5: oklch(0.5 0.1 200);
-  --sidebar: oklch(0.97 0.002 120);
-  --sidebar-foreground: oklch(0.22 0.01 165);
-  --sidebar-primary: oklch(0.58 0.14 150);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.95 0.003 120);
-  --sidebar-accent-foreground: oklch(0.22 0.01 165);
-  --sidebar-border: oklch(0.88 0.003 120);
-  --sidebar-ring: oklch(0.58 0.14 150);
+  --sidebar: oklch(0.18 0.012 160);
+  --sidebar-foreground: oklch(0.97 0.006 160);
+  --sidebar-primary: var(--gold);
+  --sidebar-primary-foreground: oklch(0.18 0.03 80);
+  --sidebar-accent: var(--surface-2);
+  --sidebar-accent-foreground: oklch(0.97 0.006 160);
+  --sidebar-border: oklch(1 0 0 / 0.09);
+  --sidebar-ring: var(--gold);
 }
 
-/* ============================================================
-   TEMA ESCURO (opcional)
-   ============================================================ */
 .dark {
-  --background: oklch(0.18 0.005 165);
-  --foreground: oklch(0.95 0.003 120);
+  color-scheme: dark;
+}
 
-  --surface: oklch(0.22 0.006 165);
-  --surface-2: oklch(0.26 0.008 165);
-  --card: oklch(0.22 0.006 165);
-  --card-foreground: oklch(0.95 0.003 120);
-  --popover: oklch(0.22 0.006 165);
-  --popover-foreground: oklch(0.95 0.003 120);
+.light {
+  color-scheme: light;
 
-  --p1: oklch(0.65 0.15 150);
-  --p1-soft: oklch(0.65 0.15 150 / 0.15);
-  --p2: oklch(0.6 0.2 25);
-  --p2-soft: oklch(0.6 0.2 25 / 0.15);
-  --gold: oklch(0.75 0.14 75);
-  --gold-soft: oklch(0.75 0.14 75 / 0.15);
-  --orange: oklch(0.68 0.16 55);
-  --orange-soft: oklch(0.68 0.16 55 / 0.15);
+  --background: oklch(0.985 0.004 160);
+  --foreground: oklch(0.21 0.02 160);
+  --surface: oklch(0.955 0.006 160);
+  --surface-2: oklch(0.915 0.008 160);
+  --board-surface: #ffffff;
+  --board-line: #373435;
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.02 160);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.02 160);
 
-  --primary: oklch(0.65 0.15 150);
-  --primary-foreground: oklch(0.18 0.005 165);
-  --secondary: oklch(0.28 0.008 165);
-  --secondary-foreground: oklch(0.95 0.003 120);
-  --muted: oklch(0.26 0.008 165);
-  --muted-foreground: oklch(0.65 0.008 120);
-  --accent: oklch(0.28 0.008 165);
-  --accent-foreground: oklch(0.95 0.003 120);
-  --destructive: oklch(0.6 0.2 25);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.65 0.15 150);
-  --sidebar: oklch(0.2 0.006 165);
-  --sidebar-foreground: oklch(0.95 0.003 120);
-  --sidebar-primary: oklch(0.65 0.15 150);
-  --sidebar-primary-foreground: oklch(0.18 0.005 165);
-  --sidebar-accent: oklch(0.26 0.008 165);
-  --sidebar-accent-foreground: oklch(0.95 0.003 120);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.65 0.15 150);
+  --gold: oklch(0.63 0.14 78);
+  --gold-soft: oklch(0.63 0.14 78 / 0.14);
+
+  --p1: oklch(0.56 0.16 155);
+  --p1-soft: oklch(0.56 0.16 155 / 0.16);
+  --p2: oklch(0.55 0.2 27);
+  --p2-soft: oklch(0.55 0.2 27 / 0.16);
+  --orange: oklch(0.62 0.15 60);
+  --orange-soft: oklch(0.62 0.15 60 / 0.14);
+
+  --primary: var(--gold);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--surface-2);
+  --muted-foreground: oklch(0.46 0.02 160);
+  --accent: var(--surface-2);
+  --accent-foreground: var(--foreground);
+  --destructive: var(--p2);
+  --border: oklch(0.2 0.02 160 / 0.14);
+  --input: oklch(0.2 0.02 160 / 0.16);
+  --ring: var(--gold);
+
+  --sidebar: oklch(0.97 0.005 160);
+  --sidebar-foreground: oklch(0.21 0.02 160);
+  --sidebar-primary: var(--gold);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: var(--surface-2);
+  --sidebar-accent-foreground: oklch(0.21 0.02 160);
+  --sidebar-border: oklch(0.2 0.02 160 / 0.14);
+  --sidebar-ring: var(--gold);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  html {
+    font-size: 18px;
   }
   body {
     @apply bg-background text-foreground;
@@ -175,79 +184,88 @@
 }
 
 /* ============================================================
-   PADRÕES GEOMÉTRICOS ANGOLANOS — subtis
+   TIPOGRAFIA — utilitários de tamanho aumentados para legibilidade
+   ============================================================ */
+@layer utilities {
+  .text-xs-sm { font-size: 0.75rem; line-height: 1.4; }   /* 13.5px @ 18px base */
+  .text-sm-sm { font-size: 0.8125rem; line-height: 1.4; } /* 14.6px @ 18px base */
+  .text-base-sm { font-size: 0.875rem; line-height: 1.5; } /* 15.75px @ 18px base */
+}
+
+/* ============================================================
+   PADRÃO GEOMÉTRICO — sussurro de fundo, dourado, quase invisível
    ============================================================ */
 .angolan-pattern {
   background-image:
-    linear-gradient(45deg, transparent 25%, var(--p1) 25%, var(--p1) 50%, transparent 50%, transparent 75%, var(--p1) 75%),
-    linear-gradient(-45deg, transparent 25%, var(--p2) 25%, var(--p2) 50%, transparent 50%, transparent 75%, var(--p2) 75%);
-  background-size: 32px 32px;
-  background-position: 0 0, 0 16px;
-  opacity: 0.03;
+    linear-gradient(45deg, transparent 46%, var(--gold) 46% 54%, transparent 54%),
+    linear-gradient(-45deg, transparent 46%, var(--gold) 46% 54%, transparent 54%);
+  background-size: 30px 30px;
+  opacity: 0.018;
 }
 
 .angolan-border {
   background: repeating-linear-gradient(
     90deg,
-    var(--p2) 0 6px,
-    var(--gold) 6px 12px,
-    var(--p1) 12px 18px,
-    transparent 18px 24px
+    var(--gold) 0 6px,
+    transparent 6px 18px
   );
+  opacity: 0.4;
 }
 
 .angolan-diamond {
   background-image:
-    linear-gradient(135deg, var(--p1) 25%, transparent 25%),
-    linear-gradient(225deg, var(--p1) 25%, transparent 25%),
-    linear-gradient(45deg, var(--p2) 25%, transparent 25%),
-    linear-gradient(315deg, var(--p2) 25%, transparent 25%);
+    linear-gradient(135deg, var(--gold) 25%, transparent 25%),
+    linear-gradient(225deg, var(--gold) 25%, transparent 25%),
+    linear-gradient(45deg, var(--gold) 25%, transparent 25%),
+    linear-gradient(315deg, var(--gold) 25%, transparent 25%);
   background-size: 24px 24px;
   background-position: 12px 0, 12px 0, 0 0, 0 0;
-  opacity: 0.08;
+  opacity: 0.05;
 }
 
 /* ============================================================
-   SOMBRAS SIMPLES E LIMPAS (como chess.com)
+   SOMBRAS — profundas, para superfícies escuras
    ============================================================ */
 .shadow-sm-clean {
-  box-shadow: 0 1px 2px oklch(0 0 0 / 0.06);
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.35);
 }
 .shadow-md-clean {
-  box-shadow: 0 2px 4px oklch(0 0 0 / 0.08), 0 1px 2px oklch(0 0 0 / 0.04);
+  box-shadow: 0 6px 16px oklch(0 0 0 / 0.4);
 }
 .shadow-lg-clean {
-  box-shadow: 0 4px 8px oklch(0 0 0 / 0.1), 0 2px 4px oklch(0 0 0 / 0.04);
+  box-shadow: 0 16px 40px oklch(0 0 0 / 0.5);
 }
 
 /* ============================================================
-   PEÇAS — simples e limpas
+   PEÇAS
    ============================================================ */
 .piece-p1 {
+  background: #00a859;
   box-shadow:
-    inset 0 -2px 4px oklch(0.35 0.08 150),
-    inset 0 2px 4px oklch(0.75 0.12 150),
-    0 2px 4px oklch(0 0 0 / 0.15);
+    inset 0 -3px 6px rgba(0, 0, 0, 0.28),
+    inset 0 3px 5px rgba(255, 255, 255, 0.3),
+    0 3px 8px rgba(0, 0, 0, 0.3);
 }
 .piece-p2 {
+  background: #ed3237;
   box-shadow:
-    inset 0 -2px 4px oklch(0.3 0.08 25),
-    inset 0 2px 4px oklch(0.7 0.12 25),
-    0 2px 4px oklch(0 0 0 / 0.15);
+    inset 0 -3px 6px rgba(0, 0, 0, 0.28),
+    inset 0 3px 5px rgba(255, 255, 255, 0.3),
+    0 3px 8px rgba(0, 0, 0, 0.3);
 }
 
 /* ============================================================
-   MOLDURA DO TABULEIRO — simples e sólida
+   MOLDURA DO TABULEIRO
    ============================================================ */
 .board-frame {
   box-shadow:
     0 0 0 3px var(--gold),
-    0 0 0 4px oklch(0 0 0 / 0.1),
-    0 8px 24px oklch(0 0 0 / 0.12);
+    0 0 0 4px oklch(0 0 0 / 0.4),
+    0 12px 32px oklch(0 0 0 / 0.5);
 }
 
 /* ============================================================
-   SCROLLBAR — minimalista
+   SCROLLBAR
    ============================================================ */
 .scrollbar-custom::-webkit-scrollbar {
   width: 4px;
@@ -257,15 +275,15 @@
   background: transparent;
 }
 .scrollbar-custom::-webkit-scrollbar-thumb {
-  background: oklch(0.7 0.003 120 / 0.4);
+  background: oklch(1 0 0 / 0.14);
   border-radius: 4px;
 }
 .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.6 0.003 120 / 0.6);
+  background: oklch(1 0 0 / 0.22);
 }
 
 /* ============================================================
-   ANIMAÇÕES — simples e diretas
+   ANIMAÇÕES
    ============================================================ */
 @keyframes piece-place {
   0% { transform: scale(0.7); opacity: 0; }
@@ -277,7 +295,7 @@
 
 @keyframes pulse-soft {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  50% { opacity: 0.5; }
 }
 .animate-pulse-soft {
   animation: pulse-soft 1.5s ease-in-out infinite;
@@ -331,44 +349,38 @@
 }
 
 *:focus-visible {
-  outline: 2px solid var(--p1);
+  outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: var(--p1-soft);
+  background: var(--gold-soft);
 }
 
 /* ============================================================
-   CLASSES DE COMPATIBILIDADE — mantêm ecrãs antigos a funcionar
+   CLASSES DE COMPATIBILIDADE
    ============================================================ */
 .animate-pulse-glow {
   animation: pulse-soft 1.5s ease-in-out infinite;
 }
 .text-glow-gold {
-  text-shadow: 0 0 8px oklch(0.7 0.15 75 / 0.3);
+  text-shadow: 0 0 12px oklch(0.83 0.14 85 / 0.35);
 }
 .text-glow-p1 {
-  text-shadow: 0 0 8px oklch(0.58 0.14 150 / 0.3);
+  text-shadow: 0 0 12px oklch(0.72 0.16 155 / 0.35);
 }
 .text-glow-p2 {
-  text-shadow: 0 0 8px oklch(0.55 0.19 25 / 0.3);
-}
-.piece-glow-p1 {
-  box-shadow: inset 0 -2px 4px oklch(0.35 0.08 150), inset 0 2px 4px oklch(0.75 0.12 150), 0 2px 4px oklch(0 0 0 / 0.15);
-}
-.piece-glow-p2 {
-  box-shadow: inset 0 -2px 4px oklch(0.3 0.08 25), inset 0 2px 4px oklch(0.7 0.12 25), 0 2px 4px oklch(0 0 0 / 0.15);
+  text-shadow: 0 0 12px oklch(0.66 0.2 27 / 0.35);
 }
 .gold-frame {
-  box-shadow: 0 0 0 2px var(--gold), 0 0 0 3px oklch(0 0 0 / 0.1), 0 8px 24px oklch(0 0 0 / 0.12);
+  box-shadow: 0 0 0 2px var(--gold), 0 0 0 3px oklch(0 0 0 / 0.4), 0 12px 32px oklch(0 0 0 / 0.5);
 }
 .elevation-1, .elevation-2, .elevation-3, .elevation-4, .elevation-5 {
-  box-shadow: 0 2px 4px oklch(0 0 0 / 0.08);
+  box-shadow: 0 6px 16px oklch(0 0 0 / 0.4);
 }
 .glass, .glass-light {
-  background: var(--surface);
-  backdrop-filter: blur(8px);
+  background: oklch(0.2 0.013 160 / 0.7);
+  backdrop-filter: blur(12px);
 }
 .mesh-gradient {
   background: var(--surface-2);

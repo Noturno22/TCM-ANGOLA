@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import { ThemeSync } from "@/components/ThemeSync";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -90,7 +91,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Tira o Cocó do Meio",
   },
   formatDetection: {
@@ -101,15 +102,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
-    { media: "(prefers-color-scheme: dark)", color: "#1a1a1a" },
-  ],
+  themeColor: "#101917",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  colorScheme: "light dark",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -118,7 +116,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-PT" suppressHydrationWarning className="light">
+    <html lang="pt-PT" suppressHydrationWarning className="dark">
       <head>
         <script
           type="application/ld+json"
@@ -146,11 +144,18 @@ export default function RootLayout({
             }),
           }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var s=JSON.parse(localStorage.getItem('tira-coco-settings')||'{}');var t=(s.state&&s.state.theme)||'dark';document.documentElement.classList.toggle('light',t==='light');document.documentElement.classList.toggle('dark',t!=='light');}catch(e){}",
+          }}
+        />
       </head>
       <body
         className={`${inter.variable} ${bebas.variable} antialiased bg-background text-foreground min-h-screen`}
       >
         {children}
+        <ThemeSync />
         <Toaster />
         <Sonner />
         <ServiceWorkerRegister />

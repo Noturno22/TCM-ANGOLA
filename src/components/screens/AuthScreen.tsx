@@ -85,23 +85,23 @@ export function AuthScreen() {
       <button
         type="button"
         onClick={back}
-        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="w-4 h-4" />
         Voltar
       </button>
 
       <GameCard className="p-6" glow="gold">
-        <div className="flex flex-col items-center text-center gap-2 mb-5">
+        <div className="flex flex-col items-center text-center gap-2 mb-6">
           <GameLogo size="md" />
-          <h1 className="font-display text-2xl tracking-wide mt-2">ENTRAR</h1>
-          <p className="text-xs text-muted-foreground max-w-xs">
+          <h1 className="font-display text-3xl tracking-wide mt-2">ENTRAR</h1>
+          <p className="text-sm text-muted-foreground max-w-xs">
             Entra ou cria conta com a tua conta Google ou o teu número de WhatsApp.
           </p>
         </div>
 
         {!isSupabaseConfigured && (
-          <div className="flex items-start gap-2 rounded-lg bg-orange/10 border border-orange/30 p-3 mb-4 text-[11px] text-orange">
+          <div className="flex items-start gap-2.5 rounded-xl bg-orange/10 border border-orange/30 p-3.5 mb-5 text-xs text-orange">
             <Info className="w-4 h-4 shrink-0 mt-0.5" />
             <span>
               Backend não configurado. Define <code>NEXT_PUBLIC_SUPABASE_URL</code> e a chave no
@@ -125,18 +125,18 @@ export function AuthScreen() {
               Continuar com Google
             </GameButton>
 
-            <div className="flex items-center gap-3 my-4">
-              <span className="h-px flex-1 bg-border/50" />
-              <span className="text-[10px] text-muted-foreground">ou por telefone</span>
-              <span className="h-px flex-1 bg-border/50" />
+            <div className="flex items-center gap-3 my-5">
+              <span className="h-px flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground">ou por telefone</span>
+              <span className="h-px flex-1 bg-border" />
             </div>
 
             <form onSubmit={handleSendOtp} className="space-y-3">
               <label className="block">
-                <span className="text-[11px] font-medium text-muted-foreground">
+                <span className="text-xs font-medium text-muted-foreground">
                   Número de WhatsApp
                 </span>
-                <div className="mt-1 flex items-center gap-2 rounded-lg bg-surface-2 border border-border px-3 focus-within:border-gold/50">
+                <div className="mt-1.5 flex items-center gap-2 rounded-xl bg-surface-2 border border-border px-3 focus-within:border-gold/60">
                   <Phone className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">{DEFAULT_DDI}</span>
                   <input
@@ -146,7 +146,7 @@ export function AuthScreen() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="923 000 000"
-                    className="flex-1 bg-transparent py-2.5 text-sm outline-none placeholder:text-muted-foreground/50"
+                    className="flex-1 bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground/50"
                     disabled={pending}
                   />
                 </div>
@@ -154,7 +154,7 @@ export function AuthScreen() {
 
               <GameButton
                 type="submit"
-                variant="gold"
+                variant="primary"
                 className="w-full h-12 text-base"
                 disabled={!phoneValid || pending}
               >
@@ -167,10 +167,10 @@ export function AuthScreen() {
         {step === 'otp' && (
           <form onSubmit={handleVerify} className="space-y-3">
             <label className="block">
-              <span className="text-[11px] font-medium text-muted-foreground">
+              <span className="text-xs font-medium text-muted-foreground">
                 Código recebido ({fullPhone})
               </span>
-              <div className="mt-1 flex items-center gap-2 rounded-lg bg-surface-2 border border-border px-3 focus-within:border-gold/50">
+              <div className="mt-1.5 flex items-center gap-2 rounded-xl bg-surface-2 border border-border px-3 focus-within:border-gold/60">
                 <ShieldCheck className="w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
@@ -179,7 +179,7 @@ export function AuthScreen() {
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="000000"
-                  className="flex-1 bg-transparent py-2.5 text-sm tracking-[0.3em] outline-none placeholder:text-muted-foreground/50"
+                  className="flex-1 bg-transparent py-3 text-sm tracking-[0.3em] outline-none placeholder:text-muted-foreground/50"
                   disabled={pending}
                   autoFocus
                 />
@@ -188,7 +188,7 @@ export function AuthScreen() {
 
             <GameButton
               type="submit"
-              variant="gold"
+              variant="primary"
               className="w-full h-12 text-base"
               disabled={otp.length < 6 || pending}
             >
@@ -202,7 +202,7 @@ export function AuthScreen() {
                 clearError();
                 setNotice(null);
               }}
-              className="w-full text-center text-xs text-muted-foreground hover:text-foreground underline py-1"
+              className="w-full text-center text-sm text-muted-foreground hover:text-foreground py-1"
             >
               Alterar número / reenviar
             </button>
@@ -210,12 +210,12 @@ export function AuthScreen() {
         )}
 
         {error && (
-          <p className="text-xs text-p2 bg-p2/10 border border-p2/30 rounded-lg px-3 py-2 mt-3">
+          <p className="text-xs text-p2 bg-p2/10 border border-p2/30 rounded-xl px-3 py-2 mt-3">
             {error}
           </p>
         )}
         {notice && (
-          <p className="text-xs text-p1 bg-p1/10 border border-p1/30 rounded-lg px-3 py-2 mt-3">
+          <p className="text-xs text-p1 bg-p1/10 border border-p1/30 rounded-xl px-3 py-2 mt-3">
             {notice}
           </p>
         )}
@@ -224,7 +224,7 @@ export function AuthScreen() {
       <button
         type="button"
         onClick={() => navigate('home')}
-        className="w-full text-center text-[11px] text-muted-foreground/70 hover:text-foreground underline py-2"
+        className="w-full text-center text-sm text-muted-foreground hover:text-foreground py-2"
       >
         Continuar como convidado
       </button>

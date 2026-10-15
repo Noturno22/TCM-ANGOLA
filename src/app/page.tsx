@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '@/store/app';
 import { useSettings } from '@/store/settings';
 import { useAuth } from '@/store/auth';
+import { useNotifications } from '@/store/notifications';
+import { useAge } from '@/store/age';
 import { SplashScreen } from '@/components/screens/SplashScreen';
 import { WelcomeScreen } from '@/components/screens/WelcomeScreen';
 import { AuthScreen } from '@/components/screens/AuthScreen';
@@ -18,7 +20,10 @@ import { ProfileScreen } from '@/components/screens/ProfileScreen';
 import { RankingsScreen } from '@/components/screens/RankingsScreen';
 import { SettingsScreen } from '@/components/screens/SettingsScreen';
 import { RoomsScreen } from '@/components/screens/RoomsScreen';
+import { FriendsScreen } from '@/components/screens/FriendsScreen';
+import { NotificationsScreen } from '@/components/screens/NotificationsScreen';
 import { WalletScreen } from '@/components/screens/WalletScreen';
+import { ShopScreen } from '@/components/screens/ShopScreen';
 import { ReplayScreen } from '@/components/screens/ReplayScreen';
 import { AchievementsScreen } from '@/components/screens/AchievementsScreen';
 import { ChallengeScreen } from '@/components/screens/ChallengeScreen';
@@ -28,9 +33,12 @@ import { LightningChallengeScreen } from '@/components/screens/LightningChalleng
 import { WatchScreen } from '@/components/screens/WatchScreen';
 import { CampaignScreen } from '@/components/screens/CampaignScreen';
 import { CampaignPlayScreen } from '@/components/screens/CampaignPlayScreen';
+import { TournamentScreen } from '@/components/screens/TournamentScreen';
+import { TournamentPlayScreen } from '@/components/screens/TournamentPlayScreen';
+import { OnlineMatchScreen } from '@/components/screens/OnlineMatchScreen';
 import { AppHeader } from '@/components/game/AppHeader';
 import { TabBar } from '@/components/game/TabBar';
-import { useMusicSync, useSound, startMusic, playSound } from '@/lib/sound';
+import { useMusicSync, useSound, startMusic, playSound, setMusicState, resumeMusicPresence } from '@/lib/sound';
 import { useProgression } from '@/store/progression';
 import { toast } from 'sonner';
 import type { Difficulty } from '@tira/ai';
@@ -44,7 +52,6 @@ const DIFF_LABELS: Record<Difficulty, string> = {
 
 export default function Home() {
   const screen = useApp((s) => s.screen);
-  const theme = useSettings((s) => s.theme);
   const reduceMotion = useSettings((s) => s.reduceMotion);
   const colorblind = useSettings((s) => s.colorblindMode);
 
@@ -58,13 +65,42 @@ export default function Home() {
     initializeAuth();
   }, [initializeAuth]);
 
+  // Notificações em tempo real (globais, enquanto houver sessão)
+  const userId = useAuth((s) => s.user?.id ?? null);
+  const loadNotifications = useNotifications((s) => s.load);
+  const subscribeNotifications = useNotifications((s) => s.subscribe);
+  const unsubscribeNotifications = useNotifications((s) => s.unsubscribe);
+  const resetNotifications = useNotifications((s) => s.reset);
+  useEffect(() => {
+    if (!userId) return;
+    void loadNotifications();
+    subscribeNotifications();
+    return () => {
+      unsubscribeNotifications();
+      resetNotifications();
+    };
+  }, [
+    userId,
+    loadNotifications,
+    subscribeNotifications,
+    unsubscribeNotifications,
+    resetNotifications,
+  ]);
+
+  // Gate 18+ (limpo ao terminar sessão)
+  const resetAge = useAge((s) => s.reset);
+  useEffect(() => {
+    if (userId) return;
+    resetAge();
+  }, [userId, resetAge]);
+
   // Notificações de desbloqueio de dificuldades
   const newlyUnlocked = useProgression((s) => s.newlyUnlocked);
   const clearNewlyUnlocked = useProgression((s) => s.clearNewlyUnlocked);
   useEffect(() => {
     if (newlyUnlocked.length === 0) return;
     for (const diff of newlyUnlocked) {
-      toast.success(`🔒 Dificuldade ${DIFF_LABELS[diff]} desbloqueada!`, {
+      toast.success(`Dificuldade ${DIFF_LABELS[diff]} desbloqueada!`, {
         description: 'Agora podes desafiar a IA neste nível.',
         duration: 5000,
       });
@@ -88,12 +124,38 @@ export default function Home() {
     };
   }, []);
 
-  // Aplicar tema (dark/light) na raiz <html>
+  // Presença do jogador: música adaptativa (ausente vs. presente)
   useEffect(() => {
-    const root = document.documentElement;
-    root.classList.remove('dark', 'light');
-    root.classList.add(theme);
-  }, [theme]);
+    const INACTIVITY_MS = 90_000;
+    let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const markAbsent = () => setMusicState('absent');
+    const markPresent = () => {
+      resumeMusicPresence();
+    };
+    const resetInactivity = () => {
+      markPresent();
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(markAbsent, INACTIVITY_MS);
+    };
+
+    const onVisibility = () => {
+      if (document.hidden) markAbsent();
+      else markPresent();
+    };
+
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pointerdown', resetInactivity, { passive: true });
+    window.addEventListener('keydown', resetInactivity);
+    resetInactivity();
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pointerdown', resetInactivity);
+      window.removeEventListener('keydown', resetInactivity);
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+    };
+  }, []);
 
   // Aplicar classes de acessibilidade no body
   useEffect(() => {
@@ -150,7 +212,10 @@ export default function Home() {
             {screen === 'rankings' && <RankingsScreen />}
             {screen === 'settings' && <SettingsScreen />}
             {screen === 'rooms' && <RoomsScreen />}
+            {screen === 'friends' && <FriendsScreen />}
+            {screen === 'notifications' && <NotificationsScreen />}
             {screen === 'wallet' && <WalletScreen />}
+            {screen === 'shop' && <ShopScreen />}
             {screen === 'replay' && <ReplayScreen />}
             {screen === 'achievements' && <AchievementsScreen />}
             {screen === 'challenge' && <ChallengeScreen />}
@@ -161,6 +226,9 @@ export default function Home() {
             {screen === 'watch' && <WatchScreen />}
             {screen === 'campaign' && <CampaignScreen />}
             {screen === 'campaign-play' && <CampaignPlayScreen key={useApp.getState().campaignLevelId ?? 'none'} />}
+            {screen === 'tournament' && <TournamentScreen />}
+            {screen === 'tournament-play' && <TournamentPlayScreen key={useApp.getState().tournamentMatchId ?? 'none'} />}
+            {screen === 'match' && <OnlineMatchScreen />}
           </motion.div>
         </AnimatePresence>
       </main>

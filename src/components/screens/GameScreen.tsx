@@ -11,11 +11,16 @@ import {
   ChevronLeft,
   Undo2,
   Eye,
+  User,
+  Bot,
+  Handshake,
+  Trophy,
+  Frown,
 } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useGame } from '@/store/game';
 import { useSettings } from '@/store/settings';
-import { isGameOver, getLegalMoves, type Square, type Threat } from '@tira/engine';
+import { isGameOver, type Square, type Threat, type Move, type Cell } from '@tira/engine';
 import { playSound } from '@/lib/sound';
 import { Board } from '@/components/game/Board';
 import { GameButton, GameCard } from '@/components/game/ui';
@@ -54,6 +59,7 @@ export function GameScreen() {
     selectSquare,
     attemptMove,
     resign,
+    forfeit,
     restart,
     undo,
     toggleThreats,
@@ -98,19 +104,13 @@ export function GameScreen() {
     else setP2Time(timePerTurn);
   }
 
-  // Timeout: jogada legal aleatória se o tempo acabar
   useEffect(() => {
     if (!hasClock || isGameOver(state) || mode === 'cvc') return;
-    const isHumanTurn = mode === 'pve' || mode === 'practice' ? state.currentPlayer === humanSide : true;
     const timeLeft = state.currentPlayer === 'P1' ? p1Time : p2Time;
-    if (timeLeft === 0 && isHumanTurn) {
-      const legal = getLegalMoves(state, state.currentPlayer);
-      if (legal.length > 0) {
-        const random = legal[Math.floor(Math.random() * legal.length)];
-        attemptMove(random.to);
-      }
+    if (timeLeft === 0) {
+      forfeit(state.currentPlayer);
     }
-  }, [p1Time, p2Time, hasClock, state, mode, humanSide, attemptMove]);
+  }, [p1Time, p2Time, hasClock, state, mode, forfeit]);
 
   const handleSquareClick = useCallback(
     (sq: Square) => {
@@ -135,9 +135,6 @@ export function GameScreen() {
     ? currentThreats.map((t) => t.to)
     : [];
 
-  // Determinar se o tabuleiro deve estar flipped (peças do humano em baixo)
-  const flipped = (mode === 'pve' || mode === 'practice') && humanSide === 'P2';
-
   const p1Label =
     mode === 'pve' || mode === 'practice'
       ? humanSide === 'P1' ? 'Tu' : `IA ${diffLabel(difficulty)}`
@@ -156,6 +153,13 @@ export function GameScreen() {
 
   const gameOver = isGameOver(state);
 
+  const handleExit = () => {
+    if (!isGameOver(state) && mode !== 'cvc') {
+      forfeit(humanSide);
+    }
+    back();
+  };
+
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-background overflow-hidden">
       {/* Padrão de fundo subtil */}
@@ -166,14 +170,14 @@ export function GameScreen() {
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"
-            onClick={back}
+            onClick={handleExit}
             className="w-9 h-9 rounded-full bg-surface/60 flex items-center justify-center hover:bg-surface"
             aria-label="Voltar"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="text-center flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
               {mode === 'pvp' ? '2 Jogadores' : mode === 'pve' ? 'vs IA' : mode === 'practice' ? 'Treino Livre' : 'IA vs IA'}
               {mode !== 'pvp' && ` • ${diffLabel(difficulty)}`}
             </p>
@@ -248,7 +252,6 @@ export function GameScreen() {
             winningLine={winningLine}
             threatSquares={threatSquares}
             onSquareClick={handleSquareClick}
-            flipped={flipped}
             disabled={mode === 'cvc' || ((mode === 'pve' || mode === 'practice') && state.currentPlayer !== humanSide)}
             size="md"
           />
@@ -258,12 +261,12 @@ export function GameScreen() {
         <div className="flex justify-center gap-6 text-center mb-4">
           <div>
             <div className="font-display text-xl text-foreground">{moveCount}</div>
-            <div className="text-[10px] text-muted-foreground uppercase">Jogadas</div>
+            <div className="text-xs text-muted-foreground uppercase">Jogadas</div>
           </div>
           <div className="w-px bg-border/40" />
           <div>
             <div className="font-display text-xl text-gold">{state.history.length}</div>
-            <div className="text-[10px] text-muted-foreground uppercase">Histórico</div>
+            <div className="text-xs text-muted-foreground uppercase">Histórico</div>
           </div>
           {showThreats && (
             <>
@@ -272,7 +275,7 @@ export function GameScreen() {
                 <div className={cn('font-display text-xl', currentThreats.length > 0 ? 'text-p2' : 'text-muted-foreground')}>
                   {currentThreats.length}
                 </div>
-                <div className="text-[10px] text-muted-foreground uppercase">Ameaças</div>
+                <div className="text-xs text-muted-foreground uppercase">Ameaças</div>
               </div>
             </>
           )}
@@ -374,6 +377,9 @@ export function GameScreen() {
             winner={winner}
             mode={mode}
             humanSide={humanSide}
+            board={state.board}
+            winningLine={winningLine}
+            lastMove={lastMove}
             onRestart={restart}
             onExit={back}
             reduceMotion={reduceMotion}
@@ -414,11 +420,11 @@ function PlayerCard({
       <div className="flex items-center gap-2 mb-1.5">
         <div
           className={cn(
-            'w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0',
-            isP1 ? 'bg-gradient-to-br from-p1 to-emerald-700' : 'bg-gradient-to-br from-p2 to-red-900',
+            'w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-white',
+            isP1 ? 'bg-p1' : 'bg-p2',
           )}
         >
-          {isHuman ? '👤' : '🤖'}
+          {isHuman ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
         </div>
         <span className="text-xs font-semibold truncate">{label}</span>
         {active && (
@@ -440,7 +446,7 @@ function PlayerCard({
             {String(time % 60).padStart(2, '0')}
           </span>
           {active && (
-            <span className="text-[9px] text-muted-foreground ml-auto uppercase">
+            <span className="text-[11px] text-muted-foreground ml-auto uppercase">
               {isHuman ? 'Sua vez' : 'A pensar…'}
             </span>
           )}
@@ -449,7 +455,7 @@ function PlayerCard({
         <div className="flex items-center gap-1">
           <span className="text-[10px] text-muted-foreground italic">Sem relógio</span>
           {active && (
-            <span className="text-[9px] text-muted-foreground ml-auto uppercase">
+            <span className="text-[11px] text-muted-foreground ml-auto uppercase">
               {isHuman ? 'Sua vez' : 'A pensar…'}
             </span>
           )}
@@ -463,6 +469,9 @@ function GameOverOverlay({
   winner,
   mode,
   humanSide,
+  board,
+  winningLine,
+  lastMove,
   onRestart,
   onExit,
   reduceMotion,
@@ -470,6 +479,9 @@ function GameOverOverlay({
   winner: 'P1' | 'P2' | null;
   mode: 'pvp' | 'pve' | 'cvc' | 'practice';
   humanSide: 'P1' | 'P2';
+  board: readonly Cell[];
+  winningLine: readonly number[] | null;
+  lastMove: Move | null;
   onRestart: () => void;
   onExit: () => void;
   reduceMotion: boolean;
@@ -496,7 +508,7 @@ function GameOverOverlay({
         : 'A IA foi mais forte. Tenta novamente!'
       : 'Linha de três completa!';
 
-  const emoji = isDraw ? '🤝' : humanWon ? '🏆' : humanLost ? '😔' : winner === 'P1' ? '🟢' : '🔴';
+  const ResultIcon = isDraw ? Handshake : humanWon ? Trophy : humanLost ? Frown : Trophy;
   const color = isDraw
     ? 'text-muted-foreground'
     : humanWon || ((mode !== 'pve' && mode !== 'practice') && winner)
@@ -535,23 +547,32 @@ function GameOverOverlay({
             initial={reduceMotion ? undefined : { scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.1 }}
-            className="text-6xl mb-3"
+            className={cn(
+              'w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center',
+              isDraw
+                ? 'bg-surface-2 text-muted-foreground'
+                : humanLost
+                  ? 'bg-p2/15 text-p2'
+                  : 'bg-gold/15 text-gold',
+            )}
           >
-            {emoji}
+            <ResultIcon className="w-10 h-10" />
           </motion.div>
           <h2 className={cn('font-display text-4xl tracking-wide mb-1', color, humanWon && 'text-glow-gold')}>{title}</h2>
           <p className="text-sm text-muted-foreground mb-5">{subtitle}</p>
 
-          {!isDraw && (
-            <div className="flex justify-center gap-2 mb-5">
-              <div className={cn(
-                'w-12 h-12 rounded-full',
-                winner === 'P1' ? 'bg-gradient-to-br from-p1 to-emerald-700 piece-glow-p1' : 'bg-gradient-to-br from-p2 to-red-900 piece-glow-p2',
-              )} />
-              <div className={cn(
-                'w-12 h-12 rounded-full',
-                winner === 'P2' ? 'bg-gradient-to-br from-p2 to-red-900 piece-glow-p2' : 'bg-surface-2 opacity-50',
-              )} />
+          {!isDraw && winner && winningLine && winningLine.length === 3 && (
+            <div className="mb-5">
+              <WinLineDiagram board={board} winningLine={winningLine} winner={winner} />
+              <p className="text-xs text-muted-foreground mt-2">
+                Como venceu:{' '}
+                <span className="text-foreground font-medium">{describeLine(winningLine)}</span>
+                {lastMove && (
+                  <span className="block mt-0.5">
+                    Jogada final: casa {lastMove.from} → casa {lastMove.to}
+                  </span>
+                )}
+              </p>
             </div>
           )}
 
@@ -568,6 +589,61 @@ function GameOverOverlay({
         </GameCard>
       </motion.div>
     </motion.div>
+  );
+}
+
+const LINE_LABELS: Record<string, string> = {
+  '1,2,3': 'linha de baixo',
+  '4,5,6': 'linha do meio',
+  '7,8,9': 'linha de cima',
+  '1,4,7': 'coluna da esquerda',
+  '2,5,8': 'coluna do meio',
+  '3,6,9': 'coluna da direita',
+  '1,5,9': 'diagonal principal',
+  '3,5,7': 'diagonal secundária',
+};
+
+function describeLine(line: readonly number[]): string {
+  const key = [...line].sort((a, b) => a - b).join(',');
+  return LINE_LABELS[key] ?? 'linha vencedora';
+}
+
+function WinLineDiagram({
+  board,
+  winningLine,
+  winner,
+}: {
+  board: readonly Cell[];
+  winningLine: readonly number[];
+  winner: 'P1' | 'P2';
+}) {
+  const winSet = new Set(winningLine);
+  return (
+    <div className="grid grid-cols-3 gap-1.5 w-fit mx-auto p-2 rounded-xl bg-surface-2/60 border border-border">
+      {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((sq) => {
+        const cell = board[sq - 1];
+        const win = winSet.has(sq);
+        return (
+          <div
+            key={sq}
+            className={cn(
+              'w-7 h-7 rounded-md flex items-center justify-center',
+              win ? (winner === 'P1' ? 'bg-p1' : 'bg-p2') : 'bg-surface',
+              win && 'ring-2 ring-gold',
+            )}
+          >
+            {cell && (
+              <span
+                className={cn(
+                  'w-3 h-3 rounded-full',
+                  win ? 'bg-white/90' : cell === 'P1' ? 'bg-p1/40' : 'bg-p2/40',
+                )}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -590,7 +666,7 @@ function getStatusMessage(
   const isHumanTurn = mode === 'pve' || mode === 'practice' ? state.currentPlayer === humanSide : true;
   if (isHumanTurn) {
     if (showThreats && currentThreats.length > 0) {
-      return '⚠️ Ameaça do adversário! Bloqueia!';
+      return 'Ameaça do adversário! Bloqueia!';
     }
     return 'A tua vez. Escolhe uma peça.';
   }

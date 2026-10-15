@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Users, Bot, Swords, Gift, Check } from 'lucide-react';
+import { Users, Bot, Swords, Gift } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { GameButton, GameLogo } from '@/components/game/ui';
 
@@ -11,24 +11,29 @@ export function WelcomeScreen() {
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-background overflow-y-auto">
       {/* Padrão de fundo */}
-      <div className="pointer-events-none absolute inset-0 angolan-pattern opacity-50" />
-      <div className="pointer-events-none absolute top-0 left-0 right-0 h-1 angolan-border" />
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-1 angolan-border" />
+      <div className="pointer-events-none absolute inset-0 angolan-pattern" />
+      {/* Brilho superior */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-72"
+        style={{
+          background:
+            'radial-gradient(70% 100% at 50% 0%, oklch(0.83 0.14 85 / 0.10), transparent 70%)',
+        }}
+        aria-hidden
+      />
 
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center min-h-full px-6 py-10 max-w-md mx-auto">
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center min-h-full px-6 py-10 max-w-md mx-auto w-full">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="flex flex-col items-center text-center gap-2 mb-8"
+          className="flex flex-col items-center text-center gap-3 mb-8"
         >
           <GameLogo size="lg" />
-          <h1 className="font-display text-4xl tracking-wider mt-4 leading-none">
+          <h1 className="font-display text-4xl tracking-wide mt-3 leading-none">
             TIRA O COCÓ DO MEIO
           </h1>
-          <p className="text-gold font-display text-xl tracking-wide text-glow-gold">
-            Joga, desafia, ganha!
-          </p>
+          <p className="text-gold text-base font-medium">Joga, desafia, ganha!</p>
         </motion.div>
 
         <motion.p
@@ -46,9 +51,9 @@ export function WelcomeScreen() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="w-full space-y-2.5 mb-8"
         >
-          <BenefitRow icon={<Bot className="w-4 h-4" />} text="Joga Online ou Offline" />
-          <BenefitRow icon={<Users className="w-4 h-4" />} text="Salas e Torneios" />
-          <BenefitRow icon={<Gift className="w-4 h-4" />} text="Apostas e Gratuito" />
+          <BenefitRow icon={<Bot className="w-4 h-4" />} text="Joga online ou offline" />
+          <BenefitRow icon={<Users className="w-4 h-4" />} text="Salas e torneios" />
+          <BenefitRow icon={<Gift className="w-4 h-4" />} text="Bónus e modo gratuito" />
         </motion.div>
 
         <motion.div
@@ -58,30 +63,30 @@ export function WelcomeScreen() {
           className="w-full space-y-2.5"
         >
           <GameButton
-            variant="p2"
+            variant="primary"
             className="w-full h-12 text-base"
             onClick={() => navigate('auth')}
           >
-            <Swords className="w-4 h-4 mr-2" />
-            CRIAR CONTA
+            <Swords className="w-5 h-5 mr-2" />
+            Criar conta
           </GameButton>
           <GameButton
             variant="outline"
             className="w-full h-12 text-base"
             onClick={() => navigate('auth')}
           >
-            ENTRAR
+            Entrar
           </GameButton>
           <button
             type="button"
             onClick={() => navigate('home')}
-            className="w-full text-center text-xs text-muted-foreground hover:text-foreground underline py-2"
+            className="w-full text-center text-sm text-muted-foreground hover:text-foreground py-2.5"
           >
             Continuar como convidado
           </button>
         </motion.div>
 
-        <p className="mt-6 text-[10px] text-muted-foreground/60 text-center max-w-xs">
+        <p className="mt-6 text-xs text-muted-foreground/70 text-center max-w-xs">
           Bónus de boas-vindas até 5.000 KZ. Moeda virtual, sem dinheiro real.
         </p>
       </div>
@@ -91,12 +96,11 @@ export function WelcomeScreen() {
 
 function BenefitRow({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-surface/60 border border-border/40">
-      <div className="w-8 h-8 rounded-full bg-p1/15 text-p1 flex items-center justify-center shrink-0">
+    <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-surface border border-border">
+      <div className="w-9 h-9 rounded-xl bg-gold/12 text-gold flex items-center justify-center shrink-0">
         {icon}
       </div>
-      <span className="text-sm text-foreground">{text}</span>
-      <Check className="w-4 h-4 text-p1 ml-auto" />
+      <span className="text-sm font-medium text-foreground">{text}</span>
     </div>
   );
 }

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useProfile } from '@/store/profile';
+import { DifficultyIcon, LockIcon, AchievementIcon } from '@/components/game/icons';
 import { useProgression } from '@/store/progression';
 import { useAuth } from '@/store/auth';
 import type { Difficulty } from '@tira/ai';
@@ -76,7 +77,7 @@ export function ProfileScreen() {
       {/* Cabeçalho do perfil */}
       <GameCard className="p-5" glow="gold">
         <div className="flex flex-col items-center text-center gap-3">
-          <LevelAvatar emoji="🦁" level={profile.level} size="lg" isTop={profile.elo > 1500} online />
+          <LevelAvatar name={displayName} level={profile.level} size="lg" isTop={profile.elo > 1500} online />
           <div>
             <h2 className="font-display text-2xl tracking-wide">
               {displayName}
@@ -227,7 +228,7 @@ export function ProfileScreen() {
                     'w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0',
                     a.unlockedAt ? 'bg-gold/15' : 'bg-surface-2',
                   )}>
-                    {a.icon}
+                    <AchievementIcon icon={a.icon} className="w-5 h-5 text-gold" />
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-xs font-semibold leading-tight">{a.title}</h4>
@@ -338,11 +339,11 @@ function ProgressionPanel() {
   const wins = useProgression((s) => s.winsByDifficulty);
   const unlocked = useProgression((s) => s.unlocked);
 
-  const diffs: { id: Difficulty; label: string; emoji: string; color: string }[] = [
-    { id: 'easy', label: 'Fácil', emoji: '😊', color: 'text-p1' },
-    { id: 'medium', label: 'Médio', emoji: '🧠', color: 'text-gold' },
-    { id: 'hard', label: 'Difícil', emoji: '💎', color: 'text-orange' },
-    { id: 'perfect', label: 'Perfeito', emoji: '👑', color: 'text-p2' },
+  const diffs: { id: Difficulty; label: string; color: string }[] = [
+    { id: 'easy', label: 'Fácil', color: 'text-p1' },
+    { id: 'medium', label: 'Médio', color: 'text-gold' },
+    { id: 'hard', label: 'Difícil', color: 'text-orange' },
+    { id: 'perfect', label: 'Perfeito', color: 'text-p2' },
   ];
 
   const reqs: Record<Difficulty, number> = { easy: 0, medium: 2, hard: 3, perfect: 5 };
@@ -365,7 +366,11 @@ function ProgressionPanel() {
                 'w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0',
                 isUnlocked ? 'bg-surface-2' : 'bg-surface-2/50',
               )}>
-                {isUnlocked ? d.emoji : '🔒'}
+                {isUnlocked ? (
+                  <DifficultyIcon difficulty={d.id} className={cn('w-5 h-5', d.color)} />
+                ) : (
+                  <LockIcon className="w-4 h-4 text-muted-foreground" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">

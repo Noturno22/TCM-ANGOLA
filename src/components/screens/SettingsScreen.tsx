@@ -1,8 +1,6 @@
 'use client';
 
 import {
-  Moon,
-  Sun,
   Volume2,
   Music,
   Eye,
@@ -16,6 +14,7 @@ import {
   Info,
   Bell,
   Languages,
+  Sun,
 } from 'lucide-react';
 import { useSettings } from '@/store/settings';
 import { useProfile } from '@/store/profile';
@@ -65,13 +64,6 @@ export function SettingsScreen() {
         <SectionTitle title="Apariência" />
         <GameCard className="divide-y divide-border/40">
           <ToggleRow
-            icon={settings.theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-            label="Modo escuro"
-            description="Alternar entre tema escuro e claro"
-            checked={settings.theme === 'dark'}
-            onChange={(v) => settings.setTheme(v ? 'dark' : 'light')}
-          />
-          <ToggleRow
             icon={<Eye className="w-4 h-4" />}
             label="Modo daltonismo"
             description="Ajusta as cores para maior contraste"
@@ -81,7 +73,7 @@ export function SettingsScreen() {
           <ToggleRow
             icon={<Triangle className="w-4 h-4" />}
             label="Símbolos nas peças"
-            description="Mostra ▲ no P1 e ● no P2 (acessibilidade)"
+            description="Mostra triângulos no P1 e círculos no P2 (acessibilidade)"
             checked={settings.symbolsOnPieces}
             onChange={(v) => settings.set('symbolsOnPieces', v)}
           />
@@ -91,6 +83,13 @@ export function SettingsScreen() {
             description="Desativa animações para maior clareza"
             checked={settings.reduceMotion}
             onChange={(v) => settings.set('reduceMotion', v)}
+          />
+          <ToggleRow
+            icon={<Sun className="w-4 h-4" />}
+            label="Modo claro"
+            description="Interface clara em vez do tema escuro"
+            checked={settings.theme === 'light'}
+            onChange={(v) => settings.set('theme', v ? 'light' : 'dark')}
           />
         </GameCard>
       </section>
@@ -161,15 +160,15 @@ export function SettingsScreen() {
             <span className="text-sm flex-1">Idioma da interface</span>
             <Select
               value={settings.language}
-              onValueChange={(v) => settings.set('language', v as 'pt' | 'en')}
+              onValueChange={(v) => settings.set('language', v as 'pt' | 'en' | 'fr')}
             >
-              <SelectTrigger className="w-32 h-9">
+              <SelectTrigger className="w-36 h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="pt">🇵🇹 Português</SelectItem>
-                <SelectItem value="en">🇬🇧 English</SelectItem>
-                <SelectItem value="fr">🇫🇷 Français</SelectItem>
+                <SelectItem value="pt">Português</SelectItem>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="fr">Français</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -124,7 +124,7 @@ export function WalletScreen() {
         <GameCard className="p-6 overflow-hidden relative" glow="gold">
           <div className="pointer-events-none absolute -top-6 -right-6 w-32 h-32 angolan-diamond opacity-20" />
           <div className="relative">
-            <p className="text-[10px] uppercase tracking-widest text-gold font-semibold flex items-center gap-1.5">
+            <p className="text-[11px] uppercase tracking-widest text-gold font-semibold flex items-center gap-1.5">
               <Coins className="w-3.5 h-3.5" />
               Saldo de jogo (virtual)
             </p>
@@ -154,7 +154,7 @@ export function WalletScreen() {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-display text-lg tracking-wide">Bónus Diário</h3>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {bonusClaimed
                 ? 'Já recebeste o teu bónus hoje. Volta amanhã!'
                 : 'Recebe 500 KZ virtuais grátis. Disponível uma vez por dia.'}
@@ -204,7 +204,7 @@ export function WalletScreen() {
                       <p className="text-sm font-semibold truncate">{m.label}</p>
                       <span
                         className={cn(
-                          'text-[10px] font-bold flex items-center gap-0.5 shrink-0',
+                          'text-[11px] font-bold flex items-center gap-0.5 shrink-0',
                           done ? 'text-p1' : 'text-gold',
                         )}
                       >
@@ -214,7 +214,7 @@ export function WalletScreen() {
                     </div>
                     <div className="flex items-center gap-2 mt-1.5">
                       <Progress value={pct} className="h-1.5 flex-1" />
-                      <span className="text-[10px] text-muted-foreground tabular-nums">
+                      <span className="text-xs text-muted-foreground tabular-nums">
                         {m.current}/{m.target}
                       </span>
                     </div>
@@ -234,7 +234,7 @@ export function WalletScreen() {
         <SectionTitle
           title="Histórico do jogo"
           action={
-            <span className="text-[11px] text-muted-foreground">{transactions.length} movimentos</span>
+            <span className="text-xs text-muted-foreground">{transactions.length} movimentos</span>
           }
         />
         <GameCard className="divide-y divide-border/30">
@@ -259,7 +259,7 @@ export function WalletScreen() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{tx.label}</p>
-                  <p className="text-[10px] text-muted-foreground">{tx.date}</p>
+                  <p className="text-xs text-muted-foreground">{tx.date}</p>
                 </div>
                 <span
                   className={cn(
@@ -279,7 +279,7 @@ export function WalletScreen() {
       {/* Aviso de jogo responsável */}
       <div className="flex items-start gap-2.5 px-3 py-3 rounded-xl bg-surface/60 border border-border/40">
         <Info className="w-4 h-4 shrink-0 mt-0.5 text-muted-foreground" />
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
+        <p className="text-xs text-muted-foreground leading-relaxed">
           <strong className="text-foreground">Joga com responsabilidade.</strong> As moedas do jogo
           são virtuais e sem valor monetário. Os depósitos na carteira (AOA) envolvem dinheiro real e
           são processados por um prestador de pagamentos; os levantamentos exigem verificação de

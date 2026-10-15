@@ -10,6 +10,8 @@ import {
   ChevronRight,
   Target,
   Lightbulb,
+  Trophy,
+  Frown,
 } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useGame } from '@/store/game';
@@ -135,8 +137,6 @@ export function CampaignPlayScreen() {
     );
   }
 
-  const flipped = level.humanSide === 'P2';
-
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-background overflow-hidden">
       <div className="pointer-events-none absolute inset-0 angolan-pattern opacity-30" />
@@ -207,7 +207,6 @@ export function CampaignPlayScreen() {
             winningLine={game.winningLine}
             threatSquares={[]}
             onSquareClick={handleSquareClick}
-            flipped={flipped}
             disabled={game.state.currentPlayer !== game.humanSide}
             size="md"
           />
@@ -275,7 +274,7 @@ export function CampaignPlayScreen() {
                   transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.1 }}
                   className="text-6xl mb-3"
                 >
-                  {result === 'success' ? '🏆' : '😔'}
+                  {result === 'success' ? <Trophy className="w-14 h-14 text-gold" /> : <Frown className="w-14 h-14 text-p2" />}
                 </motion.div>
                 <h2 className={cn(
                   'font-display text-3xl tracking-wide mb-1',

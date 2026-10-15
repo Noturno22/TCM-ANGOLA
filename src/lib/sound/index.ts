@@ -216,20 +216,32 @@ export function useSound() {
   return { play: playSound };
 }
 
-// ============ MÚSICA DE FUNDO AMBIENTE ============
+// ============ MÚSICA DE FUNDO ADAPTATIVA ============
 // Loop sintetizado, discreto, inspirado em sons angolanos contemporâneos.
-// Usa uma progressão de acordes suave com pad + arpejo subtil.
+// Máquina de estados dirigida por setMusicState(state): andamento (cadência/BPM),
+// densidade rítmica, registo e volume mudam com a presença do jogador e a partida.
+// Estados: absent (calmo), idle (neutro), match (focado), move (acento curto),
+//          win (triunfante), loss (sombrio).
 
 let musicGain: GainNode | null = null;
-let musicTimer: ReturnType<typeof setInterval> | null = null;
+let musicTimer: ReturnType<typeof setTimeout> | null = null;
+let moveReturnTimer: ReturnType<typeof setTimeout> | null = null;
+let musicRunning = false;
 let musicEnabled = false;
 let musicStep = 0;
 
+/** Estados musicais adaptativos (dirigidos por setMusicState). */
+export type MusicState = 'absent' | 'idle' | 'match' | 'move' | 'win' | 'loss';
+
+/** Estados contextuais (persistentes); 'move' é sempre transitório. */
+type BaseMusicState = Exclude<MusicState, 'move'>;
+
 /**
- * Progressões de acordes por intensidade.
+ * Progressões de acordes por estado musical.
  * - 'calm': Am-F-C-G (relaxante, menu)
- * - 'tension': Am-G-Em-F (menos resolução, durante ameaças)
+ * - 'tension': Am-G-Em-F (menos resolução, durante partida)
  * - 'victory': C-G-Am-F (resolutiva, mais animada)
+ * - 'loss': Dm-Am-Bb-A (menor, sombria)
  */
 const CHORDS_CALM: number[][] = [
   [220.0, 261.63, 329.63], // Am
@@ -249,15 +261,46 @@ const CHORDS_VICTORY: number[][] = [
   [220.0, 261.63, 329.63], // Am
   [174.61, 220.0, 261.63], // F
 ];
+const CHORDS_LOSS: number[][] = [
+  [146.83, 174.61, 220.0], // Dm
+  [220.0, 261.63, 329.63], // Am
+  [233.08, 293.66, 349.23], // Bb
+  [220.0, 277.18, 329.63], // A
+];
 
-type MusicIntensity = 'calm' | 'tension' | 'victory';
-let musicIntensity: MusicIntensity = 'calm';
+interface MusicParams {
+  /** Cadência entre acordes em ms (andamento: menor valor = mais rápido/focado). */
+  chordMs: number;
+  padVol: number;
+  arpVol: number;
+  /** Nº de notas do arpejo por acorde (densidade rítmica). */
+  arpCount: number;
+  /** Registo do arpejo: 2 = oitava acima, 1 = base, 0.5 = oitava abaixo. */
+  arpMul: number;
+  masterVol: number;
+  chords: number[][];
+}
 
-/**
- * Define a intensidade da música conforme o estado do jogo.
- */
-export function setMusicIntensity(intensity: MusicIntensity) {
-  musicIntensity = intensity;
+const MUSIC_PARAMS: Record<BaseMusicState, MusicParams> = {
+  absent: { chordMs: 6000, padVol: 0.016, arpVol: 0.007, arpCount: 2, arpMul: 1, masterVol: 0.3, chords: CHORDS_CALM },
+  idle: { chordMs: 4000, padVol: 0.03, arpVol: 0.015, arpCount: 4, arpMul: 2, masterVol: 0.5, chords: CHORDS_CALM },
+  match: { chordMs: 2600, padVol: 0.038, arpVol: 0.022, arpCount: 6, arpMul: 2, masterVol: 0.62, chords: CHORDS_TENSION },
+  win: { chordMs: 2000, padVol: 0.05, arpVol: 0.03, arpCount: 8, arpMul: 2, masterVol: 0.75, chords: CHORDS_VICTORY },
+  loss: { chordMs: 5000, padVol: 0.028, arpVol: 0.01, arpCount: 2, arpMul: 0.5, masterVol: 0.4, chords: CHORDS_LOSS },
+};
+
+/** Último estado contextual persistente (o que se volta ao sair de 'absent'/'move'). */
+let contextState: BaseMusicState = 'idle';
+/** Estado corrente da máquina (pode ser 'move', transitório, ou 'absent'). */
+let currentMusicState: MusicState = 'idle';
+
+function paramsFor(state: MusicState): MusicParams {
+  return MUSIC_PARAMS[state === 'move' ? contextState : state];
+}
+
+/** Devolve o estado musical corrente (útil para wiring/depuração). */
+export function getMusicState(): MusicState {
+  return currentMusicState;
 }
 
 function isMusicOn(): boolean {
@@ -295,14 +338,14 @@ function playChordPad(freqs: number[], duration: number, volume: number) {
   }
 }
 
-function playArpeggioNote(freq: number, time: number, volume: number) {
+function playArpeggioNote(freq: number, time: number, volume: number, mul: number) {
   const c = getCtx();
   if (!c) return;
   const now = c.currentTime + time;
   const osc = c.createOscillator();
   const g = c.createGain();
   osc.type = 'triangle';
-  osc.frequency.value = freq * 2; // oitava acima
+  osc.frequency.value = freq * mul;
   g.gain.setValueAtTime(0.0001, now);
   g.gain.linearRampToValueAtTime(volume, now + 0.02);
   g.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
@@ -312,48 +355,155 @@ function playArpeggioNote(freq: number, time: number, volume: number) {
   osc.stop(now + 0.4);
 }
 
+function effectiveMusicState(): MusicState {
+  return currentMusicState === 'move' ? contextState : currentMusicState;
+}
+
 function stepMusic() {
   if (!isMusicOn()) return;
   const c = getCtx();
   if (!c || !musicGain) return;
-  // Escolher a progressão conforme a intensidade
-  const chords = musicIntensity === 'tension'
-    ? CHORDS_TENSION
-    : musicIntensity === 'victory'
-      ? CHORDS_VICTORY
-      : CHORDS_CALM;
-  const chord = chords[musicStep % chords.length];
-  // Volume e velocidade do arpejo variam com a intensidade
-  const padVol = musicIntensity === 'tension' ? 0.04 : musicIntensity === 'victory' ? 0.05 : 0.03;
-  const arpVol = musicIntensity === 'tension' ? 0.02 : musicIntensity === 'victory' ? 0.025 : 0.015;
-  const arpCount = musicIntensity === 'victory' ? 6 : 4; // arpejo mais denso na vitória
-  // Pad (acorde sustentado)
-  playChordPad(chord, 4.0, padVol);
-  // Arpejo subtil
-  for (let i = 0; i < arpCount; i++) {
-    playArpeggioNote(chord[i % chord.length], i * (4.0 / arpCount), arpVol);
+  const p = paramsFor(effectiveMusicState());
+  const chord = p.chords[musicStep % p.chords.length];
+  playChordPad(chord, p.chordMs / 1000 + 0.8, p.padVol);
+  const stepGap = p.chordMs / 1000 / p.arpCount;
+  for (let i = 0; i < p.arpCount; i++) {
+    playArpeggioNote(chord[i % chord.length], i * stepGap, p.arpVol, p.arpMul);
   }
   musicStep++;
+}
+
+function scheduleNextStep(delayMs: number) {
+  if (musicTimer) clearTimeout(musicTimer);
+  if (!musicRunning) return;
+  musicTimer = setTimeout(() => {
+    stepMusic();
+    scheduleNextStep(paramsFor(effectiveMusicState()).chordMs);
+  }, delayMs);
+}
+
+function rampMaster(target: number, seconds: number) {
+  const c = getCtx();
+  if (!c || !musicGain) return;
+  const now = c.currentTime;
+  musicGain.gain.cancelScheduledValues(now);
+  musicGain.gain.setValueAtTime(musicGain.gain.value, now);
+  musicGain.gain.linearRampToValueAtTime(target, now + seconds);
+}
+
+function playStingNote(freq: number, time: number, dur: number) {
+  const c = getCtx();
+  if (!c || !musicGain) return;
+  const now = c.currentTime + time;
+  const osc = c.createOscillator();
+  const g = c.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.linearRampToValueAtTime(0.06, now + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  osc.connect(g);
+  g.connect(musicGain);
+  osc.start(now);
+  osc.stop(now + dur);
+}
+
+/**
+ * Acento de movimento: duck da música + stinger curto; regressa ao contexto em 600ms.
+ */
+function triggerMoveAccent() {
+  const c = getCtx();
+  if (!c) return;
+  const baseVol = paramsFor(contextState).masterVol;
+  if (musicGain) {
+    const now = c.currentTime;
+    musicGain.gain.cancelScheduledValues(now);
+    musicGain.gain.setValueAtTime(musicGain.gain.value, now);
+    musicGain.gain.linearRampToValueAtTime(baseVol * 0.35, now + 0.06);
+    musicGain.gain.linearRampToValueAtTime(baseVol, now + 0.55);
+  }
+  playStingNote(659.25, 0, 0.12);
+  playStingNote(880, 0.09, 0.14);
+  playStingNote(1174.66, 0.18, 0.22);
+  currentMusicState = 'move';
+  if (moveReturnTimer) clearTimeout(moveReturnTimer);
+  moveReturnTimer = setTimeout(() => {
+    moveReturnTimer = null;
+    if (currentMusicState === 'move') {
+      currentMusicState = contextState;
+      rampMaster(paramsFor(contextState).masterVol, 0.4);
+    }
+  }, 600);
+}
+
+/**
+ * Dirige a máquina de estados da música.
+ * - 'absent': jogador ausente (aba escondida / inatividade) — o mais calmo
+ * - 'idle': presente no site sem jogar — neutro
+ * - 'match': em partida — focado (andamento e densidade subidos)
+ * - 'move': acento transitório (duck + stinger), regressa ao estado contextual
+ * - 'win' / 'loss': triunfante / sombrio
+ * Transições usam rampas no master gain (crossfade ~0.4-0.9s), sem cortes secos.
+ */
+export function setMusicState(state: MusicState) {
+  if (state === 'move') {
+    triggerMoveAccent();
+    return;
+  }
+  if (moveReturnTimer) {
+    clearTimeout(moveReturnTimer);
+    moveReturnTimer = null;
+  }
+  if (state === 'absent') {
+    currentMusicState = 'absent';
+    rampMaster(MUSIC_PARAMS.absent.masterVol, 1.2);
+    if (musicRunning) scheduleNextStep(MUSIC_PARAMS.absent.chordMs * 0.25);
+    return;
+  }
+  const prev = contextState;
+  contextState = state;
+  currentMusicState = state;
+  const p = paramsFor(state);
+  rampMaster(p.masterVol, 0.9);
+  if (musicRunning && prev !== state) {
+    scheduleNextStep(p.chordMs * 0.25);
+  }
+}
+
+/**
+ * Regressa da presença 'absent' ao estado contextual anterior (ex.: 'match'),
+ * sem o cegar com 'idle' quando uma partida continua.
+ */
+export function resumeMusicPresence() {
+  if (currentMusicState !== 'absent') return;
+  setMusicState(contextState);
 }
 
 export function startMusic() {
   if (!isMusicOn()) return;
   const c = getCtx();
   if (!c) return;
-  if (musicTimer) return; // já a tocar
+  if (musicRunning) return;
   musicGain = c.createGain();
-  musicGain.gain.value = 0.5;
+  const target = paramsFor(effectiveMusicState()).masterVol;
+  musicGain.gain.setValueAtTime(0.0001, c.currentTime);
+  musicGain.gain.linearRampToValueAtTime(target, c.currentTime + 1.2);
   musicGain.connect(c.destination);
   musicStep = 0;
+  musicRunning = true;
   stepMusic();
-  musicTimer = setInterval(stepMusic, 4000); // novo acorde a cada 4s
+  scheduleNextStep(paramsFor(effectiveMusicState()).chordMs);
   musicEnabled = true;
 }
 
 export function stopMusic() {
   if (musicTimer) {
-    clearInterval(musicTimer);
+    clearTimeout(musicTimer);
     musicTimer = null;
+  }
+  if (moveReturnTimer) {
+    clearTimeout(moveReturnTimer);
+    moveReturnTimer = null;
   }
   if (musicGain) {
     try {
@@ -363,6 +513,7 @@ export function stopMusic() {
     }
     musicGain = null;
   }
+  musicRunning = false;
   musicEnabled = false;
 }
 

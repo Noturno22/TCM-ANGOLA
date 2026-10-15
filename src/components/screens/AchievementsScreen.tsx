@@ -6,6 +6,7 @@ import { Lock, Trophy, Sparkles } from 'lucide-react';
 import { useProfile, type Achievement } from '@/store/profile';
 import { GameCard, SectionTitle } from '@/components/game/ui';
 import { Progress } from '@/components/ui/progress';
+import { AchievementIcon } from '@/components/game/icons';
 import { cn } from '@/lib/utils';
 
 export function AchievementsScreen() {
@@ -70,7 +71,7 @@ export function AchievementsScreen() {
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
               {unlocked.length === achievements.length
-                ? 'Conquista completa! 🏆'
+                ? 'Conquista completa!'
                 : `${locked.length} por desbloquear`}
             </p>
           </div>
@@ -164,7 +165,7 @@ function AchievementCard({ achievement, index }: { achievement: Achievement; ind
             )}
           >
             {unlocked ? (
-              achievement.icon
+              <AchievementIcon icon={achievement.icon} className="w-7 h-7 text-gold" />
             ) : (
               <span className="text-muted-foreground">
                 <Lock className="w-5 h-5" />

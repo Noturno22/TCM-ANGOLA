@@ -222,9 +222,9 @@ export function ChallengeScreen() {
   };
 
   const statusMessage = useMemo(() => {
-    if (phase === 'solved') return 'Resolvido! 🎉';
+    if (phase === 'solved') return 'Resolvido!';
     if (phase === 'awaiting-ia') return 'A IA está a responder…';
-    if (phase === 'second-move') return 'Encontra a jogada vencedora! ⚡';
+    if (phase === 'second-move') return 'Encontra a jogada vencedora!';
     if (phase === 'wrong') return 'Tenta outra vez!';
     if (isMate2) return 'Faz a primeira jogada para vencer em 2!';
     return 'Faz a jogada vencedora!';
@@ -496,7 +496,7 @@ function PuzzleRow({
         'w-10 h-10 rounded-lg flex items-center justify-center text-lg shrink-0',
         solved ? 'bg-p1/15' : 'bg-surface-2',
       )}>
-        {solved ? '✅' : puzzle.mateIn === 2 ? '🧩' : '🎯'}
+        {solved ? <Trophy className="w-5 h-5 text-gold" /> : puzzle.mateIn === 2 ? <Lightbulb className="w-5 h-5 text-gold" /> : <Target className="w-5 h-5 text-gold" />}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">

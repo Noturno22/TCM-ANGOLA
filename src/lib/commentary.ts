@@ -30,31 +30,27 @@ export function commentOnMove(
   const dest = move.to;
   const player = prevState.currentPlayer;
   const playerLabel = player === 'P1' ? 'Jogador 1' : 'Jogador 2';
-  const pieceEmoji = player === 'P1' ? '🟢' : '🔴';
 
   // Vitória
   if (newState.winner) {
     if (newState.winningLine) {
       const [a, b, c] = newState.winningLine;
       return {
-        text: `🏆 ${playerLabel} completa a linha ${a}-${b}-${c} e vence!`,
+        text: `${playerLabel} completa a linha ${a}-${b}-${c} e vence!`,
         type: 'win',
-        emoji: '🏆',
       };
     }
     return {
-      text: `🏆 ${playerLabel} vence!`,
+      text: `${playerLabel} vence!`,
       type: 'win',
-      emoji: '🏆',
     };
   }
 
   // Empate
   if (newState.status === 'DRAW') {
     return {
-      text: `🤝 Empate! A posição repetiu-se.`,
+      text: `Empate! A posição repetiu-se.`,
       type: 'info',
-      emoji: '🤝',
     };
   }
 
@@ -62,16 +58,14 @@ export function commentOnMove(
   const myWinningMoves = getWinningMoves(newState, player);
   if (myWinningMoves.length >= 2) {
     return {
-      text: `⚡ ${playerLabel} cria uma ameaça dupla! O adversário só pode bloquear uma.`,
+      text: `${playerLabel} cria uma ameaça dupla! O adversário só pode bloquear uma.`,
       type: 'threat',
-      emoji: '⚡',
     };
   }
   if (myWinningMoves.length === 1) {
     return {
-      text: `⚠️ ${playerLabel} ameaça vitória! O adversário tem de bloquear.`,
+      text: `${playerLabel} ameaça vitória! O adversário tem de bloquear.`,
       type: 'threat',
-      emoji: '⚠️',
     };
   }
 
@@ -79,9 +73,8 @@ export function commentOnMove(
   const movedToCenter = dest === 5;
   if (movedToCenter && prevState.board[4] === null) {
     return {
-      text: `🎯 ${playerLabel} ocupa o centro — posição estratégica forte.`,
+      text: `${playerLabel} ocupa o centro — posição estratégica forte.`,
       type: 'good',
-      emoji: '🎯',
     };
   }
 
@@ -91,9 +84,8 @@ export function commentOnMove(
   const leftHomeLine = wasInHomeLine && !homeLine.includes(dest);
   if (leftHomeLine && moveNum === 1) {
     return {
-      text: `🚀 ${playerLabel} sai da linha de casa à procura de estratégia.`,
+      text: `${playerLabel} sai da linha de casa à procura de estratégia.`,
       type: 'neutral',
-      emoji: '🚀',
     };
   }
 
@@ -101,9 +93,8 @@ export function commentOnMove(
   const returnedHome = !homeLine.includes(mover) && homeLine.includes(dest);
   if (returnedHome) {
     return {
-      text: `↩️ ${playerLabel} regressa à linha de casa.`,
+      text: `${playerLabel} regressa à linha de casa.`,
       type: 'neutral',
-      emoji: '↩️',
     };
   }
 
@@ -114,9 +105,8 @@ export function commentOnMove(
     const blockedThreat = prevThreats.some((t) => t.to === dest);
     if (blockedThreat) {
       return {
-        text: `🛡️ ${playerLabel} bloqueia a ameaça do adversário!`,
+        text: `${playerLabel} bloqueia a ameaça do adversário!`,
         type: 'good',
-        emoji: '🛡️',
       };
     }
   }
@@ -124,15 +114,14 @@ export function commentOnMove(
   // Jogada de abertura clássica (primeira jogada para o centro)
   if (moveNum === 1 && dest === 5) {
     return {
-      text: `🎯 ${playerLabel} abre com o centro — jogada clássica e forte.`,
+      text: `${playerLabel} abre com o centro — jogada clássica e forte.`,
       type: 'good',
-      emoji: '🎯',
     };
   }
 
   // Comentários neutros rotativos
   const neutralComments = [
-    `${pieceEmoji} ${playerLabel} move de ${mover} para ${dest}.`,
+    `${playerLabel} move de ${mover} para ${dest}.`,
     `${playerLabel} reorganiza as suas peças.`,
     `Jogada cautelosa de ${playerLabel}.`,
     `${playerLabel} ajusta a sua formação.`,
@@ -148,9 +137,9 @@ export function commentOnMove(
  */
 export function commentOnStart(): Commentary {
   const intros = [
-    { text: '🎯 Começa a partida! O Jogador 1 (verde) joga primeiro.', emoji: '🎯' },
-    { text: '⚡ Partida a decorrer! Quem formará a primeira linha?', emoji: '⚡' },
-    { text: '🦁 Que comecem os jogos! P1 tem a iniciativa.', emoji: '🦁' },
+    'Começa a partida! O Jogador 1 (verde) joga primeiro.',
+    'Partida a decorrer! Quem formará a primeira linha?',
+    'Que comecem os jogos! P1 tem a iniciativa.',
   ];
-  return { ...intros[Math.floor(Math.random() * intros.length)], type: 'info' };
+  return { text: intros[Math.floor(Math.random() * intros.length)], type: 'info' };
 }

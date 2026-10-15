@@ -11,6 +11,12 @@ import {
   RefreshCw,
   ChevronRight,
   Lightbulb,
+  Timer,
+  Coins,
+  XCircle,
+  Trophy,
+  Medal,
+  Target,
 } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useProfile } from '@/store/profile';
@@ -251,11 +257,11 @@ export function LightningChallengeScreen() {
         <GameCard className="p-4">
           <SectionTitle title="Como funciona" />
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p>⚡ 5 puzzles aleatórios (mate-in-1 e mate-in-2)</p>
-            <p>⏱️ Cronómetro total — quanto mais rápido, melhor</p>
-            <p>💰 +100 KZ por puzzle resolvido, +500 KZ bónus por completar todos</p>
-            <p>⏭️ Podes saltar um puzzle (não conta como resolvido)</p>
-            <p>❌ Jogada errada → volta a tentar (sem penalização de tempo)</p>
+            <p className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-gold shrink-0" /> 5 puzzles aleatórios (mate-in-1 e mate-in-2)</p>
+            <p className="flex items-center gap-1.5"><Timer className="w-3.5 h-3.5 text-gold shrink-0" /> Cronómetro total — quanto mais rápido, melhor</p>
+            <p className="flex items-center gap-1.5"><Coins className="w-3.5 h-3.5 text-gold shrink-0" /> +100 KZ por puzzle resolvido, +500 KZ bónus por completar todos</p>
+            <p className="flex items-center gap-1.5"><SkipForward className="w-3.5 h-3.5 text-gold shrink-0" /> Podes saltar um puzzle (não conta como resolvido)</p>
+            <p className="flex items-center gap-1.5"><XCircle className="w-3.5 h-3.5 text-p2 shrink-0" /> Jogada errada → volta a tentar (sem penalização de tempo)</p>
           </div>
         </GameCard>
 
@@ -283,7 +289,7 @@ export function LightningChallengeScreen() {
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             className="text-6xl mb-3"
           >
-            {isPerfect ? '🏆' : solvedCount >= 3 ? '🥈' : '🎯'}
+            {isPerfect ? <Trophy className="w-14 h-14 mx-auto text-gold" /> : solvedCount >= 3 ? <Medal className="w-14 h-14 mx-auto text-muted-foreground" /> : <Target className="w-14 h-14 mx-auto text-gold" />}
           </motion.div>
           <h2 className="font-display text-3xl tracking-wide mb-1">
             {isPerfect ? 'PERFEITO!' : `${solvedCount}/5 resolvidos`}
@@ -298,7 +304,7 @@ export function LightningChallengeScreen() {
               animate={{ opacity: 1, y: 0 }}
               className="text-sm text-p1 font-semibold mb-4 animate-pulse-glow"
             >
-              ⚡ NOVO RECORDE PESSOAL!
+              <Zap className="inline w-4 h-4 mr-1 -mt-0.5" />NOVO RECORDE PESSOAL!
             </motion.p>
           )}
 
@@ -384,9 +390,9 @@ export function LightningChallengeScreen() {
             )}
           >
             {feedback === 'correct'
-              ? '✅ Resolvido!'
+              ? 'Resolvido!'
               : feedback === 'wrong'
-                ? '❌ Tenta outra vez!'
+                ? 'Tenta outra vez!'
                 : currentPuzzle.mateIn === 2
                   ? 'Encontra a jogada que leva à vitória forçada'
                   : 'Encontra a jogada vencedora!'}

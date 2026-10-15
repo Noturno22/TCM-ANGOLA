@@ -3,6 +3,7 @@
 import { ChevronLeft, Bell, Settings as SettingsIcon } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useProfile } from '@/store/profile';
+import { useNotifications } from '@/store/notifications';
 import { BalancePill, GameLogo } from './ui';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/lib/i18n/hook';
@@ -24,6 +25,7 @@ const SCREEN_TITLES: Record<string, string> = {
   watch: 'nav.watch',
   campaign: 'nav.campaign',
   'campaign-play': 'nav.campaign',
+  notifications: 'nav.notifications',
 };
 
 export function AppHeader() {
@@ -31,6 +33,7 @@ export function AppHeader() {
   const back = useApp((s) => s.back);
   const navigate = useApp((s) => s.navigate);
   const coins = useProfile((s) => s.coins);
+  const unread = useNotifications((s) => s.unread);
   const { t } = useI18n();
 
   const titleKey = SCREEN_TITLES[screen] ?? '';
@@ -57,10 +60,16 @@ export function AppHeader() {
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-lg h-9 w-9"
+            onClick={() => navigate('notifications')}
+            className="rounded-lg h-9 w-9 relative"
             aria-label="Notificações"
           >
             <Bell className="w-4 h-4" />
+            {unread > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-p2 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                {unread > 9 ? '9+' : unread}
+              </span>
+            )}
           </Button>
           <Button
             variant="ghost"

@@ -73,12 +73,12 @@ const STEPS: TutorialStep[] = [
   {
     title: 'Controlas três peças',
     description:
-      'Tu és o Jogador 1. As tuas peças são verdes (▲) e começam nas casas 1, 2 e 3.',
+      'Tu és o Jogador 1. As tuas peças são verdes (triângulo) e começam nas casas 1, 2 e 3.',
     icon: <Hand className="w-5 h-5" />,
     board: makeState([P1, P1, P1, _, _, _, P2, P2, P2]).board,
     selected: 2,
     validTargets: [],
-    annotation: 'Peças verdes = tu. Peças vermelhas (●) = adversário.',
+    annotation: 'Peças verdes = tu. Peças vermelhas (círculo) = adversário.',
     highlight: 'p1',
   },
   {
