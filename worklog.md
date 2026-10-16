@@ -1191,3 +1191,28 @@ Stage Summary:
 Unresolved issues / próximas fases:
 - DoD 11 pede e2e de "sala → partida online (2 contextos)". Não implementado: exige um backend semeado (utilizadores confirmados + sessão), que não é automatizável sem service role/secrets. Relegado para quando houver ambiente de staging com Utilizadores de teste.
 - Perfis EAS (mobile) não fazem parte do CI (exigem `EXPO_TOKEN`); job a adicionar quando houver secrets.
+
+---
+
+Task ID: e2e-online
+Agent: Main Builder
+Task: Opção 1 — e2e online a 2 contextos (DoD Bloco 11)
+
+Contexto/verificação:
+- O DoD exige e2e de "sala → partida online (2 contextos)". Não era automatizável porque o web AuthScreen só tinha Google + OTP e o projeto tem `mailer_autoconfirm=false`.
+- Solução: login email/password **só para testes** (gated por `NEXT_PUBLIC_E2E_AUTH=1`) + utilizadores confirmados criados via Admin API (service role em `.env.e2e`, nunca commitada).
+
+Work Log:
+- Cliente: `src/store/auth.ts` ganhou `signInWithEmail`; `AuthScreen.tsx` mostra o formulário email/password apenas quando `NEXT_PUBLIC_E2E_AUTH === '1'` (invisível em produção).
+- `playwright.online.config.ts`: carrega `.env.e2e`, `testDir: ./e2e/online`, `globalSetup`/`globalTeardown`, `webServer` com Supabase real + `NEXT_PUBLIC_E2E_AUTH=1`. `playwright.config.ts` (offline) passou a `testIgnore: '**/online/**'`.
+- `e2e/online/`: `admin.ts` (Admin API: criar/encontrar/remover utilizadores; purga `accounts`/`kyc_records` RESTRICT via PostgREST antes de apagar), `users.ts` (2 utilizadores efémeros), `state.ts`, `global-setup.ts`, `global-teardown.ts`, `match.spec.ts`.
+- `match.spec.ts`: 2 contextos de browser → login → sala gratuita "Global (Free)" → matchmaking → A (P1) joga 1→4 → jogada propaga por Realtime para B → B desiste → A "GANHASTE!", B "PERDESTE".
+- Scripts: `e2e:online`, `e2e:online:headed`. `.env.e2e.example` (commitável, sem segredos) + `.gitignore` com exceção `!.env.e2e.example`.
+
+Stage Summary:
+- **e2e online**: 1/1 verde (~1.1 min) contra o projeto Supabase real. **Offline**: 7/7. **Unit**: 124/124. **Typecheck**: limpo. **Lint**: 0 erros (6 avisos pré-existentes).
+- Zero poluição: verificado depois da corrida → 0 utilizadores/perfis/contas/matches/filas de teste.
+
+Unresolved issues / próximas fases:
+- `bun run e2e:online` exige `.env.e2e` (não corre em CI sem secrets; manter fora do pipeline público).
+- O e2e online emparelha na sala `global`; num projeto com jogadores reais na fila poderiam ser emparelhados — usar um ambiente de staging dedicado quando existir.

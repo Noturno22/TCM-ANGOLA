@@ -15,6 +15,9 @@ const baseURL = `http://localhost:${PORT}`;
  */
 export default defineConfig({
   testDir: './e2e',
+  // Os testes online precisam de backend real + credenciais: config própria
+  // (`playwright.online.config.ts` + `bun run e2e:online`). Aqui ficam de fora.
+  testIgnore: '**/online/**',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

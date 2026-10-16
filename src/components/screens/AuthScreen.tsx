@@ -10,6 +10,12 @@ import { GameButton, GameCard, GameLogo } from '@/components/game/ui';
 /** Indicativo de Angola (DDI) por defeito. */
 const DEFAULT_DDI = '+244';
 
+/**
+ * Login por email/password só para testes e2e (test-only auth).
+ * Nunca fica visível em produção: requer `NEXT_PUBLIC_E2E_AUTH=1`.
+ */
+const E2E_AUTH = process.env.NEXT_PUBLIC_E2E_AUTH === '1';
+
 function GoogleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -41,6 +47,7 @@ export function AuthScreen() {
   const pending = useAuth((s) => s.pending);
   const error = useAuth((s) => s.error);
   const signInWithGoogle = useAuth((s) => s.signInWithGoogle);
+  const signInWithEmail = useAuth((s) => s.signInWithEmail);
   const sendPhoneOtp = useAuth((s) => s.sendPhoneOtp);
   const verifyPhoneOtp = useAuth((s) => s.verifyPhoneOtp);
   const clearError = useAuth((s) => s.clearError);
@@ -49,6 +56,8 @@ export function AuthScreen() {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   // Com sessão ativa, volta para casa.
   useEffect(() => {
@@ -78,6 +87,12 @@ export function AuthScreen() {
     const token = otp.replace(/\D/g, '');
     if (token.length < 6) return;
     await verifyPhoneOtp(fullPhone, token);
+  }
+
+  async function handleEmailSignIn(e: React.FormEvent) {
+    e.preventDefault();
+    setNotice(null);
+    await signInWithEmail(email.trim(), password);
   }
 
   return (
@@ -161,6 +176,57 @@ export function AuthScreen() {
                 {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Enviar código'}
               </GameButton>
             </form>
+
+            {E2E_AUTH && (
+              <>
+                <div className="flex items-center gap-3 my-5">
+                  <span className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-muted-foreground">ou email (testes)</span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+
+                <form onSubmit={handleEmailSignIn} className="space-y-3">
+                  <label className="block">
+                    <span className="text-xs font-medium text-muted-foreground">Email (teste)</span>
+                    <input
+                      type="email"
+                      aria-label="Email (teste)"
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="teste@tira.test"
+                      className="mt-1.5 w-full rounded-xl bg-surface-2 border border-border px-3 py-3 text-sm outline-none focus:border-gold/60 placeholder:text-muted-foreground/50"
+                      disabled={pending}
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Palavra-passe (teste)
+                    </span>
+                    <input
+                      type="password"
+                      aria-label="Password (teste)"
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="mt-1.5 w-full rounded-xl bg-surface-2 border border-border px-3 py-3 text-sm outline-none focus:border-gold/60 placeholder:text-muted-foreground/50"
+                      disabled={pending}
+                    />
+                  </label>
+
+                  <GameButton
+                    type="submit"
+                    variant="outline"
+                    className="w-full h-11 text-sm"
+                    disabled={!email.trim() || !password || pending}
+                  >
+                    {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Entrar com email'}
+                  </GameButton>
+                </form>
+              </>
+            )}
           </>
         )}
 

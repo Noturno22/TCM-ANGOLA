@@ -22,6 +22,7 @@ function translateAuthError(message: string): string {
     return 'Demasiados pedidos de código. Tenta mais tarde.';
   }
   if (m.includes('signups not allowed')) return 'Registos desativados no projeto.';
+  if (m.includes('invalid login credentials')) return 'Email ou palavra-passe inválidos.';
   if (m.includes('supabase não configurado')) return 'Backend não configurado.';
   return message;
 }
@@ -37,6 +38,8 @@ interface AuthState {
 
   initialize: () => Promise<void>;
   signInWithGoogle: () => Promise<boolean>;
+  /** Login por email/password (usado em testes e2e; UI gated por NEXT_PUBLIC_E2E_AUTH). */
+  signInWithEmail: (email: string, password: string) => Promise<boolean>;
   sendPhoneOtp: (phone: string) => Promise<boolean>;
   verifyPhoneOtp: (phone: string, token: string) => Promise<boolean>;
   signOut: () => Promise<void>;
@@ -85,6 +88,18 @@ export const useAuth = create<AuthState>((set) => ({
       },
     });
     // Em caso de sucesso o browser é redirecionado; só há erro imediato.
+    set({ pending: false, error: error ? translateAuthError(error.message) : null });
+    return !error;
+  },
+
+  signInWithEmail: async (email, password) => {
+    const supabase = createClient();
+    if (!supabase) {
+      set({ error: translateAuthError('supabase não configurado') });
+      return false;
+    }
+    set({ pending: true, error: null });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     set({ pending: false, error: error ? translateAuthError(error.message) : null });
     return !error;
   },

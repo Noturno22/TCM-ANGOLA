@@ -16,6 +16,8 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
+    "e2e:online": "playwright test --config playwright.online.config.ts",
+    "e2e:online:headed": "playwright test --config playwright.online.config.ts --headed",
     "e2e:install": "playwright install chromium",
     "sync:engine": "node scripts/sync-edge-engine.mjs",
     "db:push": "prisma db push --accept-data-loss",
