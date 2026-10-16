@@ -57,6 +57,8 @@ interface ProfileStore extends ProfileStats {
   addCoins: (amount: number) => void;
   unlockAchievement: (id: string) => void;
   resetProfile: () => void;
+  /** Sincroniza números vindos do servidor (modo online autoritativo). */
+  applyServerStats: (stats: { elo?: number; xp?: number; coins?: number }) => void;
 }
 
 const XP_PER_LEVEL = (level: number) => 500 + level * 250;
@@ -201,6 +203,17 @@ export const useProfile = create<ProfileStore>()(
 
       resetProfile: () =>
         set({ ...INITIAL_STATS, matches: [], achievements: ACHIEVEMENTS.map((a) => ({ ...a })) }),
+
+      applyServerStats: ({ elo, xp, coins }) =>
+        set((s) => {
+          const nextXp = xp ?? s.xp;
+          return {
+            elo: elo ?? s.elo,
+            xp: nextXp,
+            level: xp === undefined ? s.level : levelFromXp(nextXp),
+            coins: coins ?? s.coins,
+          };
+        }),
     }),
     {
       name: 'tira:profile',
