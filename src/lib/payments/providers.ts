@@ -9,6 +9,7 @@
  * `NEXT_PUBLIC_PAYMENTS_ENABLED_PROVIDERS` (lista separada por vírgulas).
  * Por omissão só o `mock` (sandbox) está ativo — nunca ativar `mock` em produção.
  */
+import { REAL_MONEY_ENABLED } from '@/lib/config/flags';
 import type { Currency, PaymentProviderId } from './types';
 
 export interface ProviderInfo {
@@ -65,8 +66,14 @@ export function providersForCurrency(currency: Currency): ProviderInfo[] {
   return PROVIDERS.filter((p) => p.currencies.includes(currency));
 }
 
-/** Providers utilizáveis agora (suportam a moeda E estão ativos). */
+/**
+ * Providers utilizáveis agora (suportam a moeda E estão ativos).
+ *
+ * Devolve sempre `[]` enquanto a chave-mestra `REAL_MONEY_ENABLED` estiver
+ * desligada (D6) — nenhum provider de dinheiro real fica disponível.
+ */
 export function enabledProvidersForCurrency(currency: Currency): ProviderInfo[] {
+  if (!REAL_MONEY_ENABLED) return [];
   return providersForCurrency(currency).filter((p) => p.enabled);
 }
 

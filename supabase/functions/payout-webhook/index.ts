@@ -14,6 +14,7 @@ import {
 } from '../_shared/payments/ledger.ts';
 import { getProvider, isKnownProvider } from '../_shared/payments/providers.ts';
 import type { NormalizedEvent } from '../_shared/payments/types.ts';
+import { realMoneyEnabled } from '../_shared/flags.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,6 +32,8 @@ function json(body: unknown, status = 200): Response {
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
+
+  if (!realMoneyEnabled()) return json({ error: 'real_money_disabled' }, 403);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;

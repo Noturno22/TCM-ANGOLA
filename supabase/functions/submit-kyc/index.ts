@@ -10,6 +10,7 @@
 // (verificação de JWT ATIVA — o cliente envia a sessão.)
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { realMoneyEnabled } from '../_shared/flags.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -38,6 +39,8 @@ interface KycBody {
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
+
+  if (!realMoneyEnabled()) return json({ error: 'real_money_disabled' }, 403);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;

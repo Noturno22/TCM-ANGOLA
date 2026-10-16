@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useProfile } from '@/store/profile';
 import { AoaWalletPanel } from '@/components/payments/AoaWalletPanel';
+import { REAL_MONEY_ENABLED } from '@/lib/config/flags';
 import { GameButton, GameCard, SectionTitle } from '@/components/game/ui';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -281,9 +282,10 @@ export function WalletScreen() {
         <Info className="w-4 h-4 shrink-0 mt-0.5 text-muted-foreground" />
         <p className="text-xs text-muted-foreground leading-relaxed">
           <strong className="text-foreground">Joga com responsabilidade.</strong> As moedas do jogo
-          são virtuais e sem valor monetário. Os depósitos na carteira (AOA) envolvem dinheiro real e
-          são processados por um prestador de pagamentos; os levantamentos exigem verificação de
-          identidade (KYC).
+          são virtuais e sem valor monetário.{' '}
+          {REAL_MONEY_ENABLED
+            ? 'Os depósitos na carteira (AOA) envolvem dinheiro real e são processados por um prestador de pagamentos; os levantamentos exigem verificação de identidade (KYC).'
+            : 'O jogo ainda não movimenta dinheiro real.'}
         </p>
       </div>
     </div>

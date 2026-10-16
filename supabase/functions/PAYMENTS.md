@@ -4,6 +4,29 @@ Slice de dinheiro real: **ledger double-entry append-only** (Postgres) + Edge
 Functions. O saldo só muda no servidor, através de RPCs `SECURITY DEFINER`
 executáveis apenas por `service_role`.
 
+## Chave-mestra `REAL_MONEY_ENABLED` (D6)
+
+Todo o subsistema de dinheiro real está **desligado por omissão** atrás de uma
+única chave-mestra:
+
+| Âmbito | Variável | Default |
+|---|---|---|
+| Cliente (browser) | `NEXT_PUBLIC_REAL_MONEY_ENABLED` | `false` |
+| Servidor (Edge Functions) | `REAL_MONEY_ENABLED` (segredo) | `false` |
+
+Com a chave desligada **não existe nenhum caminho de dinheiro real ativo**:
+
+- UI: a carteira AOA mostra apenas um aviso "em breve"; os levantamentos ficam
+  ocultos; nenhum provider é dado como disponível.
+- Cliente: `createDeposit`/`submitKyc`/`uploadKycDocument`/`requestPayout`
+  lançam `dinheiro_real_desativado` **antes** de contactar o backend.
+- Servidor: `create-deposit-intent`, `submit-kyc`, `psp-webhook`,
+  `payout-webhook` e `request-payout` respondem `403 real_money_disabled`.
+
+As sub-flags (`NEXT_PUBLIC_PAYOUTS_ENABLED` / `PAYOUTS_ENABLED`) só têm efeito
+com a chave-mestra ligada. Nunca ligar antes de resolvido o enquadramento legal
+(BNA, contrato PSP, política KYC/AML).
+
 ## Componentes
 
 | Peça | Caminho |
@@ -29,13 +52,16 @@ executáveis apenas por `service_role`.
 - **Levantamentos exigem KYC aprovado** (`has_approved_kyc`) e reservam os fundos
   antes de chamar o PSP; falha do PSP é compensada com entrada de reembolso
   (o ledger nunca é editado — só recebe novas entradas).
-- **Levantamentos estão DESLIGADOS por omissão** (`PAYOUTS_ENABLED=false`). Não
-  ligar antes de resolvido o enquadramento legal (BNA, contrato PSP, KYC/AML).
+- **Todo o dinheiro real está DESLIGADO por omissão** (`REAL_MONEY_ENABLED=false`).
+  Mesmo com a chave-mestra ligada, os levantamentos continuam desligados até
+  `PAYOUTS_ENABLED=true`. Não ligar antes de resolvido o enquadramento legal
+  (BNA, contrato PSP, KYC/AML).
 
 ## Segredos das funções
 
 ```bash
 supabase secrets set --project-ref <REF> \
+  REAL_MONEY_ENABLED=false \
   MOCK_WEBHOOK_SECRET=<segredo-hmac-do-mock> \
   PAYMENTS_DEFAULT_PROVIDER=mock \
   PAYMENTS_RETURN_URL=http://localhost:3000 \

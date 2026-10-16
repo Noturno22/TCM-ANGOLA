@@ -8,6 +8,7 @@
  *   (nunca se escreve no ledger a partir do cliente).
  */
 import { createClient } from '@/lib/supabase/client';
+import { REAL_MONEY_ENABLED, REAL_MONEY_DISABLED_ERROR } from '@/lib/config/flags';
 import type {
   AccountRow,
   Currency,
@@ -21,6 +22,14 @@ import type {
 } from './types';
 
 const NOT_CONFIGURED = 'Backend de pagamentos não configurado.';
+
+/**
+ * Bloqueia qualquer escrita de dinheiro real quando a chave-mestra está
+ * desligada (D6). Nunca deixa sair um pedido para o backend de pagamentos.
+ */
+function assertRealMoneyEnabled(): void {
+  if (!REAL_MONEY_ENABLED) throw new Error(REAL_MONEY_DISABLED_ERROR);
+}
 
 /** Conta (carteira) do utilizador autenticado para a moeda indicada. */
 export async function fetchAccount(currency: Currency = 'AOA'): Promise<AccountRow | null> {
@@ -93,6 +102,7 @@ export interface CreateDepositParams {
  * checkout ao PSP. O crédito no saldo só acontece depois do webhook do PSP.
  */
 export async function createDeposit(params: CreateDepositParams): Promise<PaymentIntentRow> {
+  assertRealMoneyEnabled();
   const supabase = createClient();
   if (!supabase) throw new Error(NOT_CONFIGURED);
   const returnUrl =
@@ -139,6 +149,7 @@ export async function uploadKycDocument(
   file: File,
   kind: KycDocumentKind,
 ): Promise<string> {
+  assertRealMoneyEnabled();
   const supabase = createClient();
   if (!supabase) throw new Error(NOT_CONFIGURED);
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -161,6 +172,7 @@ export interface SubmitKycParams {
 
 /** Submete os metadados de KYC (os documentos já estão no Storage). */
 export async function submitKyc(params: SubmitKycParams): Promise<KycRecordRow> {
+  assertRealMoneyEnabled();
   const supabase = createClient();
   if (!supabase) throw new Error(NOT_CONFIGURED);
   const { data, error } = await supabase.functions.invoke('submit-kyc', { body: params });
@@ -199,6 +211,7 @@ export interface RequestPayoutParams {
  * `payouts_disabled`.
  */
 export async function requestPayout(params: RequestPayoutParams): Promise<PayoutRow> {
+  assertRealMoneyEnabled();
   const supabase = createClient();
   if (!supabase) throw new Error(NOT_CONFIGURED);
   const { data, error } = await supabase.functions.invoke('request-payout', {

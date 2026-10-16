@@ -14,6 +14,7 @@ import {
   MIN_DEPOSIT_MINOR,
 } from '../_shared/payments/types.ts';
 import { getProvider, isKnownProvider } from '../_shared/payments/providers.ts';
+import { realMoneyEnabled } from '../_shared/flags.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,6 +40,8 @@ interface DepositBody {
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
+
+  if (!realMoneyEnabled()) return json({ error: 'real_money_disabled' }, 403);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;

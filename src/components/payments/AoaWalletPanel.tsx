@@ -8,6 +8,9 @@
  *
  * NÃO confundir com a moeda virtual do jogo (`useProfile().coins`), que é
  * separada e sem valor monetário.
+ *
+ * Enquanto a chave-mestra `REAL_MONEY_ENABLED` estiver desligada (D6) mostra
+ * apenas um aviso "em breve" e não faz qualquer leitura ao backend.
  */
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -23,6 +26,7 @@ import {
 import { useAuth } from '@/store/auth';
 import { useApp } from '@/store/app';
 import { fetchAccount, fetchBalanceMinor, fetchLedger } from '@/lib/payments/client';
+import { REAL_MONEY_ENABLED } from '@/lib/config/flags';
 import { formatMinor, type AccountRow, type LedgerEntryRow } from '@/lib/payments/types';
 import { GameButton, GameCard, SectionTitle } from '@/components/game/ui';
 import { cn } from '@/lib/utils';
@@ -39,7 +43,7 @@ export function AoaWalletPanel() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!user) return;
+    if (!REAL_MONEY_ENABLED || !user) return;
     setLoading(true);
     try {
       const acc = await fetchAccount('AOA');
@@ -62,7 +66,7 @@ export function AoaWalletPanel() {
 
   useEffect(() => {
     let active = true;
-    if (!user) return;
+    if (!REAL_MONEY_ENABLED || !user) return;
     (async () => {
       try {
         const acc = await fetchAccount('AOA');
@@ -88,6 +92,20 @@ export function AoaWalletPanel() {
       active = false;
     };
   }, [user]);
+
+  if (!REAL_MONEY_ENABLED) {
+    return (
+      <div>
+        <SectionTitle title="Carteira (AOA)" />
+        <GameCard className="p-5 text-center space-y-3">
+          <Banknote className="w-8 h-8 text-muted-foreground mx-auto" />
+          <p className="text-sm text-muted-foreground">
+            Em breve. O Tira o Cocó do Meio só usa moeda virtual e ainda não movimenta dinheiro real.
+          </p>
+        </GameCard>
+      </div>
+    );
+  }
 
   if (!user) {
     return (

@@ -1216,3 +1216,28 @@ Stage Summary:
 Unresolved issues / próximas fases:
 - `bun run e2e:online` exige `.env.e2e` (não corre em CI sem secrets; manter fora do pipeline público).
 - O e2e online emparelha na sala `global`; num projeto com jogadores reais na fila poderiam ser emparelhados — usar um ambiente de staging dedicado quando existir.
+
+---
+
+Task ID: d6-real-money-flag + docs
+Agent: Main Builder
+Task: Item 5 — centralizar flag "sem dinheiro real" (D6) + documentação em falta
+
+Contexto/verificação:
+- D6 (§7.1/§12 e requisito 6): todas as apostas usam moeda virtual; NÃO implementar depósitos/levantamentos/gateways/conversão real; exigir a flag `REAL_MONEY_ENABLED=false` (server + client), sem qualquer caminho de código ativo atrás dela. DoD 11-B: "Sem dinheiro real em qualquer caminho de código".
+- Antes: não existia flag central. Só existiam `NEXT_PUBLIC_PAYOUTS_ENABLED=false` (UI), `NEXT_PUBLIC_PAYMENTS_ENABLED_PROVIDERS=mock` e `PAYOUTS_ENABLED` na Edge Function `request-payout`. O subsistema de Pagamentos/KYC/Payout (AOA) já existia como slice 0.
+
+Work Log:
+- Cliente: novo `src/lib/config/flags.ts` — **ponto único** com `REAL_MONEY_ENABLED` (chave-mestra, default `false`) e `PAYOUTS_UI_ENABLED` (= chave-mestra ∧ `NEXT_PUBLIC_PAYOUTS_ENABLED`); `resolveRealMoneyFlags` pura + `flags.test.ts` (4 casos).
+- Gate cliente: `payments/providers.ts` (`enabledProvidersForCurrency` → `[]` quando desligado); `payments/client.ts` (`assertRealMoneyEnabled` em `createDeposit`/`uploadKycDocument`/`submitKyc`/`requestPayout`, lança `dinheiro_real_desativado` antes de sair); `payments/PayoutPanel.tsx` passa a usar a flag central; `payments/AoaWalletPanel.tsx` mostra "Em breve" e não faz leituras quando desligado; `WalletScreen.tsx` com aviso de jogo responsável dinâmico.
+- Servidor: novo `supabase/functions/_shared/flags.ts` (`realMoneyEnabled`/`payoutsEnabled`, testáveis por injeção de env). Gate nas Edge Functions `create-deposit-intent`, `submit-kyc`, `psp-webhook`, `payout-webhook` (`403 real_money_disabled`) e `request-payout` (chave-mestra → `real_money_disabled`; depois `PAYOUTS_ENABLED` → `payouts_disabled`).
+- Config: `.env.example` + `.env` com `NEXT_PUBLIC_REAL_MONEY_ENABLED=false`; `supabase/functions/PAYMENTS.md` com a secção da chave-mestra.
+- Docs (item 5b): criados `README.md` (setup em 10 min), `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` (D1–D6 + I1–I11 + propostas), `docs/PROGRESS.md` (F0–F7 + DoD 11), `docs/RELEASE.md` (Supabase + Vercel + EAS).
+
+Stage Summary:
+- **Unit**: 128/128 (+4). **Typecheck**: limpo. **Lint**: 0 erros (6 avisos pré-existentes). **Build**: OK. **e2e offline**: 7/7.
+- D6 centralizado: com `REAL_MONEY_ENABLED=false` não há nenhum caminho de dinheiro real ativo (UI "em breve", cliente bloqueia, servidor responde `403 real_money_disabled`).
+
+Unresolved issues / próximas fases:
+- O `mock` continua listado no catálogo de providers (a UI já não o oferece com a chave-mestra desligada); quando D6 for ligado, confirmar que `NEXT_PUBLIC_PAYMENTS_ENABLED_PROVIDERS` nunca inclui `mock` em produção.
+- Auditoria WCAG AA formal e builds EAS/Vercel na nuvem continuam pendentes (F6/F7).

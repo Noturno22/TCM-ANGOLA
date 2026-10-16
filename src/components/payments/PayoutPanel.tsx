@@ -3,15 +3,17 @@
 /**
  * Secção de levantamentos (payouts).
  *
- * Só aparece ativa quando o KYC está aprovado E `NEXT_PUBLIC_PAYOUTS_ENABLED`
- * é `true`. O servidor também valida (KYC + flag `PAYOUTS_ENABLED`), por isso a
- * UI é apenas uma camada de conveniência — nunca a única barreira.
+ * Só aparece ativa quando o KYC está aprovado E as flags de dinheiro real
+ * (`REAL_MONEY_ENABLED` + `NEXT_PUBLIC_PAYOUTS_ENABLED`) estão ligadas. O
+ * servidor também valida (KYC + `PAYOUTS_ENABLED`), por isso a UI é apenas uma
+ * camada de conveniência — nunca a única barreira.
  */
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { ArrowUpRight, Loader2, ShieldAlert } from 'lucide-react';
 import { requestPayout } from '@/lib/payments/client';
 import { enabledProvidersForCurrency } from '@/lib/payments/providers';
+import { PAYOUTS_UI_ENABLED } from '@/lib/config/flags';
 import {
   MAX_PAYOUT_MINOR,
   MIN_PAYOUT_MINOR,
@@ -25,7 +27,6 @@ import {
 import { GameButton, GameCard, SectionTitle } from '@/components/game/ui';
 import { cn } from '@/lib/utils';
 
-const PAYOUTS_UI_ENABLED = process.env.NEXT_PUBLIC_PAYOUTS_ENABLED === 'true';
 const PAYOUT_PROVIDERS = enabledProvidersForCurrency('AOA');
 
 const DESTINATIONS: { id: PayoutDestinationType; label: string; placeholder: string }[] = [

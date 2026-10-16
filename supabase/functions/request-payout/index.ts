@@ -1,8 +1,9 @@
 // Edge Function: request-payout
 //
 // Pedido de levantamento do utilizador autenticado. Desligado por omissão:
-// só funciona com PAYOUTS_ENABLED=true (o enquadramento legal — BNA, contrato
-// PSP, política KYC/AML — tem de estar resolvido antes de ligar).
+// só funciona com `REAL_MONEY_ENABLED=true` E `PAYOUTS_ENABLED=true` (o
+// enquadramento legal — BNA, contrato PSP, política KYC/AML — tem de estar
+// resolvido antes de ligar).
 //
 // Garantias:
 //   * Exige KYC aprovado (RPC `has_approved_kyc`).
@@ -22,6 +23,7 @@ import { MAX_PAYOUT_MINOR, MIN_PAYOUT_MINOR } from '../_shared/payments/types.ts
 import { defaultProviderId, getProvider } from '../_shared/payments/providers.ts';
 import { creditLedger, debitLedger } from '../_shared/payments/ledger.ts';
 import { hasApprovedKyc } from '../_shared/payments/kyc.ts';
+import { payoutsEnabled, realMoneyEnabled } from '../_shared/flags.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -50,7 +52,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
-  if (Deno.env.get('PAYOUTS_ENABLED') !== 'true') return json({ error: 'payouts_disabled' }, 403);
+  if (!realMoneyEnabled()) return json({ error: 'real_money_disabled' }, 403);
+  if (!payoutsEnabled()) return json({ error: 'payouts_disabled' }, 403);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
