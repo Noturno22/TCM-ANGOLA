@@ -1163,3 +1163,31 @@ Unresolved issues / próximas fases:
 - O gate exige que o utilizador defina a data de nascimento; jogadores existentes ficam bloqueados em salas com aposta até o fazerem (comportamento pretendido).
 - A UI só cria torneios com `entry_fee = 0`, por isso o gate de torneios só se aplica a torneios criados por API/outro cliente (a regra do servidor está pronta).
 - Continua sem UI para editar/descrever torneios nem para convidar amigos diretamente para um torneio.
+
+---
+
+Task ID: e2e-ci
+Agent: Main Builder
+Task: Item 4 — e2e (Playwright) + CI (requisito Bloco 11)
+
+Contexto/verificação:
+- A app web é uma SPA: só existe a rota `/`; a navegação faz-se por estado (`useApp.screen`, **não persistido** → arranca sempre em `splash`). Os testes interagem com o UI, nunca com URLs.
+- `useSettings`/`useProfile`/etc. são persistidos em localStorage → os testes limpam o storage antes de cada caso.
+- Backend/auth reais não são automatizáveis (Google + OTP; `mailer_autoconfirm=false`), logo os fluxos online (partida a 2 contextos) não entram no CI. Em CI não existe `.env`; localmente o servidor de teste corre com `NEXT_PUBLIC_SUPABASE_*` vazias para forçar o mesmo caminho offline determinístico.
+
+Work Log:
+- Instalado `@playwright/test@1.64.1` (devDependency) + `playwright install chromium`.
+- `playwright.config.ts`: `testDir: ./e2e`, 1 projeto Chromium, `webServer` = `bun run dev` (reuse local), env sem Supabase, trace/screenshot/vídeo em falha.
+- `e2e/helpers.ts`: `resetStorage`, `gotoWelcome`, `enterAsGuest`, `startOfflinePvp`, `cell`.
+- `e2e/offline.spec.ts` (3): vitória do P1 (linha do meio 4-5-6), empate por repetição tripla, tentativa de salto inválida (não move).
+- `e2e/navigation.spec.ts` (4): fluxo de conta (boas-vindas→Entrar→convidado), sala→partida (fallback offline), desistir, tempo esgotado.
+- Sequências determinísticas calculadas com o motor (`adjacent-only`): vitória em 5 plies `1→4, 7→5, 2→6, 5→1, 3→5`; empate em 8 plies (ciclo `1→4, 7→5, 4→1, 5→7` repetido 2×).
+- `.github/workflows/ci.yml`: job `quality` (bun install → lint → typecheck → test → playwright install → e2e + artefacto do relatório) e job `build-web` (`next build`).
+- Scripts: `e2e`, `e2e:headed`, `e2e:install`. `.gitignore`: `test-results/`, `playwright-report/`, `blob-report/`, `playwright/.cache/`.
+
+Stage Summary:
+- **e2e**: 7/7 verdes (~1.3 min). **Typecheck**: limpo. **Lint**: 0 erros (6 avisos pré-existentes em `packages/`). **Testes unitários**: 124/124.
+
+Unresolved issues / próximas fases:
+- DoD 11 pede e2e de "sala → partida online (2 contextos)". Não implementado: exige um backend semeado (utilizadores confirmados + sessão), que não é automatizável sem service role/secrets. Relegado para quando houver ambiente de staging com Utilizadores de teste.
+- Perfis EAS (mobile) não fazem parte do CI (exigem `EXPO_TOKEN`); job a adicionar quando houver secrets.
