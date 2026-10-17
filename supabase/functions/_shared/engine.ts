@@ -7,10 +7,13 @@
  * Regras (fonte de verdade): docs/spec/especificacao.md + docs/PROMPT_AGENTS.md (Bloco 3)
  *
  * Decisões críticas:
- *  - D1: movementMode 'free-blocked' (omissão)
+ *  - D1: movementMode 'adjacent-only' (omissão) — a peça move um único passo para
+ *    uma casa vizinha LIGADA POR UMA DAS 8 LINHAS (horizontal, vertical ou uma das
+ *    duas diagonais do tabuleiro). Diagonais "fora das linhas" (ex.: 2↔4, 2↔6,
+ *    4↔8, 6↔8) são proibidas, pois parecem saltos e não existem no desenho do tabuleiro.
  *  - D2: vitória só verificada para o jogador que moveu; a posição inicial NÃO é vitória; a linha de casa nunca conta (homeLineCounts: false)
  *  - D3: empate por 3ª ocorrência da mesma posição + mesmo jogador
- *  - D4: em free-blocked é impossível não ter movimentos legais
+ *  - D4: um jogador sem movimentos legais perde (noMovesOutcome: 'lose')
  */
 
 export type PlayerId = 'P1' | 'P2';
@@ -110,7 +113,7 @@ export const MOVE_ERROR_MESSAGES: Record<MoveErrorCode, string> = {
   SAME_SQUARE: 'Escolhe uma casa diferente.',
   NOT_YOUR_PIECE: 'Essa peça não é tua.',
   DESTINATION_OCCUPIED: 'Essa casa está ocupada.',
-  PATH_BLOCKED: 'Só podes mover para uma casa vizinha vazia.',
+  PATH_BLOCKED: 'Só podes mover para uma casa vizinha ligada por uma linha.',
 };
 
 /** Coordenadas (col, row) de cada casa para verificação de colinearidade. */
@@ -271,6 +274,15 @@ export function validateMove(
   return { ok: true };
 }
 
+/**
+ * Duas casas estão "ligadas por linha" quando ambas pertencem a uma das 8
+ * linhas vencedoras (logo, são vizinhas ao longo de uma reta desenhada no
+ * tabuleiro). Exclui diagonais fora das linhas (ex.: 2↔4, 2↔6, 4↔8, 6↔8).
+ */
+function isLineAdjacent(a: Square, b: Square): boolean {
+  return WINNING_LINES.some((line) => line.includes(a) && line.includes(b));
+}
+
 function checkPath(
   state: GameState,
   move: Move,
@@ -313,16 +325,18 @@ function checkPath(
     }
     return null;
   }
-  // adjacent-only: só para casas vizinhas (1 passo em reta)
+  // adjacent-only: 1 passo para uma casa vizinha LIGADA POR UMA LINHA do
+  // tabuleiro (horizontal, vertical ou uma das duas diagonais). Diagonais fora
+  // das linhas (ex.: 2↔4, 2↔6, 4↔8, 6↔8) não contam como vizinhas.
   const [ax, ay] = SQUARE_COORDS[move.from];
   const [bx, by] = SQUARE_COORDS[move.to];
   const dx = Math.abs(bx - ax);
   const dy = Math.abs(by - ay);
-  const isAdjacent =
+  const isNeighbour =
     (dx === 1 && dy === 0) ||
     (dx === 0 && dy === 1) ||
     (dx === 1 && dy === 1);
-  if (!isAdjacent) {
+  if (!isNeighbour || !isLineAdjacent(move.from, move.to)) {
     return 'PATH_BLOCKED';
   }
   return null;

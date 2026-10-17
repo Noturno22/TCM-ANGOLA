@@ -5,32 +5,29 @@
  * pelo `globalSetup` (ver `playwright.online.config.ts` e `.env.e2e`).
  */
 import { expect, test, type Page } from '@playwright/test';
-import { cell, gotoWelcome, resetStorage } from '../helpers';
+import { cell, openGlobeRoom } from '../helpers';
+import { signIn } from './auth';
 import { TEST_USER_1, TEST_USER_2 } from './users';
 
-/** Autentica um contexto via login email/password (UI gated por NEXT_PUBLIC_E2E_AUTH). */
-async function signIn(page: Page, email: string, password: string): Promise<void> {
-  await resetStorage(page);
-  await gotoWelcome(page);
-  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-  await expect(page.getByRole('main').getByRole('heading', { name: 'ENTRAR' })).toBeVisible();
-
-  await page.getByLabel('Email (teste)').fill(email);
-  await page.getByLabel('Password (teste)').fill(password);
-  await page.getByRole('button', { name: 'Entrar com email' }).click();
-
-  // Sessão ativa → volta a casa.
-  await expect(page.getByRole('button', { name: /JOGAR OFFLINE/ })).toBeVisible({
-    timeout: 30_000,
-  });
-}
-
-/** Entra na sala gratuita "Global (Free)" e inicia a fila de matchmaking. */
-async function joinFreeRoom(page: Page): Promise<void> {
+/** Entra na sala de Lisboa (Portugal) e inicia a fila de matchmaking. */
+async function joinRoom(page: Page): Promise<void> {
   await page.getByRole('button', { name: /JOGAR ONLINE/ }).click();
   await expect(page.getByRole('main').getByRole('heading', { name: 'SALAS' })).toBeVisible();
-  await page.getByRole('button', { name: 'Entrar na sala Global (Free)' }).click();
+
+  // A única forma de escolher sala é clicar numa cidade real do globo.
+  await openGlobeRoom(page, 'lisboa');
   await page.getByRole('button', { name: 'Jogar', exact: true }).click();
+
+  // Sala com aposta (100 KZ) exige 18+: completa a verificação se for pedida.
+  const ageDialog = page.getByRole('dialog').filter({ hasText: 'Verificação de idade' });
+  const requested = await ageDialog
+    .waitFor({ state: 'visible', timeout: 5_000 })
+    .then(() => true)
+    .catch(() => false);
+  if (requested) {
+    await page.getByLabel('Data de nascimento').fill('1990-01-01');
+    await page.getByRole('button', { name: 'Confirmar' }).click();
+  }
 }
 
 test.describe('Online — partida entre 2 contextos', () => {
@@ -45,12 +42,12 @@ test.describe('Online — partida entre 2 contextos', () => {
     try {
       // Jogador A entra na fila e espera.
       await signIn(a, TEST_USER_1.email, TEST_USER_1.password);
-      await joinFreeRoom(a);
+      await joinRoom(a);
       await expect(a.getByText('À procura de adversário…')).toBeVisible({ timeout: 30_000 });
 
       // Jogador B entra na fila → emparelhamento imediato.
       await signIn(b, TEST_USER_2.email, TEST_USER_2.password);
-      await joinFreeRoom(b);
+      await joinRoom(b);
 
       // Ambos chegam ao tabuleiro online.
       await expect(b.getByRole('grid', { name: /Tabuleiro/ })).toBeVisible({ timeout: 30_000 });

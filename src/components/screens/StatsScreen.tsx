@@ -19,7 +19,7 @@ export function StatsScreen() {
     return (
       <div className="space-y-5 animate-slide-up pb-4">
         <GameCard className="p-8 text-center">
-          <BarChart3 className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
+          <BarChart3 className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
           <h2 className="font-display text-xl mb-2">Sem dados ainda</h2>
           <p className="text-sm text-muted-foreground mb-4">
             Joga algumas partidas para veres as tuas estatísticas e gráficos de progresso.

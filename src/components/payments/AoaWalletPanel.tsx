@@ -161,7 +161,7 @@ export function AoaWalletPanel() {
               <span className="font-display text-4xl tracking-wide text-gold tabular-nums">
                 {formatMinor(balanceMinor)}
               </span>
-              <span className="font-display text-lg text-gold/70">AOA</span>
+              <span className="font-display text-lg text-gold">AOA</span>
             </>
           )}
         </div>

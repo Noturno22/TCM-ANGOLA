@@ -271,7 +271,7 @@ function OnlineTournaments() {
             maxLength={60}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Nome do novo torneio…"
-            className="flex-1 h-11 rounded-xl bg-surface/60 border border-border/40 px-3 text-sm placeholder:text-muted-foreground/60"
+            className="flex-1 h-11 rounded-xl bg-surface/60 border border-border/40 px-3 text-sm placeholder:text-muted-foreground"
           />
           <GameButton
             type="submit"

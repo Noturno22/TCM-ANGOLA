@@ -300,22 +300,19 @@ export function ChallengeScreen() {
           <AnimatePresence>
             {phase === 'solved' && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
+                initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm rounded-2xl"
+                className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-background/85 via-background/10 to-transparent rounded-2xl p-3"
               >
-                <div className="text-center">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
-                    className="w-20 h-20 rounded-full bg-p1/20 flex items-center justify-center mx-auto mb-3"
-                  >
-                    <Check className="w-12 h-12 text-p1" strokeWidth={3} />
-                  </motion.div>
-                  <h3 className="font-display text-2xl text-p1">Resolvido!</h3>
-                  <p className="text-xs text-gold mt-1">+{isMate2 ? 400 : 200} KZ de recompensa</p>
+                <div className="text-center px-4 py-2 rounded-xl bg-background/85 border border-p1/40 backdrop-blur-sm flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-p1/20 flex items-center justify-center shrink-0">
+                    <Check className="w-5 h-5 text-p1" strokeWidth={3} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-display text-lg text-p1 leading-none">Resolvido!</h3>
+                    <p className="text-[11px] text-gold mt-0.5">+{isMate2 ? 400 : 200} KZ de recompensa</p>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -343,11 +340,11 @@ export function ChallengeScreen() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 flex items-center justify-center bg-p2/20 backdrop-blur-sm rounded-2xl pointer-events-none"
+                className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-p2/25 via-transparent to-transparent rounded-2xl p-3 pointer-events-none"
               >
-                <div className="text-center">
-                  <X className="w-16 h-16 text-p2 mx-auto mb-2" strokeWidth={3} />
-                  <h3 className="font-display text-xl text-p2">Tenta outra vez!</h3>
+                <div className="text-center px-4 py-2 rounded-xl bg-background/85 border border-p2/40 backdrop-blur-sm flex items-center gap-2">
+                  <X className="w-5 h-5 text-p2" strokeWidth={3} />
+                  <h3 className="font-display text-lg text-p2 leading-none">Tenta outra vez!</h3>
                 </div>
               </motion.div>
             )}

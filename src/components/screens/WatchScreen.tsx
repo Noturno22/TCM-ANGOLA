@@ -278,16 +278,14 @@ export function WatchScreen() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm rounded-2xl"
+                className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-background/85 via-background/15 to-transparent rounded-2xl p-3"
               >
-                <div className="text-center">
-                  <div className="text-5xl mb-2">
-                    {state.winner === 'P1' ? <PlayerDot player="P1" className="w-10 h-10 inline-block" /> : state.winner === 'P2' ? <PlayerDot player="P2" className="w-10 h-10 inline-block" /> : <Handshake className="w-10 h-10 inline-block text-gold" />}
-                  </div>
-                  <h3 className="font-display text-2xl text-gold">
+                <div className="text-center px-4 py-2 rounded-xl bg-background/85 border border-gold/30 backdrop-blur-sm">
+                  <h3 className="font-display text-xl text-gold flex items-center justify-center gap-2">
+                    {state.winner === 'P1' ? <PlayerDot player="P1" className="w-5 h-5" /> : state.winner === 'P2' ? <PlayerDot player="P2" className="w-5 h-5" /> : <Handshake className="w-5 h-5 text-gold" />}
                     {state.winner ? `${state.winner === 'P1' ? 'Jogador 1' : 'Jogador 2'} vence!` : 'Empate!'}
                   </h3>
-                  <p className="text-xs text-muted-foreground mt-1">{state.moveCount} jogadas</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{state.moveCount} jogadas</p>
                 </div>
               </motion.div>
             )}

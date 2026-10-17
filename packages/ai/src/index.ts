@@ -188,44 +188,40 @@ function choosePerfect(
     return wins[0];
   }
   // 2. Usar a tabela do solver: escolher o movimento que leva ao melhor resultado
-  //    (WIN mais rápida; se não, DRAW evitando repetições; se não, LOSS mais lenta)
-  let bestOutcome = -3; // -2 = loss, -1 = draw (slow), 0 = draw (fast), 1 = win (fast)
-  let bestDist = 0;
+  //    (WIN mais rápida; se não, DRAW; se não, LOSS mais lenta)
+  let bestRank = -1;
+  let bestDist = Infinity;
   let bestMoves: Move[] = [];
   for (const mv of legal) {
     const { state: child } = applyMove(state, mv);
+    let outcome: string;
+    let dist: number;
     if (isGameOver(child)) {
-      // Se o jogo terminou e o vencedor é `me`, é WIN
+      // O jogo terminou com este movimento.
       if (child.winner === me) {
-        // WIN em 1 ply
-        const candidate = { outcome: 'WIN' as const, dist: 1 };
-        const rank = rankOutcome(candidate);
-        if (rank > bestOutcome || (rank === bestOutcome && candidate.dist < bestDist)) {
-          bestOutcome = rank;
-          bestDist = candidate.dist;
-          bestMoves = [mv];
-        } else if (rank === bestOutcome && candidate.dist === bestDist) {
-          bestMoves.push(mv);
-        }
+        outcome = 'WIN';
+        dist = 1;
+      } else if (child.winner === null) {
+        // Empate por repetição: conta como DRAW (melhor do que perder).
+        outcome = 'DRAW';
+        dist = Infinity;
+      } else {
+        continue; // o adversário não pode ganhar no nosso movimento
       }
-      continue;
+    } else {
+      const solved = solvePosition(child);
+      // O solver dá o resultado do ponto de vista do jogador a jogar (child.currentPlayer = oponente).
+      // Se o oponente está em LOSS, eu (me) estou em WIN.
+      outcome =
+        solved.outcome === 'WIN' ? 'LOSS' : solved.outcome === 'LOSS' ? 'WIN' : 'DRAW';
+      dist = solved.distance;
     }
-    const solved = solvePosition(child);
-    // O solver dá o resultado do ponto de vista do jogador a jogar (child.currentPlayer = oponente).
-    // Se o oponente está em LOSS, eu (me) estou em WIN.
-    const myOutcome =
-      solved.outcome === 'WIN'
-        ? 'LOSS'
-        : solved.outcome === 'LOSS'
-          ? 'WIN'
-          : 'DRAW';
-    const candidate = { outcome: myOutcome, dist: solved.distance };
-    const rank = rankOutcome(candidate);
-    if (rank > bestOutcome || (rank === bestOutcome && candidate.dist < bestDist)) {
-      bestOutcome = rank;
-      bestDist = candidate.dist;
+    const rank = rankOutcome({ outcome, dist });
+    if (rank > bestRank || (rank === bestRank && dist < bestDist)) {
+      bestRank = rank;
+      bestDist = dist;
       bestMoves = [mv];
-    } else if (rank === bestOutcome && candidate.dist === bestDist) {
+    } else if (rank === bestRank && dist === bestDist) {
       bestMoves.push(mv);
     }
   }

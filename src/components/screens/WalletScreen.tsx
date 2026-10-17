@@ -11,10 +11,12 @@ import {
   Handshake,
   ArrowDownLeft,
   ArrowUpRight,
+  Banknote,
   Info,
   CalendarCheck,
 } from 'lucide-react';
 import { useProfile } from '@/store/profile';
+import { useApp } from '@/store/app';
 import { AoaWalletPanel } from '@/components/payments/AoaWalletPanel';
 import { REAL_MONEY_ENABLED } from '@/lib/config/flags';
 import { GameButton, GameCard, SectionTitle } from '@/components/game/ui';
@@ -42,7 +44,15 @@ interface Transaction {
 export function WalletScreen() {
   const profile = useProfile();
   const addCoins = useProfile((s) => s.addCoins);
+  const navigate = useApp((s) => s.navigate);
+  const setDepositTab = useApp((s) => s.setDepositTab);
   const [bonusClaimed, setBonusClaimed] = useState(false);
+
+  /** Abre o ecrã de depósitos/levantamentos numa dada aba. */
+  const openDeposits = (tab: 'deposit' | 'withdraw') => {
+    setDepositTab(tab);
+    navigate('deposit');
+  };
 
   const missions: Mission[] = useMemo(
     () => [
@@ -133,9 +143,46 @@ export function WalletScreen() {
               <span className="font-display text-6xl tracking-wider text-gold text-glow-gold leading-none">
                 {profile.coins.toLocaleString('pt-PT')}
               </span>
-              <span className="font-display text-2xl text-gold/70">KZ</span>
+              <span className="font-display text-2xl text-gold">KZ</span>
             </div>
             <p className="text-xs text-muted-foreground mt-2">Moeda virtual · Sem valor real</p>
+          </div>
+        </GameCard>
+      </motion.div>
+
+      {/* Dinheiro real: entrada única para depósitos e levantamentos */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <GameCard className="p-4" glow="gold">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0">
+              <Banknote className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-display text-lg tracking-wide">Dinheiro real</h3>
+              <p className="text-xs text-muted-foreground">
+                Depósitos e levantamentos manuais com comprovativo, aprovados por um administrador.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <GameButton
+              variant="gold"
+              className="flex-1 h-11"
+              onClick={() => openDeposits('deposit')}
+              aria-label="Depositar dinheiro real"
+            >
+              <ArrowDownLeft className="w-4 h-4 mr-1.5" />
+              Depositar
+            </GameButton>
+            <GameButton
+              variant="outline"
+              className="flex-1 h-11"
+              onClick={() => openDeposits('withdraw')}
+              aria-label="Levantar dinheiro real"
+            >
+              <ArrowUpRight className="w-4 h-4 mr-1.5" />
+              Levantar
+            </GameButton>
           </div>
         </GameCard>
       </motion.div>

@@ -85,7 +85,13 @@ bun run lint && bun run typecheck && bun run test && bun run e2e
 
 ## Dinheiro real
 
-Desativado por omissão (decisão **D6**). Toda a carteira AOA / KYC /
-levantamentos está atrás da chave-mestra `REAL_MONEY_ENABLED=false` (cliente e
-servidor); nesse estado não há **qualquer** caminho de dinheiro real ativo. Ver
+Ligado (decisão **D6**, revista). O modo ativo é **manual**: depósitos com
+**comprovativo** (`payment_receipts`) e levantamentos (`withdrawal_requests`)
+que um **admin** aprova/paga. A aprovação credita e o pagamento debita o ledger
+real, através da Edge Function `admin-manage` (gate `ADMIN_EMAILS`).
+
+Tudo continua atrás da chave-mestra `REAL_MONEY_ENABLED` (cliente e servidor),
+ligada em produção via `.env` e segredos das Edge Functions. Com a chave
+desligada não há **qualquer** caminho de dinheiro real ativo (a UI volta a "em
+breve" e as funções respondem `403 real_money_disabled`). Ver
 `docs/DECISIONS.md` (D6) e `supabase/functions/PAYMENTS.md`.

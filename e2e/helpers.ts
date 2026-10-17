@@ -52,3 +52,38 @@ export async function startOfflinePvp(
 export function cell(page: Page, name: string) {
   return page.getByRole('gridcell', { name });
 }
+
+/** Coordenadas reais de cidades do globo (ver `Globe3D`/`globe.svg`). */
+export const GLOBE_CITY = {
+  lisboa: { lon: -9.1, lat: 38.7 },
+  luanda: { lon: 13.2, lat: -8.8 },
+} as const;
+
+export type GlobeCity = keyof typeof GLOBE_CITY;
+
+/**
+ * Abre a sala de uma cidade "clicando" no globo 3D.
+ *
+ * O globo vive num iframe sandboxed e comunica com a app por `postMessage`; a
+ * app valida `event.source === iframe.contentWindow`, por isso replicamos a
+ * mensagem a partir do próprio iframe (não dá para a sintetizar no parent).
+ */
+export async function openGlobeRoom(page: Page, city: GlobeCity = 'lisboa'): Promise<void> {
+  const globe = page.locator('iframe[title="Globo interativo com jogadores online"]');
+  await expect(globe).toBeVisible();
+
+  let frame = page.frames().find((f) => f.url().includes('globe.svg'));
+  for (let i = 0; i < 25 && !frame; i++) {
+    await page.waitForTimeout(100);
+    frame = page.frames().find((f) => f.url().includes('globe.svg'));
+  }
+  if (!frame) throw new Error('iframe do globo não encontrado');
+
+  const { lon, lat } = GLOBE_CITY[city];
+  await frame.evaluate(
+    ({ lon, lat }) => {
+      window.parent.postMessage({ type: 'globe:location', lon, lat, players: 10 }, '*');
+    },
+    { lon, lat },
+  );
+}

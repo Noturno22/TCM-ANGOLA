@@ -58,21 +58,24 @@
 
 - **Feito**: tema escuro/claro; i18n (`pt`); reduzir animações; símbolos nas
   peças; teclado na web; som/háptico com estrutura trocável; gate 18+
-  (`0014_age_gate.sql`, `AgeGateDialog`/`AgeGateSheet`).
-- **Pendente**: auditoria WCAG AA formal; rever tamanhos de toque (≥ 48 dp).
+  (`0014_age_gate.sql`, `AgeGateDialog`/`AgeGateSheet`); **WCAG AA do tema
+  claro** (acentos escurecidos em `globals.css`; texto com opacidade removido).
+- **Pendente**: rever tamanhos de toque (≥ 48 dp).
 - **Dívidas conhecidas**: notificações sem "marcar-lida ao clicar"; UI de torneios
   sem editar/descrever nem convidar; contas antigas com 0 KZ precisam de top-up.
 
 ## F7 — QA, e2e, release e docs · em curso
 
 - **Feito**:
-  - Testes unitários **124/124** (11 ficheiros); typecheck limpo; lint **0 erros**.
-  - e2e web **offline 7/7** (`e2e/`) e **online 1/1** (`e2e/online/`, 2
-    contextos, contra o Supabase real).
+  - Testes unitários **137/137** (13 ficheiros); typecheck limpo; lint **0 erros**.
+  - e2e web **offline 8/8** (`e2e/`) e **online 3/3** (`e2e/online/`: 2
+    contextos + depósito/levantamento manuais, contra o Supabase real).
   - CI (`.github/workflows/ci.yml`).
   - **Mobile**: fatia vertical online (`apps/mobile/**`); `expo lint` 0 erros.
-  - **Dinheiro real centralizado (D6)**: chave-mestra `REAL_MONEY_ENABLED`
-    (cliente + servidor), default `false`.
+  - **Dinheiro real (D6, revista)**: chave-mestra `REAL_MONEY_ENABLED` (cliente +
+    servidor), default `false`; **ligada em produção** com depósitos/levantamentos
+    **manuais** (comprovativo + aprovação de admin) — `0015_manual_payments.sql` +
+    Edge Function `admin-manage`.
   - Documentação: `README.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`,
     `docs/PROGRESS.md`, `docs/RELEASE.md`.
 - **Pendente**:
@@ -98,7 +101,8 @@
       torneios, apostas virtuais)
 - [x] Servidor autoritativo; RLS verificada; ledger consistente
 - [x] **Sem dinheiro real em qualquer caminho de código**; gate 18+ nas salas com aposta
+      — *D6 revista: dinheiro real manual (comprovativo + admin) ligado atrás da chave-mestra*
 - [x] Acessibilidade (peças não só por cor, contraste, animações desligáveis)
-      — *auditoria WCAG AA formal pendente*
+      — *WCAG AA do tema claro corrigido (acentos + opacidades de texto)*
 - [ ] `lint && typecheck && test && e2e` verdes; **builds EAS e Vercel a funcionar**
       — *localmente verdes; builds na nuvem por confirmar*

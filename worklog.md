@@ -1241,3 +1241,122 @@ Stage Summary:
 Unresolved issues / próximas fases:
 - O `mock` continua listado no catálogo de providers (a UI já não o oferece com a chave-mestra desligada); quando D6 for ligado, confirmar que `NEXT_PUBLIC_PAYMENTS_ENABLED_PROVIDERS` nunca inclui `mock` em produção.
 - Auditoria WCAG AA formal e builds EAS/Vercel na nuvem continuam pendentes (F6/F7).
+
+---
+
+Task ID: d1-line-adjacent-movement
+Agent: Main Builder
+Task: D1 — corrigir "peças a pular casa" (movimento só entre vizinhas ligadas por linha)
+
+Contexto/verificação:
+- Reporte do SAMA: "no tabuleiro as peças continuam a pular casa"; na 1.ª jogada uma peça mostrava 3 opções. Reproduzido: `createGame()` (adjacent-only) devolvia 7 movimentos legais na posição inicial; a peça em 2 tinha 3 destinos (`4,5,6`).
+- Causa: `checkPath` em `adjacent-only` aceitava diagonais (`dx===1&&dy===1`) mesmo quando **fora** das linhas desenhadas (`2↔4`, `2↔6`, `4↔8`, `6↔8`) → vizinhança de 8 casas, interpretada como "salto".
+- Decisão D1 do SAMA: vizinhança = **1 passo para casa ligada por uma das 8 linhas** (horizontal/vertical/diagonal desenhada). Atualizado em `docs/DECISIONS.md` (D1) e `docs/ARCHITECTURE.md`.
+
+Work Log:
+- Motor: `packages/engine/src/index.ts` — novo `isLineAdjacent(a,b)` (`WINNING_LINES.some(l => l.includes(a) && l.includes(b))`); `checkPath` adjacent-only exige `isNeighbour && isLineAdjacent`. Mensagem `PATH_BLOCKED` atualizada. Header/doc comentário corrigidos (o default já era `adjacent-only`, mas o comentário dizia `free-blocked`).
+- Posição inicial agora: `1→{4,5}`, `2→{5}`, `3→{5,6}` (peça do meio com 1 destino).
+- IA/solver: `packages/ai/src/solver.ts` passou a analisar **por `movementMode`** (cache por modo) e a tratar estados sem movimentos como LOSS (D4) — a IA "perfeita" deixa de consultar uma tabela `free-blocked` enquanto o jogo é `adjacent-only`. Corrigido `choosePerfect` (ignorava empates por repetição → perdia empates). Em jogo perfeito a posição inicial é **empate** (`solvePosition`=DRAW; antes a "perfeita" perdia).
+- Consumidores revalidados: `sync:engine` para a Edge Function; testes do motor/IA; puzzles; tutorial; e2e.
+- Puzzles `src/lib/puzzles.ts`: p2 (`2→4`) e p7 (`2→6`) ficaram ilegais → redesenhados (p2 `P1={1,5,7}` sol. `5→4`; p7 `P1={3,5,9}` sol. `5→6`); p1 redesenhado (completava a linha de casa, que não conta) → `P1={1,3,9}` sol. `3→5` (linha 1-5-9). Novo teste `src/lib/puzzles.test.ts`: toda a solução é legal **e** vence.
+- Tutorial: passos de movimento corrigidos (destinos válidos reais; passo "diagonais fora das linhas não contam").
+- Campanha: dicas 1 e 2 deixaram de ensinar a linha de casa como vitória.
+- e2e `e2e/offline.spec.ts`: sequência de vitória reescrita com movimento legal (`1→4, 9→6, 2→5, 6→9, 3→6` → linha 4-5-6).
+- Docs: `docs/DECISIONS.md` (D1 + detalhe), `docs/ARCHITECTURE.md`; solver doc comment com números reais (`free-blocked` 2266/612/482; `adjacent-only` 1806/820/734).
+
+Stage Summary:
+- **Unit**: 137/137 (13 ficheiros; +7: 5 puzzles + 2 motor). **e2e offline**: 7/7. **Typecheck**: limpo. **Lint**: 0 erros (6 avisos pré-existentes).
+
+Unresolved issues / próximas fases:
+- `docs/PROMPT_AGENTS.md` continua a descrever a produção como `free-blocked` (documento-fonte); a decisão D1 do SAMA está registada em `docs/DECISIONS.md`.
+- O solver é agora por modo, mas o nível "Perfeito" da campanha (nível 8) é inalcançável por definição (empate com jogo perfeito) — já assim documentado.
+- Auditoria WCAG AA (tema claro) continua pendente (a tratar a seguir).
+
+---
+
+Task ID: board-gameover-visibility
+Agent: Main Builder
+Task: Bug — mostrar o tabuleiro real no fim de jogo (não overlay opaco)
+
+Contexto/verificação:
+- Reporte: no fim de um jogo (vitória/derrota/empate) os ecrãs mostravam um overlay opaco sobre o tabuleiro, escondendo a posição final e a linha vencedora.
+
+Work Log:
+- Os ecrãs de fim de jogo passaram a renderizar um **`<Board>` real** (`size="sm" disabled winningLine lastMove`) — o mesmo componente do jogo — em vez do overlay. Ficheiros: `GameScreen.tsx`, `TournamentPlayScreen.tsx`, `OnlineMatchScreen.tsx`, `CampaignPlayScreen.tsx`, `WatchScreen.tsx`, `ChallengeScreen.tsx` (e `TutorialScreen.tsx`).
+- Cabeçalho "Como foi a vitória" / "Posição final" + descrição da linha vencedora (`describeLine`) e da jogada final.
+- Headings preservadas: `Jogador 1 venceu!`, `Jogador 2 venceu!`, `Empate!`, `GANHASTE!`.
+
+Stage Summary:
+- **Typecheck**: limpo. **Lint**: 0 erros. **e2e**: verde.
+
+Unresolved issues / próximas fases:
+- Nenhum; mudança visual sem lógica de jogo nova.
+
+---
+
+Task ID: rooms-globe-revamp + globe-zoom
+Agent: Main Builder
+Task: Salas = só globo (cores originais) + zoom para ver um país
+
+Contexto/verificação:
+- Pedido do SAMA: o ecrã Salas deve ter **só o globo** e o cabeçalho; a paleta original clara do globo (`#f1f1f1`/`#323232`) "estava boa — era só a funcionalidade". Remover filtros/cartão em destaque/listas/AdSlot (que deixavam as salas `global`/`mundo` inacessíveis). Além disso, poder **aproximar** para ver um só país e clicar numa cidade.
+
+Work Log:
+- `src/components/screens/RoomsScreen.tsx`: só globo + cabeçalho + hint ("Arrasta para rodar, faz scroll ou usa o zoom para aproximar um país. Cada ponto é uma cidade real com jogadores à espera."); clique numa cidade abre a sala correspondente (`LOCATION_ROOM` → `global`/`mundo`).
+- `src/components/game/Globe3D.tsx`: glow azul revertido para `relative w-full max-w-[380px] aspect-square rounded-2xl overflow-hidden`; **3 botões de zoom** (Aproximar/Afastar/Repor) que enviam `postMessage({ type: 'globe:zoom', mode })`.
+- `public/globe.svg`: **zoom interno ao SVG via `viewBox`** (`Z={z,fx,fy}`, `applyVB()`, `zoomTo(nz,cx,cy)` zoom-ao-cursor, clamp z 1–6), porque o `<iframe>` sandboxed (`allow-scripts`, sem `allow-same-origin`) **não recebe eventos de `wheel`** do parent. Wheel não-passivo + listener de `message` (`ev.source === window.parent`); markers escalados por `1/Z.z`; tolerância de clique `18/Z.z`/`14/Z.z`; drag `k=(400/Z.z/w)*(90/R)`; duplo-clique repõe. XML validado.
+- e2e: novo teste permanente `globo das salas: aproximar, afastar e repor o zoom` em `e2e/navigation.spec.ts`.
+
+Stage Summary:
+- **Unit**: 137/137. **e2e offline**: 8/8. **e2e online**: 1/1. **Typecheck**: limpo. **Lint**: 0 erros.
+
+Unresolved issues / próximas fases:
+- Salas `global`/`mundo` continuam a ser as únicas destino do clique no globo (todas as cidades mapeiam para lá) — a granularidade por cidade fica para quando houver salas reais por região.
+
+---
+
+Task ID: manual-payments-deposits-withdrawals
+Agent: Main Builder
+Task: Depósitos/levantamentos manuais (comprovativo + aprovação de admin) com paridade com o TMT
+
+Contexto/verificação:
+- Reversão de D6 a pedido do SAMA: ativar **dinheiro real** como no TMT — métodos manuais + comprovativo + aprovação de admin, USD/AOA. Paridade total (ecrã, histórico `wallet_movements`, painéis admin, regra 1-pendente, detetor de duplicados, bucket de comprovativos). Backend Supabase real (`ogqnbhuvoypmqefxbijr`).
+
+Work Log:
+- **BD**: `supabase/migrations/0015_manual_payments.sql` (tabelas `payment_receipts`, `withdrawal_requests`, `wallet_movements`, `admin_notifications`; triggers de notificação/duplicados/sincronização; RLS; bucket `payment-proofs`; realtime; índice único 1-pendente). Anexado a `supabase/sql/setup-complete.sql` (**0001→0015**).
+- **Edge Function** `supabase/functions/admin-manage/index.ts` (TCM-native): gate `ADMIN_EMAILS`; ações `list_receipts|approve_receipt|reject_receipt|delete_receipt|save_receipt|list_withdrawals|approve_withdrawal|reject_withdrawal|mark_withdrawal_paid|list_notifications|mark_notification_read|mark_all_notifications_read|unread_count|revenue_stats`. `approve_receipt` → `ledger_credit` (`idempotency_key=receipt:<id>`, reverte p/ pending em falha); `mark_withdrawal_paid` → `ledger_debit` (`withdrawal:<id>`, reverte p/ approved em `insufficient_funds`). Moedas `usd/aoa` → `USD/AOA`; unidades maiores → menores (×100). Ações de dinheiro gateadas por `REAL_MONEY_ENABLED` (`403 real_money_disabled`).
+- **Cliente**: `src/lib/payments/manual.ts` (métodos/limites/upload/saveReceipt/submitWithdrawal), `src/lib/payments/adminApi.ts` (cliente das ações admin), `src/components/payments/{PaymentModal,ReceiptSuccessModal}.tsx`, `src/components/screens/DepositScreen.tsx`, `src/store/walletMovements.ts`, `src/store/app.ts` (+`'deposit'`/`'admin'`, `depositTab`).
+- **Admin UI**: `src/components/admin/{ReceiptsPanel,WithdrawalsPanel}.tsx`, `src/components/screens/AdminScreen.tsx` (Tabs Depósitos/Levantamentos), entrada em `SettingsScreen.tsx` ("Administração", visível só se o email estiver em `NEXT_PUBLIC_ADMIN_EMAILS`).
+- **Entrada do utilizador**: `WalletScreen.tsx` com cartão "Dinheiro real" (Depositar/Levantar) → `depositTab` + `navigate('deposit')`.
+- **Config/segredos**: `.env`/`.env.example` com `NEXT_PUBLIC_REAL_MONEY_ENABLED=true`, `NEXT_PUBLIC_PAYOUTS_ENABLED=true`, `NEXT_PUBLIC_ADMIN_EMAILS`. Defaults do código (`flags.ts`) mantidos a `false` (não quebrar `flags.test.ts`).
+- **Aplicação/deploy (projeto real)**: migração 0015 aplicada; função `admin-manage` deployada (`--use-api`); segredos `REAL_MONEY_ENABLED=true`, `PAYOUTS_ENABLED=true`, `ADMIN_EMAILS=josefortunafortuna54@gmail.com,jeronimo.samaina239898@gmail.com`.
+- **Verificação end-to-end** (script temporário, apagado): 18/18 — RLS (inserir próprio / bloquear outro), aprovação → crédito (USD 12.50 → 1250), idempotência do approve, não-admin recusado (401), levantamento aprovar → pagar → débito (1250−500 → 750), saldo insuficiente → 400 + reverte p/ approved, notificações e `revenue_stats`, listagens. Confirmado contrato das RPCs (`ledger_credit`/`ledger_debit`, `accounts.currency = character(3)`). Projeto deixado limpo (0 users/accounts/ledger).
+
+Stage Summary:
+- **Unit**: 137/137. **e2e offline**: 8/8. **e2e online**: 1/1. **Typecheck**: limpo. **Lint**: 0 erros.
+- Fluxo completo verificado no backend real; segredos ativos; UI gated por email.
+
+Unresolved issues / próximas fases:
+- Contas de recebimento (`BINANCE_ID`/`RODOTPAY_UID`/`EXPRESS_PHONE`) confirmadas pelo SAMA.
+- Auditoria WCAG AA (tema claro) — tratada na entrada seguinte.
+
+---
+
+Task ID: wcag-light-theme + deposits-e2e-ui
+Agent: Main Builder
+Task: Auditoria WCAG AA do tema claro + testes e2e do fluxo de depósito/levantamento
+
+Contexto/verificação:
+- Fechar a auditoria de contraste do tema claro (pendente) e cobrir o fluxo manual de dinheiro real na UI, com sessão iniciada.
+
+Work Log:
+- `src/app/globals.css`: acentos do tema `.light` escurecidos para ≥4.5:1 (WCAG AA) sobre as superfícies claras — `--gold` `0.46 0.096 78`, `--p1` `0.44 0.109 155`, `--p2` `0.46 0.188 27`, `--orange` `0.46 0.108 60` (croma limitada ao gamut sRGB; sem clipping). Tema escuro intacto. `primaryFg` branco sobre o novo ouro dá 7.0:1.
+- Sweep em 25 ficheiros: `text-muted-foreground/{40,50,60,70}` → token a 100%; `text-{gold,p1,p2,orange}/70` → full; `text-foreground/50` → `/80`. (Os `/70` de muted/accent falhavam AA ~3.0:1 em ambos os temas.)
+- e2e: novo `e2e/online/auth.ts` (`signIn` partilhado) e `e2e/online/deposits.spec.ts` (depósito com comprovativo fica pendente de revisão; levantamento valida saldo insuficiente). `match.spec.ts` passou a usar o `signIn` partilhado.
+- Teardown online reforçado (`e2e/online/admin.ts`): `purgeUserArtifacts` remove as notificações do admin ligadas aos comprovativos/pedidos (não têm FK) e os ficheiros do bucket `payment-proofs` (`purgeUserStorage`) antes de apagar o utilizador.
+
+Stage Summary:
+- **Unit**: 137/137. **e2e offline**: 8/8. **e2e online**: 3/3. **Typecheck**: limpo. **Lint**: 0 erros. Projeto Supabase deixado limpo (0 users/accounts/ledger/receipts/withdrawals/notifs/files).
+
+Unresolved issues / próximas fases:
+- Verificação visual do tema claro não foi possível neste ambiente (RAM insuficiente para dev server + Chromium); contraste validado por cálculo.

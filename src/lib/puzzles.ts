@@ -2,7 +2,8 @@
  * Desafios Diários — puzzles verificados com o motor (modo adjacent-only).
  * Cada puzzle tem uma posição onde P1 (o jogador) pode vencer.
  *
- * Movimento: apenas para casas adjacentes vazias (1 passo em qualquer direção).
+ * Movimento: apenas para casas vizinhas LIGADAS POR UMA LINHA (1 passo ao longo
+ * de uma das 8 linhas do tabuleiro). Diagonais fora das linhas não são permitidas.
  *
  * Os puzzles rodam por dia da semana (7 puzzles).
  */
@@ -30,28 +31,28 @@ export const PUZZLES: Puzzle[] = [
   {
     id: 'p1',
     day: 0,
-    title: 'Regresso ao Topo',
+    title: 'Diagonal Principal',
     difficulty: 'Fácil',
-    // P1={1,2,5}, P2={4,6,7} → solução: 5→3 (linha 1-2-3)
-    board: ['P1', 'P1', null, 'P2', 'P1', 'P2', 'P2', null, null],
+    // P1={1,3,9}, P2={2,4,8} → solução: 3→5 (linha 1-5-9)
+    board: ['P1', 'P2', 'P1', 'P2', null, null, null, 'P2', 'P1'],
     turn: 'P1',
     mateIn: 1,
-    solution: { from: 5 as Square, to: 3 as Square },
-    description: 'Saíste da linha de casa e foste para o centro. Volta para completar a linha!',
-    hint: 'Tens 1 e 2. A casa 3 está livre. A peça no centro (5) pode chegar lá — é adjacente.',
+    solution: { from: 3 as Square, to: 5 as Square },
+    description: 'A diagonal principal (1-5-9) está a um passo de ser tua. Fecha-a!',
+    hint: 'Tens 1 e 9. A casa 5 (centro) está livre. A peça na casa 3 pode alcançá-la — é diagonal sobre uma linha.',
   },
   {
     id: 'p2',
     day: 1,
     title: 'Coluna Esquerda',
     difficulty: 'Médio',
-    // P1={1,2,7}, P2={3,5,8} → solução: 2→4 (linha 1-4-7)
-    board: ['P1', 'P1', 'P2', null, 'P2', null, 'P1', 'P2', null],
+    // P1={1,5,7}, P2={3,6,8} → solução: 5→4 (linha 1-4-7)
+    board: ['P1', null, 'P2', null, 'P1', 'P2', 'P1', 'P2', null],
     turn: 'P1',
     mateIn: 1,
-    solution: { from: 2 as Square, to: 4 as Square },
+    solution: { from: 5 as Square, to: 4 as Square },
     description: 'A coluna da esquerda (1-4-7) está quase tua. Ocupa a casa que falta!',
-    hint: 'Tens 1 e 7. A casa 4 (meio-esquerda) está livre. Que peça a pode alcançar?',
+    hint: 'Tens 1 e 7. A casa 4 (meio-esquerda) está livre. A peça no centro (5) é vizinha dela.',
   },
   {
     id: 'p3',
@@ -110,13 +111,13 @@ export const PUZZLES: Puzzle[] = [
     day: 6,
     title: 'Coluna Direita',
     difficulty: 'Difícil',
-    // P1={2,3,9}, P2={1,5,8} → solução: 2→6 (linha 3-6-9)
-    board: ['P2', 'P1', 'P1', null, 'P2', null, null, 'P2', 'P1'],
+    // P1={3,5,9}, P2={1,4,8} → solução: 5→6 (linha 3-6-9)
+    board: ['P2', null, 'P1', 'P2', 'P1', null, null, 'P2', 'P1'],
     turn: 'P1',
     mateIn: 1,
-    solution: { from: 2 as Square, to: 6 as Square },
-    description: 'A coluna direita (3-6-9) está quase completa. Move a peça certa!',
-    hint: 'Tens 3 e 9. A casa 6 (meio-direito) está livre. Que peça a pode alcançar? É adjacente.',
+    solution: { from: 5 as Square, to: 6 as Square },
+    description: 'A coluna da direita (3-6-9) está quase completa. Move a peça certa!',
+    hint: 'Tens 3 e 9. A casa 6 (meio-direita) está livre. A peça no centro (5) é vizinha dela.',
   },
 ];
 

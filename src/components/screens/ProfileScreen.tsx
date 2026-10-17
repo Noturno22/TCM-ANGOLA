@@ -150,7 +150,7 @@ export function ProfileScreen() {
         <div className="space-y-2">
           {profile.matches.length === 0 ? (
             <GameCard className="p-8 text-center">
-              <History className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
+              <History className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
               <p className="text-sm text-muted-foreground mb-4">
                 Ainda não jogaste nenhuma partida.
               </p>
@@ -258,7 +258,7 @@ export function ProfileScreen() {
 
       {tab === 'friends' && (
         <GameCard className="p-8 text-center">
-          <Users className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
+          <Users className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
           <p className="text-sm text-muted-foreground mb-1">Sem amigos ainda</p>
           <p className="text-[11px] text-muted-foreground mb-4">
             O modo online com amigos chega em breve. Por enquanto, desafia a IA!
@@ -291,7 +291,7 @@ export function ProfileScreen() {
               useProfile.getState().resetProfile();
             }
           }}
-          className="w-full text-center text-[10px] text-muted-foreground/50 hover:text-p2 py-2"
+          className="w-full text-center text-[10px] text-muted-foreground hover:text-p2 py-2"
         >
           Reiniciar progresso
         </button>
@@ -380,7 +380,7 @@ function ProgressionPanel() {
                   {isUnlocked ? (
                     <span className="text-[10px] text-muted-foreground">{wins[d.id]} vitórias</span>
                   ) : reqD ? (
-                    <span className="text-[10px] text-gold/70">
+                    <span className="text-[10px] text-gold">
                       {currentWins}/{reqWins} no {reqD === 'easy' ? 'Fácil' : reqD === 'medium' ? 'Médio' : 'Difícil'}
                     </span>
                   ) : null}

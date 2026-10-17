@@ -63,7 +63,7 @@ export function SplashScreen() {
           />
         </div>
 
-        <p className="text-[11px] tracking-[0.2em] text-muted-foreground/70 uppercase">
+        <p className="text-[11px] tracking-[0.2em] text-muted-foreground uppercase">
           A jogar com Angola
         </p>
       </motion.div>

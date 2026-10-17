@@ -26,8 +26,10 @@ Monorepo (Bun workspaces) com três alvos:
 ## Motor das regras (resumo)
 
 - 9 casas; **3 peças por jogador**; posição inicial fixa; P1 (verde) começa.
-- Movimento para casa adjacente (modo por omissão `adjacent-only`); destino
-  ocupado é inválido; saltos impedidos; sem capturas.
+- Movimento de **1 passo para casa vizinha ligada por uma linha** do tabuleiro
+  (modo por omissão `adjacent-only`); casas na diagonal **fora** das linhas
+  (`2↔4`, `2↔6`, `4↔8`, `6↔8`) não são vizinhas; destino ocupado é inválido;
+  sem capturas (D1).
 - **Vitória** verificada nas 8 linhas, **só para o jogador que acabou de mover**
   (D2); a posição inicial não é vitória.
 - **Empate** à 3.ª repetição da mesma posição (chave
@@ -43,6 +45,26 @@ Monorepo (Bun workspaces) com três alvos:
 - `useProfile` / `useSettings` — persistidos em `localStorage`.
 - `useAuth` — sessão Supabase (`signInWithEmail`, Google, OTP de telefone).
 
+### Salas (web)
+
+`RoomsScreen` mostra **só o globo 3D** (`public/globe.svg` num `<iframe>`
+sandboxed) com zoom. As cidades são pontos no SVG; clicar abre a sala
+`global`/`mundo`. O zoom é **interno ao SVG** (via `viewBox`), porque o iframe
+sandboxed não recebe eventos de `wheel` do parent; a app envia
+`postMessage({ type: 'globe:zoom', mode })` (`Globe3D.tsx`).
+
+### Tema e contraste (WCAG AA)
+
+Os tokens de cor vivem em `src/app/globals.css` (tema único `:root` + override
+`.light` ligado pela definição “Modo claro”). O tema escuro é o principal; o
+tema claro é uma inversão com acentos **escurecidos** para cumprir WCAG AA
+(≥4.5:1 em texto normal) sobre as superfícies claras
+(`background`/`surface`/`surface-2`/`card`) — o dourado da marca (`--gold`,
+0.83 no escuro) teria apenas 2.78:1 no claro. Valores no claro: `--gold`
+`0.46 0.096 78`, `--p1` `0.44 0.109 155`, `--p2` `0.46 0.188 27`, `--orange`
+`0.46 0.108 60` (croma limitada ao gamut sRGB). O texto com opacidade
+(`text-muted-foreground/50`…) foi substituído pelo token a 100%.
+
 ## Backend (Supabase)
 
 ### Migrations (`supabase/migrations`)
@@ -51,9 +73,9 @@ Monorepo (Bun workspaces) com três alvos:
 `0005` online rooms · `0006` online match · `0007` Edge authority ·
 `0008` rooms international · `0009` friends · `0010` online tournaments ·
 `0011` virtual bets · `0012` notifications · `0013` tournament auto-advance ·
-`0014` age gate.
+`0014` age gate · `0015` manual payments (depósitos/levantamentos manuais).
 
-O ficheiro `supabase/sql/setup-complete.sql` agrega **0001→0014** para projetos
+O ficheiro `supabase/sql/setup-complete.sql` agrega **0001→0015** para projetos
 novos.
 
 ### Autoridade e segurança
@@ -73,7 +95,8 @@ novos.
 |---|---|
 | `submit-move` | Valida e aplica jogadas com `@tira/engine` (autoridade). |
 | `send-sms-hook` | Hook do Supabase Auth → WhatsApp Cloud API (OTP). |
-| `create-deposit-intent`, `psp-webhook`, `submit-kyc`, `request-payout`, `payout-webhook` | Subsistema de dinheiro real — **gated por `REAL_MONEY_ENABLED`** (ver abaixo). |
+| `create-deposit-intent`, `psp-webhook`, `submit-kyc`, `request-payout`, `payout-webhook` | Subsistema de dinheiro real por PSP — **gated por `REAL_MONEY_ENABLED`** (ver abaixo). |
+| `admin-manage` | Ações do admin sobre depósitos/levantamentos manuais (aprovar/rejeitar/pagar, notificações, estatísticas). Crédito/débito no ledger real. Gate por `ADMIN_EMAILS`. |
 
 ### Realtime
 
@@ -85,10 +108,20 @@ subscrições são idempotentes (verificação em `pg_publication_tables`).
 - **Moeda virtual do jogo (KZ)** — `profiles.coins`. Sem valor monetário.
   Novos registos recebem **5000 KZ** server-side. Apostas são **zero-sum**
   (escrow na fila; reembolso ao cancelar; liquidação do vencedor/empate).
-- **Dinheiro real (AOA)** — carteira com ledger double-entry append-only e
-  integração de PSP. **Desativada por omissão (D6)** atrás da chave-mestra
-  `REAL_MONEY_ENABLED=false` (cliente + servidor). Detalhes em
-  `supabase/functions/PAYMENTS.md`.
+- **Dinheiro real (USD/AOA)** — carteira com ledger double-entry append-only
+  (`accounts`/`ledger_entries`, RPCs `ledger_credit`/`ledger_debit`). Dois
+  caminhos:
+  - **Manual (ativo)** — depósito com comprovativo (`payment_receipts`) e
+    levantamento (`withdrawal_requests`); o admin aprova/paga na Edge Function
+    `admin-manage`, que credita/debita o ledger. Tabelas portadas do TMT;
+    `wallet_movements` é o histórico do utilizador e `admin_notifications` o sino
+    do admin. Gate por `ADMIN_EMAILS`; detalhes em `docs/DECISIONS.md` (D6).
+  - **PSP automático (inativo)** — integração de gateway/KYC
+    (`create-deposit-intent`, `psp-webhook`, `submit-kyc`, `request-payout`),
+    atrás da chave-mestra `REAL_MONEY_ENABLED`. Detalhes em
+    `supabase/functions/PAYMENTS.md`.
+  A chave-mestra `REAL_MONEY_ENABLED` está **ligada em produção** (`.env` +
+  segredos das Edge Functions).
 
 ## Gate 18+
 

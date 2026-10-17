@@ -131,15 +131,18 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.02 160);
 
-  --gold: oklch(0.63 0.14 78);
-  --gold-soft: oklch(0.63 0.14 78 / 0.14);
+  /* Acentos escurecidos para garantir contraste AA (>=4.5:1) como texto sobre
+     as superfícies claras (background/surface/surface-2/card) — ver
+     docs/ARCHITECTURE.md. Mantêm a mesma matiz da marca em tema escuro. */
+  --gold: oklch(0.46 0.096 78);
+  --gold-soft: oklch(0.46 0.096 78 / 0.14);
 
-  --p1: oklch(0.56 0.16 155);
-  --p1-soft: oklch(0.56 0.16 155 / 0.16);
-  --p2: oklch(0.55 0.2 27);
-  --p2-soft: oklch(0.55 0.2 27 / 0.16);
-  --orange: oklch(0.62 0.15 60);
-  --orange-soft: oklch(0.62 0.15 60 / 0.14);
+  --p1: oklch(0.44 0.109 155);
+  --p1-soft: oklch(0.44 0.109 155 / 0.16);
+  --p2: oklch(0.46 0.188 27);
+  --p2-soft: oklch(0.46 0.188 27 / 0.16);
+  --orange: oklch(0.46 0.108 60);
+  --orange-soft: oklch(0.46 0.108 60 / 0.14);
 
   --primary: var(--gold);
   --primary-foreground: oklch(0.99 0 0);

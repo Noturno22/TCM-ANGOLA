@@ -168,7 +168,7 @@ export function RankingsScreen() {
                       )}
                     >
                       {entry.name}
-                      {entry.isMe && <span className="text-[10px] ml-1.5 text-p1/70">(tu)</span>}
+                      {entry.isMe && <span className="text-[10px] ml-1.5 text-p1">(tu)</span>}
                     </p>
                     <p className="text-[10px] text-muted-foreground">
                       Nível {entry.level} · {entry.wins} vitórias
@@ -205,7 +205,7 @@ export function RankingsScreen() {
         </div>
       </GameCard>
 
-      <p className="text-[10px] text-muted-foreground/70 text-center leading-relaxed">
+      <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
         Rankings simulados para o modo offline. O modo online com rankings reais chega em breve.
       </p>
     </div>

@@ -13,18 +13,18 @@ test.describe('Offline — 2 Jogadores', () => {
     // 1. P1: 1 -> 4
     await cell(page, 'casa 1, Jogador 1').click();
     await cell(page, 'casa 4, vazia, destino válido').click();
-    // 2. P2: 7 -> centro (5)
-    await cell(page, 'casa 7, Jogador 2').click();
-    await cell(page, 'centro, vazia, destino válido').click();
-    // 3. P1: 2 -> 6
-    await cell(page, 'casa 2, Jogador 1').click();
+    // 2. P2: 9 -> 6
+    await cell(page, 'casa 9, Jogador 2').click();
     await cell(page, 'casa 6, vazia, destino válido').click();
-    // 4. P2: centro (5) -> 1
-    await cell(page, 'centro, Jogador 2').click();
-    await cell(page, 'casa 1, vazia, destino válido').click();
-    // 5. P1: 3 -> centro (5)  => linha 4-5-6 completa
-    await cell(page, 'casa 3, Jogador 1').click();
+    // 3. P1: 2 -> centro (5)
+    await cell(page, 'casa 2, Jogador 1').click();
     await cell(page, 'centro, vazia, destino válido').click();
+    // 4. P2: 6 -> 9
+    await cell(page, 'casa 6, Jogador 2').click();
+    await cell(page, 'casa 9, vazia, destino válido').click();
+    // 5. P1: 3 -> 6  => linha 4-5-6 completa
+    await cell(page, 'casa 3, Jogador 1').click();
+    await cell(page, 'casa 6, vazia, destino válido').click();
 
     await expect(
       page.getByRole('heading', { name: 'Jogador 1 venceu!' }),

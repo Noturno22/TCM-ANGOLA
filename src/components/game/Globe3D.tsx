@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { Maximize, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PlayerLocation {
@@ -75,6 +76,11 @@ function isLocationMessage(data: unknown): data is GlobeLocationMessage {
 export function Globe3D({ className, onLocationClick }: GlobeProps) {
   const frameRef = useRef<HTMLIFrameElement>(null);
 
+  /** Pede ao iframe para aproximar/afastar/repor o zoom (o wheel fica isolado no sandbox). */
+  const sendZoom = (mode: 'in' | 'out' | 'reset') => {
+    frameRef.current?.contentWindow?.postMessage({ type: 'globe:zoom', mode }, '*');
+  };
+
   useEffect(() => {
     function onMessage(ev: MessageEvent) {
       // O iframe sandboxed tem origem opaca ("null"); validamos pela janela do iframe.
@@ -102,6 +108,35 @@ export function Globe3D({ className, onLocationClick }: GlobeProps) {
           sandbox="allow-scripts"
           className="block w-full h-full border-0"
         />
+        <div className="absolute bottom-2 right-2 flex flex-col gap-1.5">
+          <button
+            type="button"
+            onClick={() => sendZoom('in')}
+            aria-label="Aproximar"
+            title="Aproximar"
+            className="w-9 h-9 rounded-full bg-surface-2/90 border border-border text-foreground flex items-center justify-center backdrop-blur hover:bg-surface transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => sendZoom('out')}
+            aria-label="Afastar"
+            title="Afastar"
+            className="w-9 h-9 rounded-full bg-surface-2/90 border border-border text-foreground flex items-center justify-center backdrop-blur hover:bg-surface transition-colors"
+          >
+            <Minus className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => sendZoom('reset')}
+            aria-label="Repor zoom"
+            title="Repor zoom"
+            className="w-9 h-9 rounded-full bg-surface-2/90 border border-border text-foreground flex items-center justify-center backdrop-blur hover:bg-surface transition-colors"
+          >
+            <Maximize className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

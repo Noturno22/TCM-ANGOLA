@@ -157,7 +157,7 @@ export function CampaignScreen() {
                           </span>
                         )}
                         {attempts > 0 && (
-                          <span className="text-muted-foreground/60 ml-auto">
+                          <span className="text-muted-foreground ml-auto">
                             {attempts} tentativa{attempts > 1 ? 's' : ''}
                           </span>
                         )}

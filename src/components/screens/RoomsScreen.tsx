@@ -1,30 +1,16 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import {
-  Users,
-  Coins,
-  LogIn,
-  MessageCircle,
-  Send,
-  Globe,
-  Sparkles,
-  Info,
-  MapPin,
-  Wifi,
-  Loader2,
-} from 'lucide-react';
+import { Users, Coins, LogIn, MessageCircle, Send, Globe, Loader2 } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useOnline } from '@/store/online';
 import { useAuth } from '@/store/auth';
 import { useMatch } from '@/store/match';
 import { useProfile } from '@/store/profile';
 import { useAge } from '@/store/age';
-import { GameButton, GameCard, FilterChip, LevelAvatar, SectionTitle } from '@/components/game/ui';
+import { GameButton, GameCard, LevelAvatar } from '@/components/game/ui';
 import { RoomIcon } from '@/components/game/icons';
 import { Globe3D } from '@/components/game/Globe3D';
-import { AdSlot } from '@/components/game/AdSlot';
 import { AgeGateDialog } from '@/components/game/AgeGateDialog';
 import {
   Dialog,
@@ -37,8 +23,6 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-type Filter = 'all' | 'online' | 'bets' | 'friends';
-
 interface Room {
   id: string;
   name: string;
@@ -48,7 +32,7 @@ interface Room {
   capacity: number;
   stake: number;
   featured?: boolean;
-  tags: Filter[];
+  tags: string[];
 }
 
 const ROOMS: Room[] = [
@@ -195,12 +179,26 @@ const ROOMS: Room[] = [
   },
 ];
 
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: 'all', label: 'Todas' },
-  { id: 'online', label: 'Online' },
-  { id: 'bets', label: 'Apostas' },
-  { id: 'friends', label: 'Amigos' },
-];
+/**
+ * Cada cidade real do globo abre a sala correspondente (país/região).
+ * Os ids coincidem com os `id` de `Globe3D`.
+ */
+const LOCATION_ROOM: Record<string, string> = {
+  luanda: 'luanda',
+  benguela: 'benguela',
+  huambo: 'huambo',
+  cabinda: 'cabinda',
+  lisboa: 'portugal',
+  porto: 'portugal',
+  'sao-paulo': 'brasil',
+  'rio-de-janeiro': 'brasil',
+  paris: 'europa',
+  londres: 'europa',
+  'nova-iorque': 'america',
+  maputo: 'mocambique',
+  praia: 'caboverde',
+  johannesburgo: 'africa',
+};
 
 const SAMPLE_PLAYERS = [
   { name: 'KwanzaMaster', level: 24 },
@@ -218,7 +216,6 @@ const SAMPLE_CHAT = [
 
 export function RoomsScreen() {
   const navigate = useApp((s) => s.navigate);
-  const [filter, setFilter] = useState<Filter>('all');
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [ageRoom, setAgeRoom] = useState<Room | null>(null);
 
@@ -291,7 +288,6 @@ export function RoomsScreen() {
     const known = new Set(ROOMS.map((r) => r.id));
     for (const o of onlineRooms) {
       if (known.has(o.id)) continue;
-      const tags: Filter[] = o.stake > 0 ? ['all', 'online', 'bets'] : ['all', 'online'];
       merged.push({
         id: o.id,
         name: o.name,
@@ -301,29 +297,19 @@ export function RoomsScreen() {
         capacity: o.capacity,
         stake: o.stake,
         featured: o.isFeatured,
-        tags,
+        tags: o.stake > 0 ? ['all', 'online', 'bets'] : ['all', 'online'],
       });
     }
     return merged;
   }, [onlineRooms]);
 
-  const featured = rooms.find((r) => r.featured) ?? ROOMS[0];
-
-  const filteredRooms = useMemo(() => {
-    if (filter === 'all') {
-      // Em "Todas", a sala em destaque (Angola) é mostrada como cartão próprio;
-      // o resto aparece na lista.
-      return rooms.filter((r) => !r.featured);
-    }
-    if (filter === 'friends') {
-      // Amigos: simulado — sem salas privadas por agora.
-      return [];
-    }
-    return rooms.filter((r) => r.tags.includes(filter) && !r.featured);
-  }, [filter, rooms]);
-
-  const nationalRooms = filteredRooms.filter((r) => r.region === 'national');
-  const internationalRooms = filteredRooms.filter((r) => r.region === 'international');
+  // Clicar numa localização real do globo abre a sala dessa região.
+  const openLocation = (locationId: string) => {
+    const roomId = LOCATION_ROOM[locationId];
+    const room = roomId ? rooms.find((r) => r.id === roomId) : undefined;
+    if (room) setSelectedRoom(room);
+    else toast.info('Sala em breve', { description: 'Ainda não há sala para esta região.' });
+  };
 
   return (
     <div className="space-y-5 animate-slide-up pb-6">
@@ -331,171 +317,28 @@ export function RoomsScreen() {
       <div>
         <h1 className="font-display text-3xl tracking-wide">SALAS</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Encontra jogadores de todo o mundo no globo.
+          Toca num ponto do globo para entrares na sala daquela região.
         </p>
       </div>
 
-      {/* Globo 3D com jogadores online */}
-      <GameCard className="p-4 flex flex-col items-center">
-        <SectionTitle
-          title="Jogadores Online"
-          action={
-            <span className="flex items-center gap-1 text-[10px] text-p1 font-semibold">
-              <MapPin className="w-3 h-3" />
-              Tempo real
-            </span>
-          }
-        />
-        <Globe3D
-          onLocationClick={(loc) => {
-            toast.info(`Desafio em ${loc.city}, ${loc.country}!`, {
-              description: `${loc.players} jogadores disponíveis. Modo online em breve — joga offline por agora.`,
-            });
-          }}
-        />
+      {/* Globo 3D com jogadores online — única forma de escolher sala */}
+      <GameCard className="p-4">
+        <Globe3D onLocationClick={(loc) => openLocation(loc.id)} />
+        <div className="flex items-center justify-center gap-5 mt-3 text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#3AA855] ring-1 ring-white/40" />
+            Movimento baixo
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#F0B90B] ring-1 ring-white/40" />
+            Movimento alto
+          </span>
+        </div>
       </GameCard>
 
-      {/* Google Ads — banner inline */}
-      <AdSlot format="banner-inline" />
-
-      {/* Aviso subtil */}
-      <div
-        className={cn(
-          'flex items-start gap-2.5 px-3 py-2.5 rounded-xl border text-xs leading-relaxed',
-          onlineEnabled
-            ? 'bg-p1/10 border-p1/30 text-p1'
-            : 'bg-orange/10 border-orange/30 text-orange',
-        )}
-      >
-        {onlineEnabled ? <Wifi className="w-4 h-4 shrink-0 mt-0.5" /> : <Info className="w-4 h-4 shrink-0 mt-0.5" />}
-        <p>
-          {onlineEnabled ? (
-            <>
-              <strong>Chat e presença em tempo real ativos.</strong> Entra numa sala para
-              conversar com os jogadores online.
-            </>
-          ) : (
-            <>
-              <strong>Modo online em breve.</strong> Por agora, joga offline contra a IA ou com
-              amigos.
-            </>
-          )}
-        </p>
-      </div>
-
-      {/* Filtros */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-custom -mx-1 px-1 pb-1">
-        {FILTERS.map((f) => (
-          <FilterChip key={f.id} active={filter === f.id} onClick={() => setFilter(f.id)}>
-            {f.label}
-          </FilterChip>
-        ))}
-      </div>
-
-      {/* Sala em destaque (Angola) */}
-      {filter === 'all' && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <GameCard className="overflow-hidden border-gold/40" glow="gold">
-            <div className={cn('relative bg-gradient-to-br p-5', featured.gradient)}>
-              <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-gold text-background text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-                <Sparkles className="w-3 h-3" />
-                Destaque
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-background/30 backdrop-blur-sm flex items-center justify-center text-4xl shrink-0">
-                  <RoomIcon id={featured.id} className="w-9 h-9 text-gold" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] uppercase tracking-widest text-gold font-bold">Sala Oficial</p>
-                  <h3 className="font-display text-2xl tracking-wide leading-none">ANGOLA</h3>
-                  <p className="text-xs text-foreground/80 mt-1">
-                    A grande sala nacional. Aposta mais alta.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between mt-4">
-                <div className="flex items-center gap-3 text-xs">
-                  <span className="flex items-center gap-1 text-foreground/80">
-                    <Users className="w-3.5 h-3.5" />
-                    {featured.players}/{featured.capacity}
-                  </span>
-                  <span className="flex items-center gap-1 text-gold font-semibold">
-                    <Coins className="w-3.5 h-3.5" />
-                    {featured.stake} KZ
-                  </span>
-                </div>
-                <GameButton variant="gold" onClick={() => setSelectedRoom(featured)} className="text-xs px-3 h-8">
-                  <LogIn className="w-3.5 h-3.5 mr-1" />
-                  Entrar
-                </GameButton>
-              </div>
-            </div>
-          </GameCard>
-        </motion.div>
-      )}
-
-      {/* Lista de salas — nacionais e internacionais */}
-      {filteredRooms.length === 0 ? (
-        <div>
-          <SectionTitle
-            title={filter === 'friends' ? 'Salas de Amigos' : 'Todas as Salas'}
-            action={<span className="text-[11px] text-muted-foreground">0 salas</span>}
-          />
-          <GameCard className="p-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Nenhuma sala encontrada neste filtro.
-            </p>
-          </GameCard>
-        </div>
-      ) : (
-        <>
-          {nationalRooms.length > 0 && (
-            <div>
-              <SectionTitle
-                title="Salas Nacionais"
-                action={
-                  <span className="text-[11px] text-muted-foreground">
-                    {nationalRooms.length} salas
-                  </span>
-                }
-              />
-              <div className="space-y-2">
-                {nationalRooms.map((room) => (
-                  <RoomCard key={room.id} room={room} onEnter={() => setSelectedRoom(room)} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {internationalRooms.length > 0 && (
-            <div>
-              <SectionTitle
-                title="Salas Internacionais"
-                action={
-                  <span className="text-[11px] text-muted-foreground">
-                    {internationalRooms.length} salas
-                  </span>
-                }
-              />
-              <div className="space-y-2">
-                {internationalRooms.map((room) => (
-                  <RoomCard key={room.id} room={room} onEnter={() => setSelectedRoom(room)} />
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Salas gratuitas */}
-      {filter === 'all' && (
-        <p className="text-[10px] text-muted-foreground/70 text-center leading-relaxed">
-          As salas Global e Mundo são gratuitas e sem apostas. Ideais para praticar.
-        </p>
-      )}
+      <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
+        Arrasta para rodar, faz scroll ou usa o zoom para aproximar um país. Cada ponto é uma cidade real com jogadores à espera.
+      </p>
 
       {/* Dialog de detalhes da sala */}
       <Dialog open={!!selectedRoom} onOpenChange={(open) => !open && setSelectedRoom(null)}>
@@ -514,70 +357,6 @@ export function RoomsScreen() {
         }}
       />
     </div>
-  );
-}
-
-function RoomCard({ room, onEnter }: { room: Room; onEnter: () => void }) {
-  const pct = Math.round((room.players / room.capacity) * 100);
-  return (
-    <GameCard className="p-3 flex items-center gap-3">
-      {/* Imagem placeholder */}
-      <div
-        className={cn(
-          'relative w-14 h-14 rounded-xl bg-gradient-to-br flex items-center justify-center text-2xl shrink-0 overflow-hidden',
-          room.gradient,
-        )}
-      >
-        <RoomIcon id={room.id} className="w-7 h-7 text-foreground/80" />
-        {room.players >= room.capacity * 0.9 && (
-          <span className="absolute -top-1 -right-1 px-1 py-0.5 rounded-full bg-p2 text-white text-[8px] font-bold">
-            CHEIA
-          </span>
-        )}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <h4 className="font-semibold text-sm truncate">{room.name}</h4>
-          {room.stake === 0 && (
-            <span className="px-1.5 py-0.5 rounded bg-p1/15 text-p1 text-[9px] font-bold uppercase">
-              Free
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Users className="w-3 h-3" />
-            {room.players}/{room.capacity}
-          </span>
-          <span className="flex items-center gap-1 text-gold font-semibold">
-            <Coins className="w-3 h-3" />
-            {room.stake === 0 ? 'Sem aposta' : `${room.stake} KZ`}
-          </span>
-        </div>
-        {/* Mini barra de ocupação */}
-        <div className="h-1 rounded-full bg-surface-2 mt-1.5 overflow-hidden">
-          <div
-            className={cn(
-              'h-full rounded-full transition-all',
-              pct > 90 ? 'bg-p2' : pct > 60 ? 'bg-gold' : 'bg-p1',
-            )}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
-
-      <GameButton
-        variant="p1"
-        onClick={onEnter}
-        disabled={room.players >= room.capacity}
-        aria-label={`Entrar na sala ${room.name}`}
-        className="text-xs px-3 h-8"
-      >
-        <LogIn className="w-3.5 h-3.5 mr-1" />
-        Entrar
-      </GameButton>
-    </GameCard>
   );
 }
 
@@ -741,7 +520,7 @@ function RoomDialog({ room, onPlay }: { room: Room; onPlay: () => void }) {
               onChange={(e) => setDraft(e.target.value)}
               placeholder={canChat ? 'Mensagem…' : 'Entra na tua conta para conversar'}
               disabled={!canChat}
-              className="flex-1 h-9 rounded-lg bg-surface/60 border border-border/40 px-3 text-xs placeholder:text-muted-foreground/60 disabled:text-muted-foreground"
+              className="flex-1 h-9 rounded-lg bg-surface/60 border border-border/40 px-3 text-xs placeholder:text-muted-foreground disabled:text-muted-foreground"
             />
             <button
               type="submit"
@@ -757,7 +536,7 @@ function RoomDialog({ room, onPlay }: { room: Room; onPlay: () => void }) {
 
       {/* Footer */}
       <DialogFooter className="px-5 pb-5 pt-2 gap-2">
-        <p className="text-[10px] text-muted-foreground/70 text-center w-full flex items-center justify-center gap-1.5">
+        <p className="text-[10px] text-muted-foreground text-center w-full flex items-center justify-center gap-1.5">
           <Globe className="w-3 h-3" />
           {enabled
             ? 'Chat e partidas online em tempo real.'

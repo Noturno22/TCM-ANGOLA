@@ -122,7 +122,7 @@ export function AchievementsScreen() {
       )}
 
       {/* Dica */}
-      <p className="text-[10px] text-muted-foreground/70 text-center leading-relaxed pt-2">
+      <p className="text-[10px] text-muted-foreground text-center leading-relaxed pt-2">
         Continua a jogar para desbloquear novas conquistas. Algumas são muito raras!
       </p>
     </div>
@@ -195,7 +195,7 @@ function AchievementCard({ achievement, index }: { achievement: Achievement; ind
               {date}
             </div>
           ) : (
-            <div className="mt-2 flex items-center gap-1 text-[9px] text-muted-foreground/60 uppercase tracking-wider">
+            <div className="mt-2 flex items-center gap-1 text-[9px] text-muted-foreground uppercase tracking-wider">
               <Lock className="w-2.5 h-2.5" />
               Bloqueada
             </div>

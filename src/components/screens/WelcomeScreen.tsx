@@ -86,7 +86,7 @@ export function WelcomeScreen() {
           </button>
         </motion.div>
 
-        <p className="mt-6 text-xs text-muted-foreground/70 text-center max-w-xs">
+        <p className="mt-6 text-xs text-muted-foreground text-center max-w-xs">
           Bónus de boas-vindas até 5.000 KZ. Moeda virtual, sem dinheiro real.
         </p>
       </div>

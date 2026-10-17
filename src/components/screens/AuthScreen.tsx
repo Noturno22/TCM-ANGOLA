@@ -161,7 +161,7 @@ export function AuthScreen() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="923 000 000"
-                    className="flex-1 bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground/50"
+                    className="flex-1 bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
                     disabled={pending}
                   />
                 </div>
@@ -195,7 +195,7 @@ export function AuthScreen() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="teste@tira.test"
-                      className="mt-1.5 w-full rounded-xl bg-surface-2 border border-border px-3 py-3 text-sm outline-none focus:border-gold/60 placeholder:text-muted-foreground/50"
+                      className="mt-1.5 w-full rounded-xl bg-surface-2 border border-border px-3 py-3 text-sm outline-none focus:border-gold/60 placeholder:text-muted-foreground"
                       disabled={pending}
                     />
                   </label>
@@ -211,7 +211,7 @@ export function AuthScreen() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="mt-1.5 w-full rounded-xl bg-surface-2 border border-border px-3 py-3 text-sm outline-none focus:border-gold/60 placeholder:text-muted-foreground/50"
+                      className="mt-1.5 w-full rounded-xl bg-surface-2 border border-border px-3 py-3 text-sm outline-none focus:border-gold/60 placeholder:text-muted-foreground"
                       disabled={pending}
                     />
                   </label>
@@ -245,7 +245,7 @@ export function AuthScreen() {
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="000000"
-                  className="flex-1 bg-transparent py-3 text-sm tracking-[0.3em] outline-none placeholder:text-muted-foreground/50"
+                  className="flex-1 bg-transparent py-3 text-sm tracking-[0.3em] outline-none placeholder:text-muted-foreground"
                   disabled={pending}
                   autoFocus
                 />

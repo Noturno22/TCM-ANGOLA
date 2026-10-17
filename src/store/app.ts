@@ -21,6 +21,8 @@ export type Screen =
   | 'friends'
   | 'notifications'
   | 'wallet'
+  | 'deposit'
+  | 'admin'
   | 'shop'
   | 'replay'
   | 'achievements'
@@ -48,6 +50,8 @@ interface AppState {
   campaignLevelId: number | null;
   /** ID da partida de torneio atual */
   tournamentMatchId: string | null;
+  /** Aba inicial do ecrã de depósitos (`deposit` ou `withdraw`). */
+  depositTab: 'deposit' | 'withdraw';
 
   navigate: (screen: Screen) => void;
   back: () => void;
@@ -56,6 +60,7 @@ interface AppState {
   setShareCode: (code: string | null) => void;
   setCampaignLevelId: (id: number | null) => void;
   setTournamentMatchId: (id: string | null) => void;
+  setDepositTab: (tab: 'deposit' | 'withdraw') => void;
 }
 
 export const useApp = create<AppState>((set, get) => ({
@@ -65,6 +70,7 @@ export const useApp = create<AppState>((set, get) => ({
   shareCode: null,
   campaignLevelId: null,
   tournamentMatchId: null,
+  depositTab: 'deposit',
 
   navigate: (screen) =>
     set((s) => ({
@@ -91,4 +97,5 @@ export const useApp = create<AppState>((set, get) => ({
   setShareCode: (code) => set({ shareCode: code }),
   setCampaignLevelId: (id) => set({ campaignLevelId: id }),
   setTournamentMatchId: (id) => set({ tournamentMatchId: id }),
+  setDepositTab: (tab) => set({ depositTab: tab }),
 }));

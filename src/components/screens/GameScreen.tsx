@@ -490,6 +490,10 @@ function GameOverOverlay({
   const humanWon = (mode === 'pve' || mode === 'practice') && winner === humanSide;
   const humanLost = (mode === 'pve' || mode === 'practice') && winner && winner !== humanSide;
 
+  // Vitória/derrota com linha vencedora (vitória "natural"). Quando `winningLine`
+  // é nulo, a partida terminou por desistência, tempo esgotado ou desistência.
+  const naturalWin = winner !== null && winningLine !== null && winningLine.length === 3;
+
   const title = isDraw
     ? 'Empate!'
     : mode === 'pve' || mode === 'practice'
@@ -502,11 +506,13 @@ function GameOverOverlay({
 
   const subtitle = isDraw
     ? 'A posição repetiu-se.'
-    : mode === 'pve' || mode === 'practice'
-      ? humanWon
-        ? 'Venceste a IA. Parabéns!'
-        : 'A IA foi mais forte. Tenta novamente!'
-      : 'Linha de três completa!';
+    : naturalWin
+      ? mode === 'pve' || mode === 'practice'
+        ? humanWon
+          ? 'Venceste a IA. Parabéns!'
+          : 'A IA foi mais forte. Tenta novamente!'
+        : 'Linha de três completa!'
+      : 'A partida terminou sem linha vencedora.';
 
   const ResultIcon = isDraw ? Handshake : humanWon ? Trophy : humanLost ? Frown : Trophy;
   const color = isDraw
@@ -520,7 +526,7 @@ function GameOverOverlay({
       initial={reduceMotion ? undefined : { opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md p-6"
+      className="absolute inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto bg-background/95 backdrop-blur-sm p-4"
     >
       {/* Confetti apenas em vitória humana e sem reduceMotion */}
       {humanWon && !reduceMotion && <Confetti count={50} />}
@@ -540,31 +546,66 @@ function GameOverOverlay({
         initial={reduceMotion ? undefined : { scale: 0.8, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-        className="w-full max-w-sm relative z-10"
+        className="w-full max-w-[420px] relative z-10 my-auto"
       >
-        <GameCard className="p-6 text-center" glow="gold">
+        <GameCard className="p-5 text-center" glow={isDraw || humanLost ? null : 'gold'}>
           <motion.div
             initial={reduceMotion ? undefined : { scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.1 }}
-            className={cn(
-              'w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center',
-              isDraw
-                ? 'bg-surface-2 text-muted-foreground'
-                : humanLost
-                  ? 'bg-p2/15 text-p2'
-                  : 'bg-gold/15 text-gold',
-            )}
+            className="flex items-center gap-3 mb-3 text-left"
           >
-            <ResultIcon className="w-10 h-10" />
+            <div
+              className={cn(
+                'w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center',
+                isDraw
+                  ? 'bg-surface-2 text-muted-foreground'
+                  : humanLost
+                    ? 'bg-p2/15 text-p2'
+                    : 'bg-gold/15 text-gold',
+              )}
+            >
+              <ResultIcon className="w-7 h-7" />
+            </div>
+            <div className="min-w-0">
+              <h2
+                className={cn(
+                  'font-display text-3xl leading-none tracking-wide',
+                  color,
+                  humanWon && 'text-glow-gold',
+                )}
+              >
+                {title}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+            </div>
           </motion.div>
-          <h2 className={cn('font-display text-4xl tracking-wide mb-1', color, humanWon && 'text-glow-gold')}>{title}</h2>
-          <p className="text-sm text-muted-foreground mb-5">{subtitle}</p>
 
-          {!isDraw && winner && winningLine && winningLine.length === 3 && (
-            <div className="mb-5">
-              <WinLineDiagram board={board} winningLine={winningLine} winner={winner} />
-              <p className="text-xs text-muted-foreground mt-2">
+          {/* Tabuleiro REAL da posição final — o mesmo que se jogou */}
+          <div className="rounded-xl border border-border/60 bg-surface-2/60 p-3">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
+              {winner && winningLine && winningLine.length === 3
+                ? 'Como foi a vitória'
+                : 'Posição final'}
+            </p>
+            <div className="flex justify-center">
+              <Board
+                board={board}
+                selectedSquare={null}
+                validTargets={[]}
+                lastMove={lastMove}
+                winningLine={winningLine}
+                threatSquares={[]}
+                onSquareClick={() => undefined}
+                disabled
+                size="sm"
+              />
+            </div>
+          </div>
+
+          <div className="mt-3 mb-4 text-xs text-muted-foreground space-y-0.5">
+            {winner && winningLine && winningLine.length === 3 ? (
+              <p>
                 Como venceu:{' '}
                 <span className="text-foreground font-medium">{describeLine(winningLine)}</span>
                 {lastMove && (
@@ -573,8 +614,17 @@ function GameOverOverlay({
                   </span>
                 )}
               </p>
-            </div>
-          )}
+            ) : (
+              <p>
+                {lastMove
+                  ? `Última jogada: casa ${lastMove.from} → casa ${lastMove.to}. `
+                  : ''}
+                {isDraw
+                  ? 'Nenhuma linha foi completada — a posição repetiu-se.'
+                  : 'Nenhuma linha foi completada.'}
+              </p>
+            )}
+          </div>
 
           <div className="space-y-2">
             <GameButton variant="p1" className="w-full h-11" onClick={onRestart}>
@@ -606,45 +656,6 @@ const LINE_LABELS: Record<string, string> = {
 function describeLine(line: readonly number[]): string {
   const key = [...line].sort((a, b) => a - b).join(',');
   return LINE_LABELS[key] ?? 'linha vencedora';
-}
-
-function WinLineDiagram({
-  board,
-  winningLine,
-  winner,
-}: {
-  board: readonly Cell[];
-  winningLine: readonly number[];
-  winner: 'P1' | 'P2';
-}) {
-  const winSet = new Set(winningLine);
-  return (
-    <div className="grid grid-cols-3 gap-1.5 w-fit mx-auto p-2 rounded-xl bg-surface-2/60 border border-border">
-      {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((sq) => {
-        const cell = board[sq - 1];
-        const win = winSet.has(sq);
-        return (
-          <div
-            key={sq}
-            className={cn(
-              'w-7 h-7 rounded-md flex items-center justify-center',
-              win ? (winner === 'P1' ? 'bg-p1' : 'bg-p2') : 'bg-surface',
-              win && 'ring-2 ring-gold',
-            )}
-          >
-            {cell && (
-              <span
-                className={cn(
-                  'w-3 h-3 rounded-full',
-                  win ? 'bg-white/90' : cell === 'P1' ? 'bg-p1/40' : 'bg-p2/40',
-                )}
-              />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
 }
 
 function getStatusMessage(

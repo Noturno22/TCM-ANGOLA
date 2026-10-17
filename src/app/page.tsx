@@ -23,6 +23,8 @@ import { RoomsScreen } from '@/components/screens/RoomsScreen';
 import { FriendsScreen } from '@/components/screens/FriendsScreen';
 import { NotificationsScreen } from '@/components/screens/NotificationsScreen';
 import { WalletScreen } from '@/components/screens/WalletScreen';
+import { DepositScreen } from '@/components/screens/DepositScreen';
+import { AdminScreen } from '@/components/screens/AdminScreen';
 import { ShopScreen } from '@/components/screens/ShopScreen';
 import { ReplayScreen } from '@/components/screens/ReplayScreen';
 import { AchievementsScreen } from '@/components/screens/AchievementsScreen';
@@ -215,6 +217,8 @@ export default function Home() {
             {screen === 'friends' && <FriendsScreen />}
             {screen === 'notifications' && <NotificationsScreen />}
             {screen === 'wallet' && <WalletScreen />}
+            {screen === 'deposit' && <DepositScreen />}
+            {screen === 'admin' && <AdminScreen />}
             {screen === 'shop' && <ShopScreen />}
             {screen === 'replay' && <ReplayScreen />}
             {screen === 'achievements' && <AchievementsScreen />}

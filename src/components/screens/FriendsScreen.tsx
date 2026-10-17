@@ -129,7 +129,7 @@ export function FriendsScreen() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Username do jogador…"
               disabled={!canUse}
-              className="w-full h-11 rounded-xl bg-surface/60 border border-border/40 pl-9 pr-3 text-sm placeholder:text-muted-foreground/60 disabled:text-muted-foreground"
+              className="w-full h-11 rounded-xl bg-surface/60 border border-border/40 pl-9 pr-3 text-sm placeholder:text-muted-foreground disabled:text-muted-foreground"
             />
           </div>
           <GameButton

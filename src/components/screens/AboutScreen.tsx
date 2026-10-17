@@ -119,7 +119,7 @@ export function AboutScreen() {
             <span className="text-foreground font-medium">Feito com orgulho.</span>
           </span>
         </div>
-        <div className="flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground/60 uppercase tracking-widest">
+        <div className="flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-widest">
           <Info className="w-3 h-3" />
           <span>Moeda virtual · Sem dinheiro real</span>
         </div>

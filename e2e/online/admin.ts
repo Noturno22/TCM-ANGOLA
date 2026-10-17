@@ -82,34 +82,91 @@ export async function createConfirmedUser(
   return (await res.json()) as AdminUser;
 }
 
-/**
- * Remove linhas que referenciam `auth.users` com ON DELETE RESTRICT (contas de
- * pagamento/KYC criadas automaticamente). Usa o PostgREST com a chave de
- * serviço (ignora RLS). Best-effort: não falha se a tabela/linha não existir.
- */
-async function purgeRestrictedRows(env: AdminEnv, id: string): Promise<void> {
-  // accounts.* e kyc_records.* apontam para auth.users com RESTRICT.
-  for (const table of ['kyc_records', 'accounts']) {
-    try {
-      const res = await fetch(
-        `${env.url}/rest/v1/${table}?user_id=eq.${encodeURIComponent(id)}`,
-        {
-          method: 'DELETE',
-          headers: { ...headers(env), Prefer: 'return=minimal' },
-        },
-      );
-      if (!res.ok && res.status !== 404) {
-        console.warn(`[e2e online] purge ${table} (${res.status}): ${await res.text()}`);
-      }
-    } catch (err) {
-      console.warn(`[e2e online] purge ${table} falhou:`, err);
+/** DELETE best-effort no PostgREST (service role ignora RLS). */
+async function deleteWhere(env: AdminEnv, table: string, query: string): Promise<void> {
+  try {
+    const res = await fetch(`${env.url}/rest/v1/${table}?${query}`, {
+      method: 'DELETE',
+      headers: { ...headers(env), Prefer: 'return=minimal' },
+    });
+    if (!res.ok && res.status !== 404) {
+      console.warn(`[e2e online] purge ${table} (${res.status}): ${await res.text()}`);
     }
+  } catch (err) {
+    console.warn(`[e2e online] purge ${table} falhou:`, err);
   }
+}
+
+/** SELECT de ids best-effort no PostgREST. */
+async function selectIds(env: AdminEnv, table: string, query: string): Promise<string[]> {
+  try {
+    const res = await fetch(`${env.url}/rest/v1/${table}?${query}&select=id`, {
+      headers: headers(env),
+    });
+    if (!res.ok) return [];
+    return ((await res.json()) as { id: string }[]).map((r) => r.id);
+  } catch {
+    return [];
+  }
+}
+
+/** Remove os comprovativos de um utilizador do bucket (pasta `<userId>/`). */
+export async function purgeUserStorage(
+  env: AdminEnv,
+  bucket: string,
+  userId: string,
+): Promise<void> {
+  try {
+    const listRes = await fetch(`${env.url}/storage/v1/object/list/${bucket}`, {
+      method: 'POST',
+      headers: { ...headers(env), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prefix: userId, limit: 100, offset: 0 }),
+    });
+    if (!listRes.ok) return;
+    const items = (await listRes.json()) as { name: string }[];
+    if (!items.length) return;
+    const prefixes = items.map((i) => (i.name.startsWith(`${userId}/`) ? i.name : `${userId}/${i.name}`));
+    const delRes = await fetch(`${env.url}/storage/v1/object/${bucket}`, {
+      method: 'DELETE',
+      headers: { ...headers(env), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prefixes }),
+    });
+    if (!delRes.ok) {
+      console.warn(`[e2e online] purge storage (${delRes.status}): ${await delRes.text()}`);
+    }
+  } catch (err) {
+    console.warn('[e2e online] purge storage falhou:', err);
+  }
+}
+
+/**
+ * Remove os artefactos que referenciam `auth.users` com ON DELETE RESTRICT
+ * (contas/KYC) ou que não caem em cascade (notificações do admin, ficheiros no
+ * storage). Best-effort: nunca falha a corrida de testes.
+ */
+async function purgeUserArtifacts(env: AdminEnv, id: string): Promise<void> {
+  const key = encodeURIComponent(id);
+
+  // accounts.* e kyc_records.* apontam para auth.users com RESTRICT.
+  await deleteWhere(env, 'kyc_records', `user_id=eq.${key}`);
+  await deleteWhere(env, 'accounts', `user_id=eq.${key}`);
+
+  // Notificações do admin ligadas a comprovativos/pedidos deste utilizador
+  // (não têm FK; ficariam órfãs após o cascade).
+  const receiptIds = await selectIds(env, 'payment_receipts', `user_id=eq.${key}`);
+  const withdrawalIds = await selectIds(env, 'withdrawal_requests', `user_id=eq.${key}`);
+  const entityIds = [...receiptIds, ...withdrawalIds];
+  if (entityIds.length) {
+    await deleteWhere(env, 'admin_notifications', `entity_id=in.(${entityIds.join(',')})`);
+  }
+
+  // Comprovativos no storage (não caem em cascade).
+  await purgeUserStorage(env, 'payment-proofs', id);
 }
 
 /** Remove um utilizador (purgando antes as linhas RESTRICT; cascade no resto). */
 export async function deleteUser(env: AdminEnv, id: string): Promise<void> {
-  await purgeRestrictedRows(env, id);
+  await purgeUserArtifacts(env, id);
 
   const res = await fetch(`${env.url}/auth/v1/admin/users/${id}`, {
     method: 'DELETE',

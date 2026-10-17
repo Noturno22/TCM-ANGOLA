@@ -34,7 +34,7 @@ export const CAMPAIGN_LEVELS: CampaignLevel[] = [
     humanSide: 'P1',
     objective: { type: 'win' },
     reward: 100,
-    hint: 'Sai da linha de casa e volta para completar a linha 1-2-3.',
+    hint: 'A tua linha de partida (1-2-3) não conta. Forma outra linha — tenta a do meio (4-5-6).',
   },
   {
     id: 2,
@@ -44,7 +44,7 @@ export const CAMPAIGN_LEVELS: CampaignLevel[] = [
     humanSide: 'P1',
     objective: { type: 'win_fast', maxMoves: 3 },
     reward: 200,
-    hint: 'A jogada 1→5 é a chave. Depois, volta para a linha de casa.',
+    hint: 'A jogada 1→5 leva-te ao centro. Com o centro e uma diagonal, cria uma linha vencedora.',
   },
   {
     id: 3,

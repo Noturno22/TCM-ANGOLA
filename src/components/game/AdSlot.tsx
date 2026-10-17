@@ -35,7 +35,7 @@ export function AdSlot({ format = 'responsive', className, showLabel = true }: A
     >
       {/* Em produção: <ins className="adsbygoogle" style={{display:'block'}} data-ad-client="ca-pub-XXX" data-ad-slot="XXX" data-ad-format="auto" /> */}
       {showLabel && (
-        <div className="flex flex-col items-center gap-1 text-muted-foreground/40">
+        <div className="flex flex-col items-center gap-1 text-muted-foreground">
           <span className="text-[9px] uppercase tracking-widest font-semibold">Anúncio</span>
           <span className="text-[8px]">Google Ads</span>
         </div>

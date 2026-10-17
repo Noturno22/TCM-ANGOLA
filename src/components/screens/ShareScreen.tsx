@@ -234,7 +234,7 @@ export function ShareScreen() {
             </>
           ) : (
             <GameCard className="p-8 text-center">
-              <Share2 className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
+              <Share2 className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
               <p className="text-sm text-muted-foreground mb-4">
                 Ainda não tens partidas para partilhar.
               </p>
@@ -260,7 +260,7 @@ export function ShareScreen() {
                 value={importCode}
                 onChange={(e) => setImportCode(e.target.value)}
                 placeholder="1VM_02..."
-                className="w-full h-24 p-3 pr-10 rounded-xl bg-surface-2/60 border border-border/40 text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-gold/50 resize-none scrollbar-custom"
+                className="w-full h-24 p-3 pr-10 rounded-xl bg-surface-2/60 border border-border/40 text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold/50 resize-none scrollbar-custom"
                 aria-label="Código da partida"
               />
               <button
@@ -344,7 +344,7 @@ export function ShareScreen() {
 
           {!importCode.trim() && (
             <GameCard className="p-8 text-center">
-              <QrCode className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
+              <QrCode className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
                 Cola um código de partida acima para pré-visualizar.
               </p>

@@ -15,9 +15,11 @@ import {
   Bell,
   Languages,
   Sun,
+  ShieldCheck,
 } from 'lucide-react';
 import { useSettings } from '@/store/settings';
 import { useProfile } from '@/store/profile';
+import { useAuth } from '@/store/auth';
 import { GameCard, GameButton, SectionTitle } from '@/components/game/ui';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
@@ -46,6 +48,14 @@ export function SettingsScreen() {
   const navigate = useApp((s) => s.navigate);
   const settings = useSettings();
   const resetProfile = useProfile((s) => s.resetProfile);
+  const email = useAuth((s) => s.user?.email?.toLowerCase() ?? null);
+  const isAdmin =
+    email !== null &&
+    (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean)
+      .includes(email);
 
   return (
     <div className="space-y-5 animate-slide-up pb-4">
@@ -175,6 +185,20 @@ export function SettingsScreen() {
         </GameCard>
       </section>
 
+      {/* Administração (só admins) */}
+      {isAdmin && (
+        <section>
+          <SectionTitle title="Administração" />
+          <GameCard className="divide-y divide-border/40">
+            <LinkRow
+              icon={<ShieldCheck className="w-4 h-4" />}
+              label="Depósitos e levantamentos"
+              onClick={() => navigate('admin')}
+            />
+          </GameCard>
+        </section>
+      )}
+
       {/* Ajuda e informação */}
       <section>
         <SectionTitle title="Ajuda e Informação" />
@@ -256,7 +280,7 @@ export function SettingsScreen() {
         </div>
       </section>
 
-      <p className="text-center text-[10px] text-muted-foreground/60 pt-2">
+      <p className="text-center text-[10px] text-muted-foreground pt-2">
         Tira o Cocó do Meio • Versão 1.0
       </p>
     </div>

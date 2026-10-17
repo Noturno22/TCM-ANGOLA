@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { enterAsGuest, gotoWelcome, resetStorage, startOfflinePvp } from './helpers';
+import { enterAsGuest, gotoWelcome, openGlobeRoom, resetStorage, startOfflinePvp } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await resetStorage(page);
@@ -25,8 +25,8 @@ test('sala -> partida (fallback offline sem sessão)', async ({ page }) => {
     page.getByRole('main').getByRole('heading', { name: 'SALAS' }),
   ).toBeVisible();
 
-  // Abre a sala em destaque e entra.
-  await page.getByRole('button', { name: 'Entrar', exact: true }).first().click();
+  // Abre a sala de Lisboa (Portugal) a partir do globo e entra.
+  await openGlobeRoom(page, 'lisboa');
   await page.getByRole('button', { name: 'Jogar', exact: true }).click();
 
   // Sem sessão online ativa, cai no seletor offline.
@@ -55,4 +55,55 @@ test('tempo esgotado resulta em derrota do jogador com o relógio', async ({ pag
   await expect(
     page.getByRole('heading', { name: 'Jogador 2 venceu!' }),
   ).toBeVisible({ timeout: 40_000 });
+});
+
+test('globo das salas: aproximar, afastar e repor o zoom', async ({ page }) => {
+  test.setTimeout(90_000);
+  await enterAsGuest(page);
+  await page.getByRole('button', { name: /JOGAR ONLINE/ }).click();
+  await expect(
+    page.getByRole('main').getByRole('heading', { name: 'SALAS' }),
+  ).toBeVisible();
+
+  let frame = page.frames().find((f) => f.url().includes('globe.svg'));
+  for (let i = 0; i < 25 && !frame; i++) {
+    await page.waitForTimeout(100);
+    frame = page.frames().find((f) => f.url().includes('globe.svg'));
+  }
+  if (!frame) throw new Error('iframe do globo não encontrado');
+  const globe = frame;
+
+  const state = () =>
+    globe.evaluate(() => {
+      const g = (window as unknown as { Globo?: { estado(): { z: number } } }).Globo;
+      const svg = document.querySelector('svg');
+      return { z: g ? g.estado().z : -1, viewBox: svg?.getAttribute('viewBox') ?? '' };
+    });
+
+  await expect.poll(async () => (await state()).z).toBe(1);
+
+  // Botões do parent (postMessage) aproximam e alteram o viewBox.
+  await page.getByRole('button', { name: 'Aproximar' }).click();
+  await expect.poll(async () => (await state()).z).toBeGreaterThan(1);
+  expect((await state()).viewBox).not.toBe('0 0 400 400');
+
+  // O scroll dentro do iframe (sandboxed) também aproxima.
+  const beforeWheel = (await state()).z;
+  await globe.evaluate(() => {
+    document.documentElement.dispatchEvent(
+      new WheelEvent('wheel', {
+        deltaY: -120,
+        clientX: 120,
+        clientY: 140,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+  });
+  await expect.poll(async () => (await state()).z).toBeGreaterThan(beforeWheel);
+
+  // "Repor zoom" volta ao estado inicial.
+  await page.getByRole('button', { name: 'Repor zoom' }).click();
+  await expect.poll(async () => (await state()).z).toBe(1);
+  expect((await state()).viewBox).toBe('0 0 400 400');
 });

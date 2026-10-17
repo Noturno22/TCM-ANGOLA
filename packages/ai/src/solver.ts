@@ -11,9 +11,12 @@
  *  - Um estado é LOSS se TODOS os movimentos levam a estados WIN (para o adversário).
  *  - Caso contrário DRAW (ciclos onde ninguém força vitória).
  *
- * Referência (Prompt Bloco 6.2): free-blocked, regras por omissão:
- *   3 360 estados; 0 sem movimentos; 2 416 vitórias / 288 derrotas / 656 empates
- *   (do ponto de vista de quem joga).
+ * Nota: a análise é feita por modo de movimento (o cache é por `movementMode`),
+ * para que a IA "perfeita" analise as mesmas regras que o jogo em produção
+ * (`adjacent-only`). Números medidos (do ponto de vista de quem joga):
+ *   - free-blocked: 3 360 estados; 0 sem movimentos; 2 266 vit. / 612 der. / 482 emp.
+ *   - adjacent-only: 3 360 estados; 16 sem movimentos; 1 806 vit. / 820 der. / 734 emp.
+ *   (o solver "perfeito" usa `state.config`, logo adjacent-only na app)
  */
 
 import {
@@ -25,6 +28,7 @@ import {
   type GameState,
   type Line,
   type Move,
+  type MovementMode,
   type PlayerId,
   WINNING_LINES,
   type RulesConfig,
@@ -138,15 +142,19 @@ interface SolverResult {
   counts: { win: number; loss: number; draw: number; total: number };
 }
 
-let cachedResult: SolverResult | null = null;
+/** Cache por modo de movimento (a enumeração de estados é a mesma; as regras mudam). */
+const cache = new Map<MovementMode, SolverResult>();
 
 /**
- * Executa a análise retrógrada completa. Resultado memoizado.
+ * Executa a análise retrógrada completa para o modo indicado (omissão: free-blocked).
+ * Resultado memoizado por modo de movimento.
  */
-export function solve(): SolverResult {
-  if (cachedResult) return cachedResult;
+export function solve(configOverride?: Partial<RulesConfig>): SolverResult {
+  const config: RulesConfig = { ...DEFAULT_SOLVER_CONFIG, ...configOverride };
+  const cacheKey = config.movementMode;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
 
-  const config = DEFAULT_SOLVER_CONFIG;
   const allStates = enumerateAllStates(config);
 
   // Tabela de resultados
@@ -218,6 +226,14 @@ export function solve(): SolverResult {
     }
     children.set(key, childKeys);
     remainingChildren.set(key, childKeys.length);
+
+    // D4: um estado sem movimentos legais é LOSS para o jogador atual.
+    // (Só acontece em modos restritivos como 'adjacent-only'; em free-blocked
+    // existe sempre pelo menos um movimento.)
+    if (childKeys.length === 0) {
+      table.set(key, { outcome: 'LOSS', distance: 0 });
+      queue.push({ key, outcome: 'LOSS', distance: 0 });
+    }
   }
 
   // Inicializar predecessores
@@ -274,28 +290,30 @@ export function solve(): SolverResult {
     }
   }
 
-  cachedResult = {
+  const result: SolverResult = {
     table,
     counts: { win, loss, draw, total: allStates.length },
   };
-  return cachedResult;
+  cache.set(cacheKey, result);
+  return result;
 }
 
 /**
- * Consulta o resultado resolvido de um estado.
+ * Consulta o resultado resolvido de um estado, usando as regras do próprio
+ * estado (movementMode). Assim a IA "perfeita" analisa o mesmo jogo que está a ser jogado.
  */
 export function solvePosition(state: GameState): SolvedState {
-  const { table } = solve();
+  const { table } = solve({ movementMode: state.config.movementMode });
   const key = boardKey(state.board, state.currentPlayer);
   return table.get(key) ?? { outcome: 'DRAW', distance: -1 };
 }
 
-/** Estatísticas do solver (para testes/relatório). */
-export function solverStats() {
-  return solve().counts;
+/** Estatísticas do solver (para testes/relatório). Omissão: free-blocked. */
+export function solverStats(configOverride?: Partial<RulesConfig>) {
+  return solve(configOverride).counts;
 }
 
 /** Reseta o cache (para testes com configs diferentes). */
 export function resetSolverCache(): void {
-  cachedResult = null;
+  cache.clear();
 }

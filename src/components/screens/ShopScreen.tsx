@@ -118,7 +118,7 @@ export function ShopScreen() {
         </div>
       </Section>
 
-      <p className="text-[10px] text-muted-foreground/70 text-center leading-relaxed pt-2">
+      <p className="text-[10px] text-muted-foreground text-center leading-relaxed pt-2">
         Os cosméticos gratuitos estão sempre disponíveis. Ganhas KZ a cada partida jogada.
       </p>
     </div>

@@ -120,17 +120,35 @@ describe('Motor — Validação de movimentos', () => {
     expect(r.ok).toBe(true);
   });
 
-  it('movimento adjacente permitido: 2→4 (diagonal)', () => {
+  it('diagonal fora das linhas bloqueada: 2→4 → PATH_BLOCKED', () => {
+    // 2=(1,0), 4=(0,1): diagonal adjacente mas FORA das linhas desenhadas
+    // (2 e 4 não partilham nenhuma linha vencedora) → não é vizinha válida.
     const g = createGame();
     const r = validateMove(g, { from: 2, to: 4 });
-    expect(r.ok).toBe(true);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.code).toBe('PATH_BLOCKED');
+  });
+
+  it('diagonal fora das linhas bloqueada: 2→6 → PATH_BLOCKED', () => {
+    // 2=(1,0), 6=(2,1): diagonal adjacente fora das linhas.
+    const g = createGame();
+    const r = validateMove(g, { from: 2, to: 6 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.code).toBe('PATH_BLOCKED');
   });
 
   it('movimento adjacente permitido: 1→5 (diagonal)', () => {
-    // 1=(0,0), 5=(1,1): diagonal adjacente
+    // 1=(0,0), 5=(1,1): diagonal adjacente SOBRE a linha vencedora 1–5–9
     const g = createGame();
     const r = validateMove(g, { from: 1, to: 5 });
     expect(r.ok).toBe(true);
+  });
+
+  it('posição inicial: peça do meio (2) tem só 1 destino (5)', () => {
+    // Regressão: 2↔4 e 2↔6 são diagonais fora das linhas e não contam.
+    const g = createGame();
+    const moves = getLegalMoves(g).filter((m) => m.from === 2);
+    expect(moves).toEqual([{ from: 2, to: 5 }]);
   });
 
   it('casa não-adjacente bloqueada: 3→4 → PATH_BLOCKED', () => {

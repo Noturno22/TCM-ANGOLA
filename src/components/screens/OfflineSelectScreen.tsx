@@ -147,12 +147,12 @@ export function OfflineSelectScreen() {
                     {unlocked ? (
                       <p className="text-[10px] text-muted-foreground leading-tight">{d.desc}</p>
                     ) : (
-                      <p className="text-[10px] text-gold/70 leading-tight">
+                      <p className="text-[10px] text-gold leading-tight">
                         {req ? `${getUnlockText(d.id)}${wins > 0 ? ` (${wins}/${req.wins})` : ''}` : ''}
                       </p>
                     )}
                     {unlocked && wins > 0 && (
-                      <span className="absolute top-1 right-1 flex items-center gap-0.5 text-[9px] text-muted-foreground/60">
+                      <span className="absolute top-1 right-1 flex items-center gap-0.5 text-[9px] text-muted-foreground">
                         {wins}
                         <Check className="w-3 h-3" />
                       </span>

@@ -13,8 +13,8 @@ Projeto de referência: **`TCM`** — ref `ogqnbhuvoypmqefxbijr`.
 
 ### Migrations
 
-Num projeto novo, aplicar `supabase/sql/setup-complete.sql` (agrega 0001→0014).
-Caso contrário, aplicar migrations individualmente (`0001`→`0014`):
+Num projeto novo, aplicar `supabase/sql/setup-complete.sql` (agrega 0001→0015).
+Caso contrário, aplicar migrations individualmente (`0001`→`0015`):
 
 ```bash
 supabase link --project-ref ogqnbhuvoypmqefxbijr
@@ -24,7 +24,7 @@ supabase db push
 Helper local (Windows/PowerShell, via Management API):
 
 ```powershell
-.\scripts\apply-supabase-migration.ps1 -File supabase\migrations\0014_age_gate.sql
+.\scripts\apply-supabase-migration.ps1 -File supabase\migrations\0015_manual_payments.sql
 ```
 
 ### Edge Functions
@@ -35,9 +35,10 @@ bun run sync:engine
 
 supabase functions deploy submit-move        --project-ref ogqnbhuvoypmqefxbijr
 supabase functions deploy send-sms-hook      --project-ref ogqnbhuvoypmqefxbijr
+supabase functions deploy admin-manage       --project-ref ogqnbhuvoypmqefxbijr --use-api
 ```
 
-Funções de pagamento (só se D6 estiver ligado — ver abaixo):
+Funções de pagamento por PSP (só relevantes quando o PSP automático for ligado):
 
 ```bash
 supabase functions deploy create-deposit-intent --project-ref ogqnbhuvoypmqefxbijr
@@ -51,13 +52,15 @@ supabase functions deploy payout-webhook        --project-ref ogqnbhuvoypmqefxbi
 
 ```bash
 supabase secrets set --project-ref ogqnbhuvoypmqefxbijr \
-  REAL_MONEY_ENABLED=false \
-  PAYOUTS_ENABLED=false
+  REAL_MONEY_ENABLED=true \
+  PAYOUTS_ENABLED=true \
+  ADMIN_EMAILS="email-do-admin@exemplo.com"
 ```
 
-> **Dinheiro real (D6):** manter `REAL_MONEY_ENABLED=false` até existir parecer
-> jurídico/licenciamento. Com `false`, todas as funções de pagamento respondem
-> `403 real_money_disabled`.
+> **Dinheiro real (D6, revista):** os depósitos/levantamentos **manuais** estão
+> ligados. `ADMIN_EMAILS` (lista separada por vírgulas, emails dos admins) gateia
+> a Edge Function `admin-manage`. Com `REAL_MONEY_ENABLED=false` todas as funções
+> de pagamento respondem `403 real_money_disabled`.
 
 ## 2. Web (Vercel)
 
@@ -66,10 +69,10 @@ supabase secrets set --project-ref ogqnbhuvoypmqefxbijr \
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
   - `NEXT_PUBLIC_SITE_URL` (URL de produção)
-  - `NEXT_PUBLIC_REAL_MONEY_ENABLED=false`
-  - `NEXT_PUBLIC_PAYOUTS_ENABLED=false`
-  - `NEXT_PUBLIC_PAYMENTS_ENABLED_PROVIDERS=mock` *(nunca `mock` em produção se
-    D6 vier a ser ligado)*
+  - `NEXT_PUBLIC_REAL_MONEY_ENABLED=true`
+  - `NEXT_PUBLIC_PAYOUTS_ENABLED=true`
+  - `NEXT_PUBLIC_ADMIN_EMAILS` (emails com acesso ao painel admin)
+  - `NEXT_PUBLIC_PAYMENTS_ENABLED_PROVIDERS=mock` *(nunca `mock` em produção)*
 
 **Nunca** definir `NEXT_PUBLIC_E2E_AUTH` em produção (só para testes).
 
@@ -105,5 +108,6 @@ service role) e os builds EAS (exigem `EXPO_TOKEN`).
 - [ ] Web carrega e o jogo offline funciona.
 - [ ] Partida online a 2 clientes com jogadas validadas no servidor.
 - [ ] Gate 18+ ao entrar numa sala com aposta.
-- [ ] Carteira AOA mostra "em breve" (D6 desligado) e nenhum provider ativo.
+- [ ] Depósito manual (comprovativo) submetido e visível no painel admin.
+- [ ] Admin aprova → saldo creditado; levantamento pago → saldo debitado.
 - [ ] Migrations/functions sem erros nos logs do Supabase.

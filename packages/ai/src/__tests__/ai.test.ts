@@ -27,18 +27,18 @@ describe('IA — nunca faz jogada ilegal', () => {
 });
 
 describe('IA — Perfeito vs Perfeito', () => {
-  it('P1 ganha em ≤ 5 plies (linha de casa desativada)', () => {
+  it('empata (a posição inicial é empate com jogo perfeito; adjacent-only)', () => {
     let state = createGame();
     let plies = 0;
-    while (!isGameOver(state) && plies < 10) {
+    while (!isGameOver(state) && plies < 1000) {
       const mv = chooseMove(state, 'perfect', 42 + plies);
       expect(mv).not.toBeNull();
       if (!mv) break;
       state = applyMove(state, mv).state;
       plies++;
     }
-    expect(state.winner).toBe('P1');
-    expect(plies).toBeLessThanOrEqual(5);
+    expect(state.status).toBe('DRAW');
+    expect(state.winner).toBeNull();
   });
 });
 

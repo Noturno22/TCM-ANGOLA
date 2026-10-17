@@ -199,7 +199,7 @@ export function NotificationsScreen() {
                     {n.body && (
                       <span className="block text-xs text-muted-foreground truncate">{n.body}</span>
                     )}
-                    <span className="block text-[11px] text-muted-foreground/70 mt-0.5">
+                    <span className="block text-[11px] text-muted-foreground mt-0.5">
                       {relativeTime(n.createdAt)}
                     </span>
                   </span>
