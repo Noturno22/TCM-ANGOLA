@@ -13,6 +13,19 @@ rankings, torneios) e economia de **moeda virtual** (KZ) — **sem dinheiro real
 - **Supabase CLI** ≥ 2.x (apenas para mexer no backend)
 - **Expo** com Dev Client (apenas para mobile)
 
+### RAM (máquina de dev com pouca memória)
+
+A máquina de dev tem 8 GB instalados (2×4 GB DDR3L-1600, 2 slots ocupados) mas o
+SO só vê ~6,4 GB por causa da gráfica integrada. O `vitest` já corre com
+`maxWorkers: 1` + `isolate: false` (ver `vitest.config.ts`). Para não estourar:
+
+- Fecha o browser e apps pesadas enquanto compilas.
+- **Não** corras `next dev` e um browser/headless Chromium ao mesmo tempo.
+- Para screenshots, usa o build de produção (`bun run build` + `bun run start`)
+  em vez de `next dev`.
+- Upgrade real: 2×8 GB **DDR3L-1600 SODIMM** (máximo suportado: 16 GB).
+- Pendrives USB/ReadyBoost **não** servem de RAM e o pagefile não deve ir para USB.
+
 ## Setup em 10 minutos
 
 ```bash
