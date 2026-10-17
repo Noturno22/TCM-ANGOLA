@@ -18,5 +18,7 @@ export default defineConfig({
     environment: 'node',
     include: ['src/lib/**/*.test.ts', 'packages/**/*.test.ts'],
     testTimeout: 30000,
+    isolate: false,
+    maxWorkers: 1,
   },
 });
