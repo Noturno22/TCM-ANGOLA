@@ -33,15 +33,18 @@ import { useApp } from '@/store/app';
 import { useWalletMovements, type WalletMovement } from '@/store/walletMovements';
 import { REAL_MONEY_ENABLED } from '@/lib/config/flags';
 import { fetchAccount, fetchBalanceMinor } from '@/lib/payments/client';
-import { enabledProvidersForCurrency } from '@/lib/payments/providers';
+import { enabledProvidersForCurrency, getProviderInfo } from '@/lib/payments/providers';
 import {
   autoErrorMessage,
+  autoProviderCandidates,
   fetchIntentById,
   findResumableAutoIntent,
+  isNotConfiguredError,
   normalizeAutoPhone,
   startAutoDeposit,
   type AutoCheckoutInfo,
   type AutoDepositMethod,
+  type AutoProviderId,
 } from '@/lib/payments/auto';
 import type { PaymentIntentRow } from '@/lib/payments/types';
 import {
@@ -118,8 +121,9 @@ export function DepositScreen() {
   const [pendingDeposit, setPendingDeposit] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // Depósito automático (AppyPay)
+  // Depósito automático (AppyPay / BitPay)
   const [autoMethod, setAutoMethod] = useState<AutoDepositMethod>('gpo');
+  const [autoProviderChoice, setAutoProviderChoice] = useState<AutoProviderId | null>(null);
   const [phone, setPhone] = useState('');
   const [autoStart, setAutoStart] = useState<{
     intent: PaymentIntentRow;
@@ -131,10 +135,17 @@ export function DepositScreen() {
   const amount = parseAmount(amountStr);
   const methods = methodsForCurrency(currency);
   const activeMethod = methods.find((m) => m.id === method) ?? methods[0];
-  const autoEnabled = useMemo(
-    () => enabledProvidersForCurrency('AOA').some((p) => p.id === 'appypay'),
+  /** PSP automáticos ativos na UI, por ordem de preferência. */
+  const autoCandidates = useMemo(
+    () => autoProviderCandidates(enabledProvidersForCurrency('AOA').map((p) => p.id)),
     [],
   );
+  const autoEnabled = autoCandidates.length > 0;
+  const autoProvider =
+    autoProviderChoice && autoCandidates.includes(autoProviderChoice)
+      ? autoProviderChoice
+      : (autoCandidates[0] ?? null);
+  const autoProviderLabel = autoProvider ? (getProviderInfo(autoProvider)?.label ?? autoProvider) : '';
   /** Bloqueia o formulário: comprovativo pendente ou pagamento automático a decorrer. */
   const formBlocked = pendingDeposit || autoStart !== null;
   const autoIntentId = autoStart?.intent.id ?? null;
@@ -246,7 +257,7 @@ export function DepositScreen() {
     };
   }, [user]);
 
-  /** Arranca um depósito automático (AppyPay) com o valor/método escolhidos. */
+  /** Arranca um depósito automático no PSP escolhido (com recuo se não configurado). */
   const handleStartAuto = async () => {
     if (!amount || depositError) {
       toast.error(depositError || 'Indica um valor válido.');
@@ -258,16 +269,29 @@ export function DepositScreen() {
       return;
     }
     setAutoBusy(true);
+    let lastError: unknown = null;
+    const order: AutoProviderId[] = autoProvider
+      ? [autoProvider, ...autoCandidates.filter((p) => p !== autoProvider)]
+      : autoCandidates;
     try {
-      const started = await startAutoDeposit({
-        amountMinor: Math.round(amount * 100),
-        method: autoMethod,
-        phone: phoneDigits ?? undefined,
-      });
-      setAutoStart(started);
-    } catch (err) {
-      console.error('auto deposit failed', err);
-      toast.error(autoErrorMessage(err));
+      for (const provider of order) {
+        try {
+          const started = await startAutoDeposit({
+            amountMinor: Math.round(amount * 100),
+            method: autoMethod,
+            provider,
+            phone: phoneDigits ?? undefined,
+          });
+          setAutoStart(started);
+          return;
+        } catch (err) {
+          lastError = err;
+          // Sem credenciais nesse PSP: tenta o seguinte (ex.: AppyPay → BitPay).
+          if (!isNotConfiguredError(err)) break;
+        }
+      }
+      console.error('auto deposit failed', lastError);
+      toast.error(autoErrorMessage(lastError));
     } finally {
       setAutoBusy(false);
     }
@@ -470,7 +494,7 @@ export function DepositScreen() {
             </button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Depósitos automáticos (AppyPay) ou manuais com comprovativo; levantamentos manuais.
+            Depósitos automáticos ou manuais com comprovativo; levantamentos manuais.
           </p>
         </GameCard>
       </motion.div>
@@ -546,7 +570,7 @@ export function DepositScreen() {
             )}
           </div>
 
-          {/* -------------------- Depósito automático (AppyPay) -------------------- */}
+          {/* -------------------- Depósito automático (AppyPay / BitPay) -------------------- */}
           {autoStart && (
             <GameCard className="p-4 space-y-3 border border-gold/40" glow="gold">
               <div className="flex items-center justify-between gap-2">
@@ -665,9 +689,25 @@ export function DepositScreen() {
                 <Zap className="w-4 h-4 text-gold" aria-hidden />
                 <p className="text-sm font-semibold">Depósito automático</p>
                 <span className="text-[10px] uppercase tracking-wider text-gold border border-gold/40 rounded px-1.5 py-0.5">
-                  AppyPay
+                  {autoProviderLabel}
                 </span>
               </div>
+
+              {autoCandidates.length > 1 && (
+                <div className="grid grid-cols-2 gap-2">
+                  {autoCandidates.map((id) => (
+                    <GameButton
+                      key={id}
+                      variant={autoProvider === id ? 'gold' : 'ghost'}
+                      className="h-12 text-xs"
+                      onClick={() => setAutoProviderChoice(id)}
+                      aria-pressed={autoProvider === id}
+                    >
+                      {getProviderInfo(id)?.label ?? id}
+                    </GameButton>
+                  ))}
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-2">
                 <GameButton
@@ -712,7 +752,7 @@ export function DepositScreen() {
                 className="w-full"
                 disabled={!amount || !!depositError || autoBusy}
                 onClick={() => void handleStartAuto()}
-                aria-label="Pagar com AppyPay"
+                aria-label={`Pagar com ${autoProviderLabel}`}
               >
                 {autoBusy ? (
                   <>
@@ -726,8 +766,8 @@ export function DepositScreen() {
                 )}
               </GameButton>
               <p className="text-[11px] leading-relaxed text-muted-foreground">
-                Processado pela AppyPay — o saldo entra na carteira assim que o pagamento for
-                confirmado. Sem comprovativo nem espera por aprovação.
+                Processado pela {autoProviderLabel} — o saldo entra na carteira assim que o
+                pagamento for confirmado. Sem comprovativo nem espera por aprovação.
               </p>
             </div>
           )}

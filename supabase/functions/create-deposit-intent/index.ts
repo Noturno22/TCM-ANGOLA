@@ -74,7 +74,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ error: 'invalid_json' }, 400);
   }
 
-  const amountMinor = Math.trunc(Number(body.amountMinor));
+  let amountMinor = Math.trunc(Number(body.amountMinor));
   const currency = (body.currency ?? 'AOA') as Currency;
   const providerId = (body.provider ?? '') as PaymentProviderId;
   const idempotencyKey = (body.idempotencyKey ?? '').trim();
@@ -96,6 +96,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (!provider.supportsCurrency(currency)) {
     return json({ error: 'provider_currency_unsupported' }, 400);
   }
+
+  // A BitPay só aceita montantes inteiros em kwanzas: arredonda a intenção
+  // (é este valor que o webhook vai confirmar e creditar) antes de persistir.
+  if (providerId === 'bitpay') amountMinor = Math.round(amountMinor / 100) * 100;
 
   const admin = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },

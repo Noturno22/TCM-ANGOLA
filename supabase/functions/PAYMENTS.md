@@ -69,6 +69,8 @@ supabase secrets set --project-ref <REF> \
 # AppyPay (depósitos automáticos) — ver secção "Ligar um PSP real":
 #   APPYPAY_ENV, APPYPAY_CLIENT_ID, APPYPAY_CLIENT_SECRET,
 #   APPYPAY_PAYMENT_METHOD_GPO, APPYPAY_PAYMENT_METHOD_REF
+# BitPay (sandbox aberto; depositos automaticos):
+#   BITPAY_SK (+ opcional BITPAY_WEBHOOK_SECRET, BITPAY_ENV)
 ```
 
 ## Deploy
@@ -148,6 +150,51 @@ Notas de integração (porquês no código):
 - Estado `Pending` → evento `payment.pending` (ignorado; só `paid` credita).
 - Sandbox: telemóvel `900000000` = sucesso, `999999999` = cancelado,
   `900000001` = saldo insuficiente, `900000002` = valor inválido.
+- **Levantamentos**: `supportsPayouts: false` — continuam manuais.
+
+### BitPay (implementado — sandbox)
+
+Adaptador `_shared/payments/bitpay.ts` (registado em `providers.ts`). A BitPay
+**ainda não está em produção** (aguarda certificação EMIS): só o sandbox move
+"pagamentos" simulados.
+
+| Método | O que faz |
+|---|---|
+| `gpo` | Multicaixa Express (`multicaixa_express`) — push para a app do cliente (`customerPhone`, 9 dígitos começados por 9). |
+| `ref` | Referência Multicaixa (`multicaixa_reference`) — a BitPay devolve entidade + número, validade 72 h. |
+
+Chave (sem ela a função responde `bitpay_not_configured`):
+
+1. Criar conta em `https://dashboard.bitpay.ao` (ou `POST
+   https://api-sandbox.bitpay.ao/v1/sandbox/accounts`) e copiar a chave
+   `sk_test_…` de **Developers → Chaves**.
+2. `supabase secrets set --project-ref <REF> BITPAY_SK=sk_test_…`
+   (opcional: `BITPAY_WEBHOOK_SECRET=whsec_…` para validar a assinatura;
+   `BITPAY_ENV=production` quando houver chaves `sk_live_…`).
+3. Cliente: `NEXT_PUBLIC_PAYMENTS_ENABLED_PROVIDERS` tem de incluir `bitpay`.
+
+O endpoint de webhook é **registado automaticamente** na primeira cobrança
+(`POST /v1/webhook_endpoints`, eventos `*`) apontado a
+`<SUPABASE_URL>/functions/v1/psp-webhook?provider=bitpay`. Se preferires
+controlar isso no painel, cria o endpoint lá com esse URL.
+
+Notas de integração (porquês no código):
+
+- `amount` é **inteiro em kwanzas** → a Edge Function arredonda o valor do
+  intent para o Kz mais próximo antes de persistir (o webhook credita esse
+  mesmo valor).
+- `merchant_reference` = `idempotency_key` → o webhook localiza a intenção na
+  1.ª consulta de `findIntent`; `Idempotency-Key` repetido devolve a cobrança
+  original (nunca duplica).
+- Webhooks assinados (`BitPay-Signature`) **e** reconsulta
+  `GET /v1/payment_intents/{id}`: só o estado da API é usado. Estados
+  `PENDING/PROCESSING/UNKNOWN` → `payment.pending` (ignorado);
+  `SUCCEEDED/REFUNDED` → `payment.paid`; `EXPIRED` → `payment.expired`;
+  `FAILED/CANCELLED` → `payment.failed`.
+- Sandbox: `923000000` aprova (~5 s), `923000001` recusa, `923000002` timeout
+  (UNKNOWN → sucesso tardio), `923000003` saldo insuficiente, `923000004`
+  operador indisponível; referência paga simulada com
+  `POST /v1/sandbox/simulate/reference_paid`.
 - **Levantamentos**: `supportsPayouts: false` — continuam manuais.
 
 ### Outros providers

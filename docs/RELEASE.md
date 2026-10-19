@@ -77,6 +77,22 @@ supabase secrets set --project-ref ogqnbhuvoypmqefxbijr \
   APPYPAY_PAYMENT_METHOD_REF=<REF_uuid>
 ```
 
+### Segredos BitPay (depósitos automáticos, sandbox)
+
+O sandbox é aberto — criar conta em https://dashboard.bitpay.ao e copiar a
+chave `sk_test_…` (Developers → Chaves). O webhook é registado
+automaticamente na primeira cobrança; `BITPAY_WEBHOOK_SECRET` é opcional
+(valida a assinatura, além da reconsulta à API).
+
+```bash
+supabase secrets set --project-ref ogqnbhuvoypmqefxbijr \
+  BITPAY_SK=sk_test_...
+# opcionais: BITPAY_WEBHOOK_SECRET=whsec_...  BITPAY_ENV=production
+```
+
+> A BitPay **ainda não está em produção** (certificação EMIS pendente): os
+> depósitos via BitPay são simulados até haver chaves `sk_live_…`.
+
 No portal AppyPay, configurar o webhook de cada aplicação (GPO e REF) para
 `https://ogqnbhuvoypmqefxbijr.supabase.co/functions/v1/psp-webhook?provider=appypay`
 (método POST). A AppyPay não assina os payloads — `psp-webhook` valida por
@@ -92,7 +108,7 @@ reconsulta `GET /v2.0/charges/{id}`.
   - `NEXT_PUBLIC_REAL_MONEY_ENABLED=true`
   - `NEXT_PUBLIC_PAYOUTS_ENABLED=true`
   - `NEXT_PUBLIC_ADMIN_EMAILS` (emails com acesso ao painel admin)
-  - `NEXT_PUBLIC_PAYMENTS_ENABLED_PROVIDERS=appypay` *(nunca `mock` em produção)*
+  - `NEXT_PUBLIC_PAYMENTS_ENABLED_PROVIDERS=appypay,bitpay` *(nunca `mock` em produção)*
 
 **Nunca** definir `NEXT_PUBLIC_E2E_AUTH` em produção (só para testes).
 
@@ -131,4 +147,5 @@ service role) e os builds EAS (exigem `EXPO_TOKEN`).
 - [ ] Depósito manual (comprovativo) submetido e visível no painel admin.
 - [ ] Admin aprova → saldo creditado; levantamento pago → saldo debitado.
 - [ ] Depósito automático AppyPay (Express e referência) → webhook credita o saldo.
+- [ ] Depósito automático BitPay (sandbox: `923000000` / referência simulada) → saldo creditado.
 - [ ] Migrations/functions sem erros nos logs do Supabase.

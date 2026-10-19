@@ -84,13 +84,19 @@
   (bloco "Depósito automático" + cartão pendente com polling de 5 s e retoma
   ao reabrir). Coexiste com o fluxo manual; levantamentos continuam manuais;
   sem credenciais responde `appypay_not_configured`.
-- **Dívidas conhecidas**: PSP WiPay e Stripe (stubs); credenciais AppyPay
-  sandbox/produção por configurar.
+- **Feito**: 2.º PSP automático **BitPay** (`I22`, sandbox; produção só após
+  certificação EMIS) — `_shared/payments/bitpay.ts` (Express/referência,
+  `Idempotency-Key` e `merchant_reference` = `idempotency_key`, webhook
+  assinado **e** reconsulta, registo automático do endpoint). UI escolhe o PSP
+  quando há mais de um ativo e só recua em erros `*_not_configured`
+  (AppyPay → BitPay).
+- **Dívidas conhecidas**: PSP WiPay e Stripe (stubs); AppyPay bloqueado por
+  NIF empresarial (portal recusa adesão sem empresa) — credenciais pendentes.
 
 ## F7 — QA, e2e, release e docs · em curso
 
 - **Feito**:
-  - Testes unitários **145/145** (14 ficheiros); typecheck limpo; lint **0 erros**.
+  - Testes unitários **148/148** (14 ficheiros); typecheck limpo; lint **0 erros**.
   - e2e web **offline 8/8** (`e2e/`) e **online 3/3** (`e2e/online/`: 2
     contextos + depósito/levantamento manuais, contra o Supabase real).
   - CI (`.github/workflows/ci.yml`).

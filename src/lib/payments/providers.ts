@@ -46,6 +46,13 @@ export const PROVIDERS: ProviderInfo[] = [
     enabled: isEnabled('appypay'),
   },
   {
+    id: 'bitpay',
+    label: 'BitPay',
+    description: 'Referência Multicaixa e Multicaixa Express — sandbox até à certificação EMIS.',
+    currencies: ['AOA'],
+    enabled: isEnabled('bitpay'),
+  },
+  {
     id: 'stripe',
     label: 'Cartão internacional (Stripe)',
     description: 'Visa/Mastercard internacionais — requer entidade fora de Angola.',

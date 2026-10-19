@@ -3,6 +3,9 @@
 // `mock` está implementado de ponta a ponta (sandbox / testes).
 // `appypay` está implementado para depósitos automáticos (GPO/REF) e só
 // funciona com credenciais — sem elas responde `appypay_not_configured`.
+// `bitpay` está implementado para depósitos automáticos (Express/referência);
+// só existe sandbox (aguarda certificação EMIS) e sem `BITPAY_SK` responde
+// `bitpay_not_configured`.
 // `wipay` / `stripe` são stubs explícitos: falham com erro claro até haver
 // credenciais e endpoints reais ligados — nunca fingem sucesso, para não
 // creditarmos saldo sem dinheiro real.
@@ -18,6 +21,7 @@ import type {
   PaymentProviderId,
 } from './types.ts';
 import { appypayProvider } from './appypay.ts';
+import { bitpayProvider } from './bitpay.ts';
 
 // --------------------------- utilitários HMAC ---------------------------
 
@@ -142,6 +146,9 @@ const REGISTRY: Record<string, PSPProvider> = {
   // Implementado em `appypay.ts`; sem APPYPAY_CLIENT_ID/SECRET responde
   // `appypay_not_configured` (nunca fingindo sucesso).
   appypay: appypayProvider,
+  // Sandbox aberto (chave `BITPAY_SK`); assinatura de webhook opcional via
+  // `BITPAY_WEBHOOK_SECRET` — em ambos os casos o estado vem da reconsulta.
+  bitpay: bitpayProvider,
   stripe: stripeProvider,
 };
 

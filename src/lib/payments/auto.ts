@@ -1,9 +1,9 @@
 'use client';
 
 /**
- * Depósitos automáticos (AppyPay) — helpers do lado cliente.
+ * Depósitos automáticos (AppyPay / BitPay) — helpers do lado cliente.
  *
- * O checkout da AppyPay não é uma página externa: a função devolve um URL do
+ * O checkout destes PSP não é uma página externa: a função devolve um URL do
  * próprio app com os dados de apresentação (entidade/referência ou telefone
  * mascarado) em query. Aqui fazemos o arranque da intenção, a leitura desses
  * dados e o polling do estado até o webhook do PSP creditar o saldo.
@@ -15,9 +15,24 @@ import { newIdempotencyKey, type AutoDepositMethod, type PaymentIntentRow } from
 
 export type { AutoDepositMethod };
 
+/** Providers com depósito automático, por ordem de preferência. */
+export const AUTO_PROVIDER_IDS = ['appypay', 'bitpay'] as const;
+export type AutoProviderId = (typeof AUTO_PROVIDER_IDS)[number];
+
+/** Subconjunto de `AUTO_PROVIDER_IDS` que está ativo na UI, por preferência. */
+export function autoProviderCandidates(enabledIds: string[]): AutoProviderId[] {
+  return AUTO_PROVIDER_IDS.filter((id) => enabledIds.includes(id));
+}
+
+function isAutoProvider(id: string | null | undefined): id is AutoProviderId {
+  return AUTO_PROVIDER_IDS.includes(id as AutoProviderId);
+}
+
 /** Dados de apresentação extraídos do `checkout_url` devolvido pela função. */
 export interface AutoCheckoutInfo {
   intentId: string;
+  /** PSP que gerou o checkout (`appypay` | `bitpay`). */
+  psp: AutoProviderId;
   method: AutoDepositMethod;
   /** Entidade (só referências). */
   entity: string | null;
@@ -44,12 +59,14 @@ export function parseCheckoutUrl(url: string | null | undefined): AutoCheckoutIn
   } catch {
     return null;
   }
-  if (parsed.searchParams.get('psp') !== 'appypay') return null;
+  const psp = parsed.searchParams.get('psp');
+  if (!isAutoProvider(psp)) return null;
   const intentId = parsed.searchParams.get('intent');
   const method = parsed.searchParams.get('method');
   if (!intentId || (method !== 'gpo' && method !== 'ref')) return null;
   return {
     intentId,
+    psp,
     method,
     entity: parsed.searchParams.get('entity'),
     reference: parsed.searchParams.get('reference'),
@@ -61,18 +78,19 @@ export function parseCheckoutUrl(url: string | null | undefined): AutoCheckoutIn
 export async function startAutoDeposit(params: {
   amountMinor: number;
   method: AutoDepositMethod;
+  provider: AutoProviderId;
   phone?: string;
 }): Promise<{ intent: PaymentIntentRow; info: AutoCheckoutInfo }> {
   const intent = await createDeposit({
     amountMinor: params.amountMinor,
     currency: 'AOA',
-    provider: 'appypay',
+    provider: params.provider,
     idempotencyKey: newIdempotencyKey(),
     method: params.method,
     customerPhone: params.method === 'gpo' ? params.phone : undefined,
   });
   const info = parseCheckoutUrl(intent.checkout_url);
-  if (!info) throw new Error('checkout_invalido');
+  if (!info || info.psp !== params.provider) throw new Error('checkout_invalido');
   return { intent, info };
 }
 
@@ -93,10 +111,10 @@ export async function findResumableAutoIntent(): Promise<{
   if (!account) return null;
   const intents = await fetchIntents(account.id, 20);
   for (const intent of intents) {
-    if (intent.provider !== 'appypay' || intent.status !== 'pending') continue;
+    if (!isAutoProvider(intent.provider) || intent.status !== 'pending') continue;
     if (new Date(intent.expires_at).getTime() <= Date.now()) continue;
     const info = parseCheckoutUrl(intent.checkout_url);
-    if (info) return { intent, info };
+    if (info && info.psp === intent.provider) return { intent, info };
   }
   return null;
 }
@@ -107,9 +125,14 @@ const AUTO_ERROR_MESSAGES: Record<string, string> = {
   appypay_ref_not_configured: 'Pagamento por referência não está ativo na AppyPay.',
   appypay_token_failed_401: 'Credenciais AppyPay recusadas. Contacta o suporte.',
   appypay_token_failed_403: 'Credenciais AppyPay recusadas. Contacta o suporte.',
+  bitpay_not_configured: 'Depósito automático indisponível: falta a chave da BitPay.',
+  bitpay_missing_reference: 'A BitPay não devolveu a referência de pagamento.',
+  bitpay_amount_out_of_range: 'Valor fora dos limites aceites pela BitPay.',
+  bitpay_http_401: 'Chave BitPay recusada. Contacta o suporte.',
+  bitpay_http_429: 'A BitPay limitou os pedidos. Espera um minuto e tenta de novo.',
   phone_required: 'Indica o telemóvel do Multicaixa Express.',
   phone_invalid: 'Telemóvel inválido — usa o formato 9XX XXX XXX.',
-  checkout_failed: 'A AppyPay recusou o pedido. Tenta novamente.',
+  checkout_failed: 'O PSP recusou o pedido. Tenta novamente.',
   currency_not_supported: 'Só é possível depositar em AOA.',
   real_money_disabled: 'Dinheiro real desativado.',
   unauthenticated: 'Sessão expirada. Volta a entrar.',
@@ -121,4 +144,13 @@ export function autoErrorMessage(err: unknown): string {
   const raw = err instanceof Error ? err.message : String(err);
   const code = raw.split(':')[0].trim();
   return AUTO_ERROR_MESSAGES[code] ?? 'Falha ao iniciar o pagamento.';
+}
+
+/**
+ * Erro de "provider sem credenciais" — o chamador pode tentar o próximo
+ * candidato da lista (ex.: AppyPay por configurar → BitPay).
+ */
+export function isNotConfiguredError(err: unknown): boolean {
+  const raw = err instanceof Error ? err.message : String(err);
+  return raw.split(':')[0].trim().endsWith('_not_configured');
 }

@@ -12,7 +12,7 @@
 export type Currency = 'AOA' | 'USD';
 
 /** Providers conhecidos. `mock` é só para sandbox; nunca move dinheiro real. */
-export type PaymentProviderId = 'mock' | 'wipay' | 'appypay' | 'paypay' | 'stripe';
+export type PaymentProviderId = 'mock' | 'wipay' | 'appypay' | 'bitpay' | 'paypay' | 'stripe';
 
 export type IntentStatus = 'created' | 'pending' | 'paid' | 'failed' | 'expired' | 'refunded';
 

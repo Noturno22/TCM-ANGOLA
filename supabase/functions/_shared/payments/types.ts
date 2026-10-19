@@ -3,7 +3,7 @@
 // pode importar de `src/`.
 
 export type Currency = 'AOA' | 'USD';
-export type PaymentProviderId = 'mock' | 'wipay' | 'appypay' | 'paypay' | 'stripe';
+export type PaymentProviderId = 'mock' | 'wipay' | 'appypay' | 'bitpay' | 'paypay' | 'stripe';
 export type IntentStatus = 'created' | 'pending' | 'paid' | 'failed' | 'expired' | 'refunded';
 
 export interface CreateCheckoutParams {

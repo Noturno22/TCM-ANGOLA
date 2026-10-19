@@ -1410,3 +1410,30 @@ Stage Summary:
 Unresolved issues / próximas fases:
 - Sem credenciais não há validação ao vivo (sandbox AppyPay por configurar); levantamentos continuam manuais (`supportsPayouts: false`).
 - WiPay/Stripe seguem como stubs (PROPOSTAS).
+
+---
+
+Task ID: bitpay-psp
+Agent: Main Builder
+Task: 2.º PSP automático — BitPay (sandbox) com seleção de PSP na UI
+
+Contexto/verificação:
+- SAMA: adesão à AppyPay recusada por NIF ("Não é possível continuar a adesão com este NIF") — ainda não tem empresa. Foram indicados os caminhos de formalização (GUE `gue.gov.ao`, Comerciante em Nome Individual, Kz 21.380; NIF na AGT `agt.minfin.gov.ao`) e, a pedido, implementado o 2.º PSP automático.
+- BitPay (Angola): docs em `developers.bitpay.ao` (`llms-full.txt` + OpenAPI). **Sandbox aberto** (`POST /v1/sandbox/accounts` → `sk_test_…` em segundos); **produção ainda indisponível** (aguarda certificação EMIS). `amount` = inteiro em kwanzas; `multicaixa_express` (9 dígitos) e `multicaixa_reference` (entidade+número devolvidos); `Idempotency-Key` obrigatório; webhooks assinados (`BitPay-Signature: t=…,v1=HMAC(whsec,"t.corpo")`); estados PENDING→PROCESSING→SUCCEEDED/FAILED/UNKNOWN; referências expiram em 72 h.
+
+Work Log:
+- `_shared/payments/bitpay.ts` (novo): `config()` (`BITPAY_SK`; `BITPAY_ENV` sandbox/produção; `BITPAY_BASE_URL` override), `normalizePhone` (9 dígitos), `createCheckout` (`multicaixa_express` com `customer.mobile`; `multicaixa_reference` com `reference.entity/number/expires_at`; `merchant_reference` = `idempotency_key`; `Idempotency-Key` = `idempotency_key`), `ensureWebhookEndpoint` (lista e regista `POST /webhook_endpoints` com `events:['*']` uma única vez, sem duplicar), `verifyAndParse` (assinatura HMAC opcional via `BITPAY_WEBHOOK_SECRET` + **reconsulta** `GET /payment_intents/{id}` como fonte de verdade), `mapStatus` (PENDING/PROCESSING/UNKNOWN → `payment.pending`; SUCCEEDED/REFUNDED/PARTIALLY_REFUNDED → `payment.paid`; EXPIRED → `payment.expired`; FAILED/CANCELLED → `payment.failed`), `supportsPayouts: false`.
+- Registo em `providers.ts` (Deno) e `bitpay` na union `PaymentProviderId` (server + cliente).
+- `create-deposit-intent`: para `bitpay` o valor é arredondado ao Kz inteiro antes do insert (é esse o valor confirmado/creditado pelo webhook).
+- Cliente: `providers.ts` ganhou o cartão BitPay; `auto.ts` generalizado — `AUTO_PROVIDER_IDS` (`appypay`,`bitpay`), `autoProviderCandidates`, `parseCheckoutUrl` devolve `psp`, `startAutoDeposit` recebe `provider`, `findResumableAutoIntent` retoma qualquer um, `isNotConfiguredError` permite recuo, mensagens de erro BitPay.
+- UI `DepositScreen`: escolha de PSP quando há mais de um candidato ativo; etiquetas/botão/footer dinâmicos; recuo automático só em `*_not_configured` (AppyPay por configurar → BitPay). Rótulos do e2e mantidos.
+- `auto.test.ts`: +3 testes (ordem de candidatos, parse BitPay, `isNotConfiguredError`).
+- Docs/env: `PAYMENTS.md` (secção BitPay: chave, webhook automático, particularidades), `DECISIONS.md` **I22**, `PROGRESS.md`, `RELEASE.md` (segredos + checklist), `.env`/`.env.example` (`mock,appypay,bitpay`).
+
+Stage Summary:
+- **Unit**: 148/148 (14 ficheiros). **Typecheck**: limpo. **Lint**: 0 erros (6 avisos pré-existentes). `deno check` ✓ nos 5 ficheiros Deno.
+- BitPay fica utilizável no sandbox com uma única secret (`BITPAY_SK`); produção depende da certificação EMIS.
+
+Unresolved issues / próximas fases:
+- BitPay não processa dinheiro real até à certificação EMIS; AppyPay continua bloqueado pelo NIF empresarial (GUE/AGT).
+- WiPay/Stripe continuam stubs (PROPOSTAS).
