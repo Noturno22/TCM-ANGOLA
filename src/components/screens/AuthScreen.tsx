@@ -219,7 +219,7 @@ export function AuthScreen() {
                   <GameButton
                     type="submit"
                     variant="outline"
-                    className="w-full h-11 text-sm"
+                    className="w-full h-12 text-sm"
                     disabled={!email.trim() || !password || pending}
                   >
                     {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Entrar com email'}

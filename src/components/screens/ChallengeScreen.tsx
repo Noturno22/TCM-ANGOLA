@@ -400,7 +400,7 @@ export function ChallengeScreen() {
         )}
 
         {phase !== 'solved' && (selectedSquare || phase === 'wrong') && (
-          <GameButton variant="ghost" className="w-full text-xs px-3 h-8" onClick={reset}>
+          <GameButton variant="ghost" className="w-full text-xs px-3 h-12" onClick={reset}>
             Reiniciar puzzle
           </GameButton>
         )}

@@ -51,7 +51,7 @@ function FileField({
         type="button"
         onClick={() => ref.current?.click()}
         className={cn(
-          'w-full h-11 px-3 rounded-lg border flex items-center gap-2 text-left transition-colors',
+          'w-full h-12 px-3 rounded-lg border flex items-center gap-2 text-left transition-colors',
           file ? 'border-gold/40 bg-gold/5' : 'border-border bg-surface hover:bg-surface-2',
         )}
       >
@@ -73,7 +73,7 @@ function FileField({
                   onChange(null);
                 }
               }}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground inline-flex size-12 items-center justify-center shrink-0"
             >
               <X className="w-4 h-4" />
             </span>
@@ -225,7 +225,7 @@ export function KycPanel({
           value={documentNumber}
           onChange={(e) => setDocumentNumber(e.target.value)}
           placeholder="Ex.: 000123456LA041"
-          className="w-full h-11 px-3 mt-1.5 rounded-lg border border-border bg-surface text-sm focus:outline-none focus:border-gold transition-colors"
+          className="w-full h-12 px-3 mt-1.5 rounded-lg border border-border bg-surface text-sm focus:outline-none focus:border-gold transition-colors"
         />
       </div>
 
@@ -242,7 +242,7 @@ export function KycPanel({
         </p>
       )}
 
-      <GameButton variant="p1" className="w-full h-11" onClick={handleSubmit} disabled={!canSubmit}>
+      <GameButton variant="p1" className="w-full h-12" onClick={handleSubmit} disabled={!canSubmit}>
         {submitting ? (
           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
         ) : (

@@ -134,7 +134,7 @@ export function WithdrawalsPanel() {
             type="button"
             onClick={() => setFilter(f.id)}
             className={cn(
-              'shrink-0 px-3.5 py-2 rounded-full text-sm font-semibold border transition-colors min-h-[40px]',
+              'shrink-0 px-3.5 py-2 rounded-full text-sm font-semibold border transition-colors min-h-12',
               filter === f.id
                 ? 'bg-gold text-primary-foreground border-gold'
                 : 'bg-surface-2 text-muted-foreground border-border hover:text-foreground',
@@ -147,7 +147,7 @@ export function WithdrawalsPanel() {
           type="button"
           onClick={() => void load(filter)}
           aria-label="Atualizar lista"
-          className="ml-auto shrink-0 w-10 h-10 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:bg-surface transition-colors"
+          className="ml-auto shrink-0 w-12 h-12 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:bg-surface transition-colors"
         >
           <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
         </button>
@@ -208,7 +208,7 @@ export function WithdrawalsPanel() {
                   {row.status === 'pending' && (
                     <GameButton
                       variant="p1"
-                      className="h-9 px-3 text-sm"
+                      className="h-12 px-3 text-sm"
                       disabled={busyId === row.id}
                       onClick={() =>
                         void act(row, () => approveWithdrawal(row.id), 'Levantamento aprovado.')
@@ -225,7 +225,7 @@ export function WithdrawalsPanel() {
                   {row.status === 'approved' && (
                     <GameButton
                       variant="gold"
-                      className="h-9 px-3 text-sm"
+                      className="h-12 px-3 text-sm"
                       disabled={busyId === row.id}
                       onClick={() =>
                         void act(
@@ -245,7 +245,7 @@ export function WithdrawalsPanel() {
                   )}
                   <GameButton
                     variant="outline"
-                    className="h-9 px-3 text-sm ml-auto"
+                    className="h-12 px-3 text-sm ml-auto"
                     disabled={busyId === row.id}
                     onClick={() => {
                       setRejecting(row);

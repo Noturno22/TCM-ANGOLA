@@ -39,7 +39,7 @@ export function TabBar({ active }: { active: string }) {
               onClick={() => navigate(tab.id)}
               className={cn(
                 'relative flex flex-col items-center gap-0.5 py-2 rounded-lg transition-colors',
-                'min-h-[44px]',
+                'min-h-12',
                 isActive ? 'text-p1' : 'text-muted-foreground hover:text-foreground',
               )}
               aria-label={t(tab.labelKey)}

@@ -14,6 +14,7 @@ import {
   createTournament,
   fetchTournamentDetail,
   fetchTournaments,
+  inviteTournamentFriends,
   joinTournament,
   leaveTournament,
   reportTournamentResult,
@@ -21,13 +22,16 @@ import {
   startTournamentMatch,
   subscribeToTournament,
   unsubscribeTournamentChannel,
+  updateTournament,
   type CreateTournamentInput,
   type CreateTournamentResult,
+  type InviteTournamentResult,
   type JoinTournamentResult,
   type StartTournamentMatchResult,
   type Tournament,
   type TournamentDetail,
   type TournamentErrorCode,
+  type UpdateTournamentInput,
 } from '@/lib/online/tournaments';
 
 export interface PlayerPublicInfo {
@@ -59,6 +63,10 @@ interface OnlineTournamentsStore {
   join: (id: string) => Promise<JoinTournamentResult>;
   leave: (id: string) => Promise<boolean>;
   start: (id: string) => Promise<boolean>;
+  /** Edita nome/descrição (só o criador, enquanto aberto). */
+  update: (input: UpdateTournamentInput) => Promise<{ ok: boolean; code?: TournamentErrorCode }>;
+  /** Envia convites por notificação aos amigos indicados. */
+  invite: (id: string, userIds: readonly string[]) => Promise<InviteTournamentResult>;
   /** Abre (ou retoma) a partida online de um jogo do bracket. */
   playMatch: (tournamentMatchId: string) => Promise<StartTournamentMatchResult>;
   /** Regista o resultado de um jogo do bracket já terminado. */
@@ -148,6 +156,19 @@ export const useOnlineTournaments = create<OnlineTournamentsStore>((set, get) =>
     }
     return ok;
   },
+
+  update: async (input) => {
+    const result = await updateTournament(input);
+    if (result.ok) {
+      await get().load();
+      if (get().selectedId === input.tournamentId) {
+        await refreshDetail(set, get, input.tournamentId);
+      }
+    }
+    return result;
+  },
+
+  invite: (id, userIds) => inviteTournamentFriends(id, userIds),
 
   playMatch: async (tournamentMatchId) => startTournamentMatch(tournamentMatchId),
 

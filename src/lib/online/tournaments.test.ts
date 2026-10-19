@@ -178,6 +178,9 @@ describe('parseTournamentErrorCode', () => {
     expect(parseTournamentErrorCode('tournament_full')).toBe('tournament_full');
     expect(parseTournamentErrorCode('ERROR: not_enough_coins')).toBe('not_enough_coins');
     expect(parseTournamentErrorCode('not_authenticated')).toBe('not_authenticated');
+    expect(parseTournamentErrorCode('ERROR: invalid_name')).toBe('invalid_name');
+    expect(parseTournamentErrorCode('too_many_invites')).toBe('too_many_invites');
+    expect(parseTournamentErrorCode('not_tournament_owner')).toBe('not_tournament_owner');
   });
 
   it('devolve null para desconhecido ou vazio', () => {

@@ -365,7 +365,7 @@ export function DepositScreen() {
                 <GameButton
                   key={c}
                   variant={currency === c ? 'gold' : 'ghost'}
-                  className="flex-1 h-11 text-sm"
+                  className="flex-1 h-12 text-sm"
                   onClick={() => setCurrency(c)}
                   aria-pressed={currency === c}
                 >
@@ -416,7 +416,7 @@ export function DepositScreen() {
                   disabled={pendingDeposit}
                   aria-pressed={method === m.id}
                   className={cn(
-                    'flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors min-h-[44px]',
+                    'flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors min-h-12',
                     method === m.id
                       ? 'border-gold/60 bg-gold/10'
                       : 'border-border/50 bg-surface/60 hover:border-gold/40',
@@ -469,7 +469,7 @@ export function DepositScreen() {
                 <GameButton
                   key={c}
                   variant={currency === c ? 'gold' : 'ghost'}
-                  className="flex-1 h-11 text-sm"
+                  className="flex-1 h-12 text-sm"
                   onClick={() => setCurrency(c)}
                   aria-pressed={currency === c}
                 >
@@ -516,7 +516,7 @@ export function DepositScreen() {
                   onClick={() => setMethod(m.id)}
                   aria-pressed={method === m.id}
                   className={cn(
-                    'flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors min-h-[44px]',
+                    'flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors min-h-12',
                     method === m.id
                       ? 'border-gold/60 bg-gold/10'
                       : 'border-border/50 bg-surface/60 hover:border-gold/40',
@@ -646,7 +646,7 @@ export function DepositScreen() {
                     <button
                       type="button"
                       onClick={() => handleDelete(m)}
-                      className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-p2 hover:bg-p2/10 transition-colors"
+                      className="w-12 h-12 rounded-md flex items-center justify-center text-muted-foreground hover:text-p2 hover:bg-p2/10 transition-colors"
                       aria-label="Remover movimento pendente"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

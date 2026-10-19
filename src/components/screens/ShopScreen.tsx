@@ -178,13 +178,13 @@ function ShopItem({
             Equipado
           </div>
         ) : owned ? (
-          <GameButton variant="outline" className="w-full h-10 text-xs" onClick={onAction}>
+          <GameButton variant="outline" className="w-full h-12 text-xs" onClick={onAction}>
             Equipar
           </GameButton>
         ) : (
           <GameButton
             variant="primary"
-            className="w-full h-10 text-xs"
+            className="w-full h-12 text-xs"
             onClick={onAction}
             disabled={!canAfford}
           >

@@ -14,9 +14,12 @@ import {
   Info,
   Wifi,
   Crown,
+  Pencil,
+  UserPlus,
 } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useAuth } from '@/store/auth';
+import { useFriends } from '@/store/friends';
 import { useTournament } from '@/store/tournament';
 import { useMatch } from '@/store/match';
 import { useOnlineTournaments } from '@/store/onlineTournaments';
@@ -27,6 +30,7 @@ import {
   roundLabel,
   tournamentStatusLabel,
   type BracketMatch,
+  type Tournament,
   type TournamentDetail,
   type TournamentErrorCode,
 } from '@/lib/online/tournaments';
@@ -36,7 +40,7 @@ import {
   type TournamentBracket,
   type TournamentMatch,
 } from '@/lib/tournament';
-import { GameButton, GameCard, SectionTitle } from '@/components/game/ui';
+import { GameButton, GameCard, LevelAvatar, SectionTitle } from '@/components/game/ui';
 import { AgeGateDialog } from '@/components/game/AgeGateDialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -78,7 +82,7 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex-1 flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-semibold transition-colors',
+        'flex-1 flex items-center justify-center gap-2 h-12 rounded-lg text-sm font-semibold transition-colors',
         active ? 'bg-gold/15 text-gold' : 'text-muted-foreground hover:text-foreground',
       )}
     >
@@ -97,10 +101,12 @@ const ERROR_MESSAGES: Partial<Record<TournamentErrorCode, string>> = {
   tournament_full: 'O torneio já está cheio.',
   tournament_not_open: 'Este torneio já não aceita inscrições.',
   tournament_already_started: 'O torneio já começou.',
-  not_tournament_owner: 'Só o criador pode iniciar o torneio.',
+  not_tournament_owner: 'Só o criador do torneio pode fazer isto.',
   not_enough_players: 'Precisas de pelo menos 2 jogadores para iniciar.',
   match_not_ready: 'Este jogo ainda não está pronto.',
   not_a_participant: 'Não participas neste jogo.',
+  invalid_name: 'Dá um nome ao torneio (mín. 2 letras).',
+  too_many_invites: 'Demasiados convites de uma vez. Envia em lotes.',
 };
 
 function errorMessage(code: TournamentErrorCode | undefined): string {
@@ -131,6 +137,7 @@ function OnlineTournaments() {
   const unsubscribe = useOnlineTournaments((s) => s.unsubscribe);
 
   const [newName, setNewName] = useState('');
+  const [newDescription, setNewDescription] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
   /** Torneio com aposta à espera de verificação 18+. */
   const [ageJoinId, setAgeJoinId] = useState<string | null>(null);
@@ -157,13 +164,20 @@ function OnlineTournaments() {
       return;
     }
     setBusy('create');
-    const res = await create({ name, entryFee: 0, prize: 1000, maxPlayers: 8 });
+    const res = await create({
+      name,
+      description: newDescription.trim(),
+      entryFee: 0,
+      prize: 1000,
+      maxPlayers: 8,
+    });
     setBusy(null);
     if (!res.ok) {
       toast.error(errorMessage(res.code));
       return;
     }
     setNewName('');
+    setNewDescription('');
     toast.success('Torneio criado!', { description: 'Inscreve-te e convida os amigos.' });
   };
 
@@ -259,28 +273,38 @@ function OnlineTournaments() {
           </div>
         </div>
         <form
-          className="flex gap-2 mt-4"
+          className="mt-4 space-y-2"
           onSubmit={(e) => {
             e.preventDefault();
             void handleCreate();
           }}
         >
-          <input
-            type="text"
-            value={newName}
-            maxLength={60}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="Nome do novo torneio…"
-            className="flex-1 h-11 rounded-xl bg-surface/60 border border-border/40 px-3 text-sm placeholder:text-muted-foreground"
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newName}
+              maxLength={60}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="Nome do novo torneio…"
+              className="flex-1 h-12 rounded-xl bg-surface/60 border border-border/40 px-3 text-sm placeholder:text-muted-foreground"
+            />
+            <GameButton
+              type="submit"
+              variant="primary"
+              className="h-12 px-4"
+              disabled={busy === 'create' || newName.trim().length < 2}
+            >
+              {busy === 'create' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            </GameButton>
+          </div>
+          <textarea
+            value={newDescription}
+            maxLength={140}
+            rows={2}
+            onChange={(e) => setNewDescription(e.target.value)}
+            placeholder="Descrição (opcional): regras, prémio, hora…"
+            className="w-full resize-none rounded-xl bg-surface/60 border border-border/40 px-3 py-2.5 text-sm placeholder:text-muted-foreground"
           />
-          <GameButton
-            type="submit"
-            variant="primary"
-            className="h-11 px-4"
-            disabled={busy === 'create' || newName.trim().length < 2}
-          >
-            {busy === 'create' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-          </GameButton>
         </form>
       </GameCard>
 
@@ -406,6 +430,9 @@ function TournamentDetailPanel({
   const totalRounds = bracketRoundCount(matches);
   const myOpen = findMyOpenMatch(matches, uid);
   const championName = t.championId ? nameFor(t.championId) : null;
+  const canInvite = t.status === 'open' && (isOwner || iJoined);
+  const joinedIds = new Set(entries.map((e) => e.userId));
+  const [mode, setMode] = useState<'idle' | 'edit' | 'invite'>('idle');
 
   return (
     <>
@@ -426,11 +453,56 @@ function TournamentDetailPanel({
           </button>
         </div>
 
+        {t.description && (
+          <p className="text-xs text-muted-foreground leading-relaxed mt-2 whitespace-pre-wrap">
+            {t.description}
+          </p>
+        )}
+
         <div className="flex items-center gap-1 text-[11px] text-muted-foreground mt-2">
           <Trophy className="w-3 h-3 text-gold" />
           Prémio: <span className="text-gold font-semibold">{t.pot > 0 ? t.pot : t.prize} KZ</span>
           {t.entryFee > 0 && <span className="ml-2">• Inscrição: {t.entryFee} KZ</span>}
         </div>
+
+        {/* Editar (só o criador) / Convidar amigos */}
+        {(isOwner || canInvite) && (
+          <div className="flex gap-2 mt-3">
+            {isOwner && t.status === 'open' && (
+              <GameButton
+                type="button"
+                variant="outline"
+                className="flex-1 px-3"
+                onClick={() => setMode(mode === 'edit' ? 'idle' : 'edit')}
+              >
+                <Pencil className="w-4 h-4 mr-2" />
+                {mode === 'edit' ? 'Fechar' : 'Editar'}
+              </GameButton>
+            )}
+            {canInvite && (
+              <GameButton
+                type="button"
+                variant="outline"
+                className="flex-1 px-3"
+                onClick={() => setMode(mode === 'invite' ? 'idle' : 'invite')}
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                {mode === 'invite' ? 'Fechar' : 'Convidar'}
+              </GameButton>
+            )}
+          </div>
+        )}
+
+        {isOwner && t.status === 'open' && mode === 'edit' && (
+          <TournamentEditForm tournament={t} onDone={() => setMode('idle')} />
+        )}
+        {canInvite && mode === 'invite' && (
+          <TournamentInviteList
+            tournament={t}
+            joinedIds={joinedIds}
+            onDone={() => setMode('idle')}
+          />
+        )}
 
         {/* Ações */}
         <div className="mt-3 space-y-2">
@@ -545,6 +617,226 @@ function TournamentDetailPanel({
   );
 }
 
+/** Editar nome e descrição — só o criador, enquanto o torneio está aberto. */
+function TournamentEditForm({
+  tournament,
+  onDone,
+}: {
+  tournament: Tournament;
+  onDone: () => void;
+}) {
+  const update = useOnlineTournaments((s) => s.update);
+  const [name, setName] = useState(tournament.name);
+  const [description, setDescription] = useState(tournament.description);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = name.trim();
+    if (trimmed.length < 2) {
+      toast.error(errorMessage('invalid_name'));
+      return;
+    }
+    setBusy(true);
+    const res = await update({
+      tournamentId: tournament.id,
+      name: trimmed,
+      description: description.trim(),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      toast.error(errorMessage(res.code));
+      return;
+    }
+    toast.success('Torneio atualizado.');
+    onDone();
+  };
+
+  return (
+    <form
+      onSubmit={submit}
+      className="mt-3 space-y-2 rounded-xl border border-border/40 bg-surface/50 p-3"
+    >
+      <input
+        type="text"
+        value={name}
+        maxLength={60}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Nome do torneio"
+        className="w-full h-12 rounded-xl bg-surface/60 border border-border/40 px-3 text-sm placeholder:text-muted-foreground"
+      />
+      <textarea
+        value={description}
+        maxLength={140}
+        rows={3}
+        onChange={(e) => setDescription(e.target.value)}
+        placeholder="Descrição (máx. 140 caracteres)"
+        className="w-full resize-none rounded-xl bg-surface/60 border border-border/40 px-3 py-2.5 text-sm placeholder:text-muted-foreground"
+      />
+      <div className="flex gap-2">
+        <GameButton
+          type="submit"
+          variant="primary"
+          className="flex-1 px-3"
+          disabled={busy || name.trim().length < 2}
+        >
+          {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
+          Guardar
+        </GameButton>
+        <GameButton type="button" variant="ghost" className="px-3" disabled={busy} onClick={onDone}>
+          Cancelar
+        </GameButton>
+      </div>
+    </form>
+  );
+}
+
+/** Convidar amigos por notificação (criador ou inscrito, torneio aberto). */
+function TournamentInviteList({
+  tournament,
+  joinedIds,
+  onDone,
+}: {
+  tournament: Tournament;
+  joinedIds: ReadonlySet<string>;
+  onDone: () => void;
+}) {
+  const navigate = useApp((s) => s.navigate);
+  const uid = useAuth((s) => s.user?.id ?? null);
+  const invite = useOnlineTournaments((s) => s.invite);
+  const friends = useFriends((s) => s.friends);
+  const loaded = useFriends((s) => s.loaded);
+  const loadingFriends = useFriends((s) => s.loading);
+  const loadFriends = useFriends((s) => s.load);
+
+  const [selected, setSelected] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!loaded && !loadingFriends) void loadFriends();
+  }, [loaded, loadingFriends, loadFriends]);
+
+  const candidates = friends.filter((f) => f.userId !== uid && !joinedIds.has(f.userId));
+
+  const toggle = (id: string) =>
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const send = async () => {
+    if (selected.length === 0) return;
+    setBusy(true);
+    const res = await invite(tournament.id, selected);
+    setBusy(false);
+    if (!res.ok) {
+      toast.error(errorMessage(res.code));
+      return;
+    }
+    if (res.invited === 0) {
+      toast.info('Nenhum convite enviado.');
+    } else {
+      toast.success('Convites enviados!', {
+        description: `${res.invited} ${res.invited === 1 ? 'amigo convidado' : 'amigos convidados'}.`,
+      });
+    }
+    setSelected([]);
+    onDone();
+  };
+
+  if (candidates.length === 0) {
+    return (
+      <div className="mt-3 rounded-xl border border-border/40 bg-surface/50 p-3 text-center">
+        <Users className="w-6 h-6 text-muted-foreground mx-auto mb-1.5" />
+        <p className="text-xs text-muted-foreground mb-2">
+          {friends.length === 0
+            ? 'Ainda não tens amigos para convidar.'
+            : 'Todos os teus amigos já estão inscritos.'}
+        </p>
+        {friends.length === 0 && (
+          <GameButton
+            type="button"
+            variant="ghost"
+            className="h-12 px-4"
+            onClick={() => navigate('friends')}
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Procurar amigos
+          </GameButton>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded-xl border border-border/40 bg-surface/50 p-3">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <p className="text-[11px] text-muted-foreground">
+          {loadingFriends && !loaded ? 'A carregar amigos…' : `${candidates.length} amigos disponíveis`}
+        </p>
+        <button
+          type="button"
+          onClick={() =>
+            setSelected(
+              selected.length === candidates.length ? [] : candidates.map((f) => f.userId),
+            )
+          }
+          className="text-[11px] text-gold hover:underline min-h-12 px-2"
+        >
+          {selected.length === candidates.length ? 'Limpar' : 'Selecionar todos'}
+        </button>
+      </div>
+
+      <div className="space-y-1 max-h-56 overflow-y-auto">
+        {candidates.map((f) => {
+          const isSelected = selected.includes(f.userId);
+          return (
+            <button
+              key={f.userId}
+              type="button"
+              onClick={() => toggle(f.userId)}
+              aria-pressed={isSelected}
+              className={cn(
+                'w-full min-h-12 flex items-center gap-3 px-2 rounded-lg text-left transition-colors',
+                isSelected ? 'bg-gold/15 text-gold' : 'hover:bg-surface-2',
+              )}
+            >
+              <span
+                className={cn(
+                  'w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center',
+                  isSelected ? 'border-gold bg-gold' : 'border-border',
+                )}
+              >
+                {isSelected && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
+              </span>
+              <LevelAvatar
+                name={f.username ?? `Jogador ${f.userId.slice(0, 4)}`}
+                level={f.level}
+                size="sm"
+              />
+              <span className="flex-1 min-w-0 truncate text-sm font-medium">
+                {f.username ?? `Jogador ${f.userId.slice(0, 4)}`}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <GameButton
+        type="button"
+        variant="primary"
+        className="w-full mt-2"
+        disabled={busy || selected.length === 0}
+        onClick={() => void send()}
+      >
+        {busy ? (
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        ) : (
+          <UserPlus className="w-4 h-4 mr-2" />
+        )}
+        {selected.length === 0 ? 'Seleciona amigos' : `Enviar convites (${selected.length})`}
+      </GameButton>
+    </div>
+  );
+}
+
 function OnlineMatchCard({
   match,
   uid,
@@ -577,7 +869,7 @@ function OnlineMatchCard({
           type="button"
           disabled={busy === `play:${match.id}`}
           onClick={() => onPlay(match.id)}
-          className="mt-1.5 w-full h-7 rounded-md bg-gold/15 text-gold text-[11px] font-semibold flex items-center justify-center gap-1 disabled:opacity-50"
+          className="mt-1.5 w-full h-12 rounded-md bg-gold/15 text-gold text-[11px] font-semibold flex items-center justify-center gap-1 disabled:opacity-50"
         >
           {busy === `play:${match.id}` ? (
             <Loader2 className="w-3 h-3 animate-spin" />

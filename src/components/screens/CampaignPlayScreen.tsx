@@ -147,7 +147,7 @@ export function CampaignPlayScreen() {
           <button
             type="button"
             onClick={back}
-            className="w-9 h-9 rounded-full bg-surface/60 flex items-center justify-center hover:bg-surface"
+            className="w-12 h-12 rounded-full bg-surface/60 flex items-center justify-center hover:bg-surface"
             aria-label="Voltar"
           >
             <ChevronRight className="w-5 h-5 rotate-180" />
@@ -158,7 +158,7 @@ export function CampaignPlayScreen() {
             </p>
             <p className="text-xs text-gold font-medium truncate">{level.title}</p>
           </div>
-          <div className="w-9 h-9" />
+          <div className="w-12 h-12" />
         </div>
       </header>
 

@@ -1360,3 +1360,27 @@ Stage Summary:
 
 Unresolved issues / próximas fases:
 - Verificação visual do tema claro não foi possível neste ambiente (RAM insuficiente para dev server + Chromium); contraste validado por cálculo.
+
+---
+
+Task ID: touch-targets-notifications-topup-tournaments
+Agent: Main Builder
+Task: Alvos de toque ≥48 dp, notificações lidas ao sair, top-up a 0 KZ e UI de torneios (editar/descrever + convidar amigos)
+
+Contexto/verificação:
+- Backlog sequencial acordado; verificação visual impossível (RAM insuficiente para dev server + Chromium), tudo validado por typecheck/lint/test/e2e.
+
+Work Log:
+- **Toques ≥ 48 dp**: chaves em `button` (`h-12`), `input` (`h-12`), `select` (default/sm `h-12`), `tabs` (`TabsList h-14`), `switch` (área de 48 px por `after:` pseudo-elemento), `dialog` close (`size-12`). Sweep por 40 ficheiros de UI (`AppHeader`/`TabBar`/`game/ui` + todas as screens): botões só-ícone → `w-12 h-12`, chips/pills → `min-h-12`, inputs → `h-12`, overlays/`Spacer` → `h-12`. Exceções registadas: thumb do `slider` (16 px) e `input[type=range]` do replay.
+- **Notificações lidas ao sair da lista**: `NotificationsScreen` ganhou `useEffect` de cleanup que chama `markAllRead()` só se `useApp.getState().screen !== 'notifications'` (guarda contra o `StrictMode` de desenvolvimento, que disparava o cleanup no mount); entradas do sino (`AppHeader`, `HomeScreen`) só navegam.
+- **Top-up 0 KZ + RLS**: `0016_profile_topup.sql` — backfill `coins = 5000` para `coins = 0` (sem bónus diário, sem botão de claim) e `revoke update on profiles` + `grant update (username, avatar, updated_at)` (antes qualquer cliente podia escrever `coins`/`elo`/`xp`). Aplicado.
+- **Logo theme-aware**: `public/logo.svg` passou de `#2D2D2D`/`#FFFFFF` fixos para `var(--foreground)`/`color-mix(in oklch, var(--background) 92%, var(--foreground) 8%)`.
+- **Torneios (I20)**: `0017_tournament_edit_invite.sql` — `create_tournament` ganhou `p_description` (assinatura antiga droppada para evitar overload), `update_tournament` (só `created_by` + `status = 'open'`) e `invite_to_tournament` (criador ou inscrito; `_notify` `tournament_invite`; máx. 50 alvos; ignora quem já está inscrito). Cliente: `updateTournament`/`inviteTournamentFriends` + `description` em `CreateTournamentInput`; store `update`/`invite`; UI em `TournamentScreen` (`TournamentEditForm`, `TournamentInviteList` com seleção de amigos e "Convidar todos"); notificações `tournament_invite` com ícone/tom e deep link para o torneio.
+- Verificação: typecheck limpo · lint 0 erros (6 warnings pré-existentes em `packages/`) · **137/137** · e2e offline **8/8** · e2e online **3/3** · RPCs confirmadas no projeto Supabase.
+
+Stage Summary:
+- Backlog das 4 tarefas concluído. Migrações 0016/0017 aplicadas ao projeto Supabase (`ogqnbhuvoypmqefxbijr`). Trabalho por commitar (a confirmar com o utilizador; PNGs de QA ficam de fora).
+
+Unresolved issues / próximas fases:
+- Verificação visual das alterações de layout não foi possível neste ambiente.
+- PSP automático continua pendente (PROPOSTAS).

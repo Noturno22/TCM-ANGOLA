@@ -112,7 +112,7 @@ export function PaymentModal({
             <GameButton
               type="button"
               variant="outline"
-              className="h-9 px-3 text-sm"
+              className="h-12 px-3 text-sm"
               onClick={handleCopy}
               aria-label={`Copiar ${method.copyValue}`}
             >

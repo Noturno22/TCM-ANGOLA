@@ -87,7 +87,7 @@ export function BalancePill({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-2 rounded-full bg-surface-2 border border-border pl-3 pr-1.5 py-2 hover:bg-surface transition-colors min-h-[44px]"
+      className="flex items-center gap-2 rounded-full bg-surface-2 border border-border pl-3 pr-1.5 py-2 hover:bg-surface transition-colors min-h-12"
       aria-label={`Saldo: ${coins} Kwanza. Abrir carteira.`}
     >
       <Coins className="w-4 h-4 text-gold" />
@@ -221,7 +221,7 @@ export function FilterChip({
       type="button"
       onClick={onClick}
       className={cn(
-        'px-4 py-2.5 rounded-full text-[14px] font-medium transition-all whitespace-nowrap border min-h-[44px]',
+        'px-4 py-2.5 rounded-full text-[14px] font-medium transition-all whitespace-nowrap border min-h-12',
         active
           ? 'bg-gold text-primary-foreground border-gold'
           : 'bg-surface-2 text-muted-foreground border-transparent hover:text-foreground hover:bg-surface',

@@ -47,7 +47,7 @@ export function AppHeader() {
             variant="ghost"
             size="icon"
             onClick={back}
-            className="rounded-lg h-9 w-9 shrink-0"
+            className="rounded-lg h-12 w-12 shrink-0"
             aria-label={t('nav.back')}
           >
             <ChevronLeft className="w-5 h-5" />
@@ -61,7 +61,7 @@ export function AppHeader() {
             variant="ghost"
             size="icon"
             onClick={() => navigate('notifications')}
-            className="rounded-lg h-9 w-9 relative"
+            className="rounded-lg h-12 w-12 relative"
             aria-label="Notificações"
           >
             <Bell className="w-4 h-4" />
@@ -75,7 +75,7 @@ export function AppHeader() {
             variant="ghost"
             size="icon"
             onClick={() => navigate('settings')}
-            className="rounded-lg h-9 w-9"
+            className="rounded-lg h-12 w-12"
             aria-label={t('settings.account')}
           >
             <SettingsIcon className="w-4 h-4" />

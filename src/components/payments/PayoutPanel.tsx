@@ -197,7 +197,7 @@ export function PayoutPanel({
             value={destinationValue}
             onChange={(e) => setDestinationValue(e.target.value)}
             placeholder={destination.placeholder}
-            className="w-full h-11 px-3 mt-1.5 rounded-lg border border-border bg-surface text-sm focus:outline-none focus:border-gold transition-colors"
+            className="w-full h-12 px-3 mt-1.5 rounded-lg border border-border bg-surface text-sm focus:outline-none focus:border-gold transition-colors"
           />
         </div>
 
@@ -210,7 +210,7 @@ export function PayoutPanel({
             value={holderName}
             onChange={(e) => setHolderName(e.target.value)}
             placeholder="Nome do titular"
-            className="w-full h-11 px-3 mt-1.5 rounded-lg border border-border bg-surface text-sm focus:outline-none focus:border-gold transition-colors"
+            className="w-full h-12 px-3 mt-1.5 rounded-lg border border-border bg-surface text-sm focus:outline-none focus:border-gold transition-colors"
           />
         </div>
 

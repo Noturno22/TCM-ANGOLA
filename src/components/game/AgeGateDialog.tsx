@@ -90,7 +90,7 @@ export function AgeGateDialog({ open, onOpenChange, onVerified }: AgeGateDialogP
                   setBirthdate(e.target.value);
                   setError(null);
                 }}
-                className="w-full h-11 rounded-lg bg-surface/60 border border-border/40 pl-9 pr-3 text-sm [color-scheme:dark]"
+                className="w-full h-12 rounded-lg bg-surface/60 border border-border/40 pl-9 pr-3 text-sm [color-scheme:dark]"
               />
             </div>
           </label>
@@ -106,7 +106,7 @@ export function AgeGateDialog({ open, onOpenChange, onVerified }: AgeGateDialogP
         <DialogFooter className="gap-2">
           <GameButton
             variant="outline"
-            className="flex-1 h-10"
+            className="flex-1 h-12"
             onClick={() => onOpenChange(false)}
             disabled={busy}
           >
@@ -114,7 +114,7 @@ export function AgeGateDialog({ open, onOpenChange, onVerified }: AgeGateDialogP
           </GameButton>
           <GameButton
             variant="gold"
-            className="flex-1 h-10"
+            className="flex-1 h-12"
             onClick={() => void submit()}
             disabled={!birthdate || busy}
           >

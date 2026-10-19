@@ -129,13 +129,13 @@ export function FriendsScreen() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Username do jogador…"
               disabled={!canUse}
-              className="w-full h-11 rounded-xl bg-surface/60 border border-border/40 pl-9 pr-3 text-sm placeholder:text-muted-foreground disabled:text-muted-foreground"
+              className="w-full h-12 rounded-xl bg-surface/60 border border-border/40 pl-9 pr-3 text-sm placeholder:text-muted-foreground disabled:text-muted-foreground"
             />
           </div>
           <GameButton
             type="submit"
             variant="p1"
-            className="h-11 px-4"
+            className="h-12 px-4"
             disabled={!canUse || !query.trim() || sending}
           >
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
@@ -164,7 +164,7 @@ export function FriendsScreen() {
                 <button
                   type="button"
                   onClick={() => void accept(r.friendshipId)}
-                  className="w-9 h-9 rounded-lg bg-p1 text-white flex items-center justify-center"
+                  className="w-12 h-12 rounded-lg bg-p1 text-white flex items-center justify-center"
                   aria-label="Aceitar pedido"
                 >
                   <Check className="w-4 h-4" />
@@ -172,7 +172,7 @@ export function FriendsScreen() {
                 <button
                   type="button"
                   onClick={() => void decline(r.friendshipId)}
-                  className="w-9 h-9 rounded-lg bg-surface-2 border border-border flex items-center justify-center"
+                  className="w-12 h-12 rounded-lg bg-surface-2 border border-border flex items-center justify-center"
                   aria-label="Recusar pedido"
                 >
                   <X className="w-4 h-4" />
@@ -201,7 +201,7 @@ export function FriendsScreen() {
                 <button
                   type="button"
                   onClick={() => void remove(r.userId)}
-                  className="w-9 h-9 rounded-lg bg-surface-2 border border-border flex items-center justify-center"
+                  className="w-12 h-12 rounded-lg bg-surface-2 border border-border flex items-center justify-center"
                   aria-label="Cancelar pedido"
                 >
                   <X className="w-4 h-4" />
@@ -248,7 +248,7 @@ export function FriendsScreen() {
                 </div>
                 <GameButton
                   variant="ghost"
-                  className="h-9 px-3 text-xs"
+                  className="h-12 px-3 text-xs"
                   onClick={() => navigate('rooms')}
                 >
                   Desafiar
@@ -256,7 +256,7 @@ export function FriendsScreen() {
                 <button
                   type="button"
                   onClick={() => void remove(f.userId)}
-                  className="w-9 h-9 rounded-lg bg-surface-2 border border-border flex items-center justify-center text-muted-foreground"
+                  className="w-12 h-12 rounded-lg bg-surface-2 border border-border flex items-center justify-center text-muted-foreground"
                   aria-label={`Remover ${f.username ?? 'amigo'}`}
                 >
                   <UserMinus className="w-4 h-4" />

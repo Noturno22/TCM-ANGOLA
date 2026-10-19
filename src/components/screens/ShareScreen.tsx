@@ -266,7 +266,7 @@ export function ShareScreen() {
               <button
                 type="button"
                 onClick={handlePaste}
-                className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-surface hover:bg-surface-2 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                className="absolute top-2 right-2 w-12 h-12 rounded-lg bg-surface hover:bg-surface-2 flex items-center justify-center text-muted-foreground hover:text-foreground"
                 aria-label="Colar da área de transferência"
               >
                 <ClipboardPaste className="w-4 h-4" />

@@ -296,7 +296,7 @@ export function WatchScreen() {
             {!gameOver && (
               <GameButton
                 variant={playing ? 'outline' : 'p1'}
-                className="flex-1 text-xs px-3 h-8"
+                className="flex-1 text-xs px-3 h-12"
                 onClick={togglePause}
               >
                 {playing ? (
@@ -313,12 +313,12 @@ export function WatchScreen() {
               </GameButton>
             )}
             {!gameOver && !playing && (
-              <GameButton variant="outline" className="flex-1 text-xs px-3 h-8" onClick={stepForward}>
+              <GameButton variant="outline" className="flex-1 text-xs px-3 h-12" onClick={stepForward}>
                 <SkipForward className="w-4 h-4 mr-1" />
                 Passo
               </GameButton>
             )}
-            <GameButton variant="outline" className="flex-1 text-xs px-3 h-8" onClick={reset}>
+            <GameButton variant="outline" className="flex-1 text-xs px-3 h-12" onClick={reset}>
               <RefreshCw className="w-4 h-4 mr-1" />
               Reiniciar
             </GameButton>

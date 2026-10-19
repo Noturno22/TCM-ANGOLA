@@ -167,7 +167,7 @@ export function WalletScreen() {
           <div className="flex gap-2 mt-3">
             <GameButton
               variant="gold"
-              className="flex-1 h-11"
+              className="flex-1 h-12"
               onClick={() => openDeposits('deposit')}
               aria-label="Depositar dinheiro real"
             >
@@ -176,7 +176,7 @@ export function WalletScreen() {
             </GameButton>
             <GameButton
               variant="outline"
-              className="flex-1 h-11"
+              className="flex-1 h-12"
               onClick={() => openDeposits('withdraw')}
               aria-label="Levantar dinheiro real"
             >

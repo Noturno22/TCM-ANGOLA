@@ -22,6 +22,7 @@ export type NotificationKind =
   | 'tournament_advance'
   | 'tournament_eliminated'
   | 'tournament_champion'
+  | 'tournament_invite'
   | string;
 
 /** Notificação já pronta para apresentar. */
@@ -65,7 +66,8 @@ export function isToastWorthy(kind: NotificationKind): boolean {
     kind === 'friend_request' ||
     kind === 'friend_accepted' ||
     kind === 'tournament_started' ||
-    kind === 'tournament_champion'
+    kind === 'tournament_champion' ||
+    kind === 'tournament_invite'
   );
 }
 

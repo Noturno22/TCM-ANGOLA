@@ -171,7 +171,7 @@ export function GameScreen() {
           <button
             type="button"
             onClick={handleExit}
-            className="w-9 h-9 rounded-full bg-surface/60 flex items-center justify-center hover:bg-surface"
+            className="w-12 h-12 rounded-full bg-surface/60 flex items-center justify-center hover:bg-surface"
             aria-label="Voltar"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -188,7 +188,7 @@ export function GameScreen() {
           <button
             type="button"
             onClick={() => navigate('how-to-play')}
-            className="w-9 h-9 rounded-full bg-surface/60 flex items-center justify-center hover:bg-surface"
+            className="w-12 h-12 rounded-full bg-surface/60 flex items-center justify-center hover:bg-surface"
             aria-label="Como jogar"
           >
             <MessageCircle className="w-4 h-4" />
@@ -285,7 +285,7 @@ export function GameScreen() {
         <div className="grid grid-cols-3 gap-2 max-w-md mx-auto">
           <GameButton
             variant="outline"
-            className="h-10 text-xs px-3"
+            className="h-12 text-xs px-3"
             onClick={undo}
             disabled={moveCount === 0 || mode === 'cvc' || gameOver}
           >
@@ -294,7 +294,7 @@ export function GameScreen() {
           </GameButton>
           <GameButton
             variant="outline"
-            className="h-10 text-xs px-3"
+            className="h-12 text-xs px-3"
             onClick={toggleThreats}
           >
             <Eye className="w-4 h-4 mr-1" />
@@ -302,7 +302,7 @@ export function GameScreen() {
           </GameButton>
           <GameButton
             variant="outline"
-            className="h-10 text-xs px-3"
+            className="h-12 text-xs px-3"
             onClick={restart}
           >
             <RotateCcw className="w-4 h-4 mr-1" />
@@ -313,7 +313,7 @@ export function GameScreen() {
         <div className="grid grid-cols-2 gap-2 max-w-md mx-auto mt-2">
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <GameButton variant="p2" className="h-10 text-xs px-3" disabled={gameOver}>
+              <GameButton variant="p2" className="h-12 text-xs px-3" disabled={gameOver}>
                 <Flag className="w-4 h-4 mr-1" />
                 Desistir
               </GameButton>
@@ -341,7 +341,7 @@ export function GameScreen() {
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <GameButton variant="outline" className="h-10 text-xs px-3">
+              <GameButton variant="outline" className="h-12 text-xs px-3">
                 <LogOut className="w-4 h-4 mr-1" />
                 Sair
               </GameButton>
@@ -627,11 +627,11 @@ function GameOverOverlay({
           </div>
 
           <div className="space-y-2">
-            <GameButton variant="p1" className="w-full h-11" onClick={onRestart}>
+            <GameButton variant="p1" className="w-full h-12" onClick={onRestart}>
               <RotateCcw className="w-4 h-4 mr-2" />
               Jogar novamente
             </GameButton>
-            <GameButton variant="outline" className="w-full h-11" onClick={onExit}>
+            <GameButton variant="outline" className="w-full h-12" onClick={onExit}>
               <LogOut className="w-4 h-4 mr-2" />
               Sair
             </GameButton>

@@ -23,6 +23,7 @@ import {
 import { useApp, type Screen } from '@/store/app';
 import { useNotifications } from '@/store/notifications';
 import { useAuth } from '@/store/auth';
+import { useOnlineTournaments } from '@/store/onlineTournaments';
 import { isSupabaseConfigured } from '@/lib/supabase/client';
 import { GameButton, GameCard } from '@/components/game/ui';
 import { cn } from '@/lib/utils';
@@ -39,6 +40,7 @@ const ICONS: Record<string, LucideIcon> = {
   tournament_advance: TrendingUp,
   tournament_eliminated: X,
   tournament_champion: Crown,
+  tournament_invite: UserPlus,
 };
 
 const TONES: Record<string, string> = {
@@ -46,6 +48,7 @@ const TONES: Record<string, string> = {
   friend_accepted: 'bg-p1/12 text-p1',
   tournament_advance: 'bg-p1/12 text-p1',
   tournament_champion: 'bg-gold/12 text-gold',
+  tournament_invite: 'bg-gold/12 text-gold',
   welcome: 'bg-gold/12 text-gold',
   friend_request: 'bg-gold/12 text-gold',
   match_loss: 'bg-p2/12 text-p2',
@@ -103,8 +106,26 @@ export function NotificationsScreen() {
     void load();
   }, [canUse, load]);
 
+  useEffect(() => {
+    if (!canUse) return;
+    return () => {
+      if (useApp.getState().screen === 'notifications') return;
+      void markAllRead();
+    };
+  }, [canUse, markAllRead]);
+
   const handleOpen = (n: AppNotification) => {
     if (!n.read) void markRead(n.id);
+    // Convite de torneio → abre diretamente o torneio convidado.
+    if (n.kind === 'tournament_invite') {
+      const tournamentId =
+        typeof n.data.tournament_id === 'string' ? n.data.tournament_id : null;
+      if (tournamentId && useOnlineTournaments.getState().enabled) {
+        navigate('tournament');
+        void useOnlineTournaments.getState().open(tournamentId);
+        return;
+      }
+    }
     navigate(destinationFor(n));
   };
 
@@ -120,7 +141,7 @@ export function NotificationsScreen() {
         {canUse && unread > 0 && (
           <GameButton
             variant="ghost"
-            className="h-9 px-3 text-xs shrink-0"
+            className="h-12 px-3 text-xs shrink-0"
             onClick={() => void markAllRead()}
           >
             <CheckCheck className="w-4 h-4 mr-1.5" />
@@ -207,7 +228,7 @@ export function NotificationsScreen() {
                 <button
                   type="button"
                   onClick={() => void remove(n.id)}
-                  className="w-9 h-9 rounded-lg bg-surface-2 border border-border flex items-center justify-center text-muted-foreground shrink-0"
+                  className="w-12 h-12 rounded-lg bg-surface-2 border border-border flex items-center justify-center text-muted-foreground shrink-0"
                   aria-label="Apagar notificação"
                 >
                   <Trash2 className="w-4 h-4" />

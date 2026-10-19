@@ -520,12 +520,12 @@ function RoomDialog({ room, onPlay }: { room: Room; onPlay: () => void }) {
               onChange={(e) => setDraft(e.target.value)}
               placeholder={canChat ? 'Mensagem…' : 'Entra na tua conta para conversar'}
               disabled={!canChat}
-              className="flex-1 h-9 rounded-lg bg-surface/60 border border-border/40 px-3 text-xs placeholder:text-muted-foreground disabled:text-muted-foreground"
+              className="flex-1 h-12 rounded-lg bg-surface/60 border border-border/40 px-3 text-xs placeholder:text-muted-foreground disabled:text-muted-foreground"
             />
             <button
               type="submit"
               disabled={!canChat || !draft.trim() || sending}
-              className="w-9 h-9 rounded-lg bg-p1 text-background flex items-center justify-center disabled:bg-surface-2 disabled:text-muted-foreground"
+              className="w-12 h-12 rounded-lg bg-p1 text-background flex items-center justify-center disabled:bg-surface-2 disabled:text-muted-foreground"
               aria-label="Enviar mensagem"
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -542,7 +542,7 @@ function RoomDialog({ room, onPlay }: { room: Room; onPlay: () => void }) {
             ? 'Chat e partidas online em tempo real.'
             : 'Modo online em breve — redirecionado para o modo offline.'}
         </p>
-        <GameButton variant="p1" className="w-full h-11" onClick={onPlay}>
+        <GameButton variant="p1" className="w-full h-12" onClick={onPlay}>
           <LogIn className="w-4 h-4 mr-2" />
           Jogar
         </GameButton>

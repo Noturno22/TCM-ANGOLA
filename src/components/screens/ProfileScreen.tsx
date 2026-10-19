@@ -184,7 +184,7 @@ export function ProfileScreen() {
                       <button
                         type="button"
                         onClick={() => handleShare(m.id)}
-                        className="w-8 h-8 rounded-lg bg-surface-2 hover:bg-gold/20 hover:text-gold flex items-center justify-center transition-colors"
+                        className="w-12 h-12 rounded-lg bg-surface-2 hover:bg-gold/20 hover:text-gold flex items-center justify-center transition-colors"
                         aria-label="Partilhar partida"
                       >
                         <Share2 className="w-3.5 h-3.5" />
@@ -192,7 +192,7 @@ export function ProfileScreen() {
                       <button
                         type="button"
                         onClick={() => handleReplay(m.id)}
-                        className="w-8 h-8 rounded-lg bg-surface-2 hover:bg-gold/20 hover:text-gold flex items-center justify-center transition-colors"
+                        className="w-12 h-12 rounded-lg bg-surface-2 hover:bg-gold/20 hover:text-gold flex items-center justify-center transition-colors"
                         aria-label="Ver replay"
                       >
                         <Play className="w-3.5 h-3.5" />

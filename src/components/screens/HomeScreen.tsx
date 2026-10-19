@@ -67,7 +67,7 @@ export function HomeScreen() {
           <button
             type="button"
             onClick={() => navigate('notifications')}
-            className="relative w-11 h-11 rounded-full bg-surface-2 border border-border flex items-center justify-center text-foreground hover:bg-surface transition-colors"
+            className="relative w-12 h-12 rounded-full bg-surface-2 border border-border flex items-center justify-center text-foreground hover:bg-surface transition-colors"
             aria-label="Notificações"
           >
             <Bell className="w-5 h-5" />
@@ -110,7 +110,7 @@ export function HomeScreen() {
           <button
             type="button"
             onClick={() => setShowTournamentBanner(false)}
-            className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-background/60 flex items-center justify-center text-muted-foreground hover:text-foreground"
+            className="absolute top-2.5 right-2.5 w-12 h-12 rounded-full bg-background/60 flex items-center justify-center text-muted-foreground hover:text-foreground"
             aria-label="Fechar banner"
           >
             <X className="w-4 h-4" />
@@ -131,7 +131,7 @@ export function HomeScreen() {
           </div>
           <GameButton
             variant="primary"
-            className="w-full h-10 mt-4 text-sm"
+            className="w-full h-12 mt-4 text-sm"
             onClick={() => navigate('rooms')}
           >
             Participar agora
@@ -239,7 +239,7 @@ export function HomeScreen() {
                 </div>
                 <GameButton
                   variant="outline"
-                  className="text-xs px-3.5 h-9"
+                  className="text-xs px-3.5 h-12"
             onClick={() => navigate('tournament')}
                 >
                   Entrar

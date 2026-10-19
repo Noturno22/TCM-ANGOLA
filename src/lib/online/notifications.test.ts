@@ -70,6 +70,7 @@ describe('isToastWorthy', () => {
     expect(isToastWorthy('friend_accepted')).toBe(true);
     expect(isToastWorthy('tournament_started')).toBe(true);
     expect(isToastWorthy('tournament_champion')).toBe(true);
+    expect(isToastWorthy('tournament_invite')).toBe(true);
   });
   it('não faz toast de resultados de partida nem boas-vindas', () => {
     expect(isToastWorthy('match_win')).toBe(false);

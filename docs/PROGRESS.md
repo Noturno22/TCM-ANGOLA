@@ -59,10 +59,24 @@
 - **Feito**: tema escuro/claro; i18n (`pt`); reduzir animações; símbolos nas
   peças; teclado na web; som/háptico com estrutura trocável; gate 18+
   (`0014_age_gate.sql`, `AgeGateDialog`/`AgeGateSheet`); **WCAG AA do tema
-  claro** (acentos escurecidos em `globals.css`; texto com opacidade removido).
-- **Pendente**: rever tamanhos de toque (≥ 48 dp).
-- **Dívidas conhecidas**: notificações sem "marcar-lida ao clicar"; UI de torneios
-  sem editar/descrever nem convidar; contas antigas com 0 KZ precisam de top-up.
+  claro** (acentos escurecidos em `globals.css`; texto com opacidade removido);
+  **alvos de toque ≥ 48 dp** (chaves em `button`/`input`/`select`/`tabs` →
+  `h-12`, `tabs` lista `h-14`, `switch` com área de toque de 48 px por
+  pseudo-elemento, `dialog` fechar `size-12`, e varredura por toda a UI —
+  `TabBar`/`BalancePill`/`FilterChip` → `min-h-12`, botões só-ícone →
+  `w-12 h-12`). Exceções estruturais registadas: thumb do `slider` (16 px) e
+  `input[type=range]` do replay.
+- **Feito**: notificações lidas ao sair da lista (`I18`); **logo do header
+  theme-aware** (`public/logo.svg` usa `var(--background)`/`var(--foreground)`
+  em vez de `#2D2D2D` fixo); **top-up das contas a 0 KZ** + RLS de `profiles`
+  fechado (`0016_profile_topup.sql`, `I19`).
+- **Feito**: torneios online com **editar/descrever** (só o criador, enquanto
+  aberto) e **convidar amigos** por notificação (`0017_tournament_edit_invite.sql`,
+  `I20`): `create_tournament` ganhou `p_description`, novas RPCs
+  `update_tournament`/`invite_to_tournament` (ambas `security definer`, cliente
+  continua sem escrever em `tournaments`), convite `tournament_invite` com deep
+  link para o torneio a partir da lista de notificações.
+- **Dívidas conhecidas**: PSP automático (WiPay/AppyPay/Stripe).
 
 ## F7 — QA, e2e, release e docs · em curso
 

@@ -98,13 +98,13 @@ suas próprias linhas (RLS). Idempotência: `receipt:<id>` / `withdrawal:<id>`.
 | I14 | `admin-manage` é a única porta de escrita de estado | O cliente insere/elimina só as próprias linhas pendentes (RLS); aprovar/pagar/rejeitar é exclusivo do `service_role`. |
 | I15 | Salas = só globo | `RoomsScreen` mostra o globo 3D (`public/globe.svg`) com zoom; clicar numa cidade abre a sala `global`/`mundo`. Filtros/listas removidos. |
 | I16 | Tema claro com acentos escurecidos (WCAG AA) | Acentos de marca escurecidos no `.light` (ex.: `--gold` 0.46) para ≥4.5:1 sobre as superfícies claras; escuro intacto. Opacidades de texto (`text-muted-foreground/50`…) removidas. |
+| I17 | Alvos de toque ≥ 48 dp | Chaves `button`/`input`/`select` (`h-12`), lista `tabs` `h-14`, `switch` com área de 48 px por pseudo-elemento, `dialog` fechar `size-12` e varredura por toda a UI (só-ícone → `w-12 h-12`, `min-h-[44px]` → `min-h-12`). Exceções: thumb do `slider` e `input[type=range]` do replay. |
+| I18 | Notificações: lidas ao sair da lista | `NotificationsScreen` marca tudo como lida no unmount — o sino limpa o badge depois de abrires a lista, e enquanto lá estás continuas a ver pontos/contador "por ler". |
+| I19 | Top-up de KZ = backfill + RLS de `profiles` fechado | `0016_profile_topup.sql`: dá 5.000 KZ a contas com `coins = 0` (criadas antes do bónus de boas-vindas) e revoga o UPDATE do cliente em `profiles` (só `username`/`avatar`/`updated_at`) — antes qualquer um podia fazer `update profiles set coins = 999999`. Sem bónus diário nem botão de claim. |
+| I20 | Torneios: editar/descrever + convidar amigos via RPC | `0017_tournament_edit_invite.sql`: `create_tournament` ganhou `p_description`; `update_tournament` (só `created_by` e `status = 'open'`) e `invite_to_tournament` (criador ou inscrito → `_notify` `tournament_invite`, máx. 50 por chamada, ignora quem já está inscrito). Cliente continua sem escrever em `tournaments`. |
 
 ## PROPOSTAS (não implementadas; aguardam autorização)
 
-- **UI de torneios**: editar/descrever torneios e convidar amigos diretamente.
-  Estado atual: a UI só cria torneios com `entry_fee = 0`.
-- **Marcar notificação como lida ao clicar no sino** (hoje só lista).
-- **Top-up de moeda virtual** para contas antigas com 0 KZ.
 - **PSP automático** (WiPay/AppyPay/Stripe) para substituir/coexistir com os
   depósitos manuais — depende de integração e licenciamento.
 

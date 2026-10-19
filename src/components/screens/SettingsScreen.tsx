@@ -172,7 +172,7 @@ export function SettingsScreen() {
               value={settings.language}
               onValueChange={(v) => settings.set('language', v as 'pt' | 'en' | 'fr')}
             >
-              <SelectTrigger className="w-36 h-9">
+              <SelectTrigger className="w-36 h-12">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

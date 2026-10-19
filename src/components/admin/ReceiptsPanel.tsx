@@ -137,7 +137,7 @@ export function ReceiptsPanel() {
             type="button"
             onClick={() => setFilter(f.id)}
             className={cn(
-              'shrink-0 px-3.5 py-2 rounded-full text-sm font-semibold border transition-colors min-h-[40px]',
+              'shrink-0 px-3.5 py-2 rounded-full text-sm font-semibold border transition-colors min-h-12',
               filter === f.id
                 ? 'bg-gold text-primary-foreground border-gold'
                 : 'bg-surface-2 text-muted-foreground border-border hover:text-foreground',
@@ -150,7 +150,7 @@ export function ReceiptsPanel() {
           type="button"
           onClick={() => void load(filter)}
           aria-label="Atualizar lista"
-          className="ml-auto shrink-0 w-10 h-10 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:bg-surface transition-colors"
+          className="ml-auto shrink-0 w-12 h-12 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:bg-surface transition-colors"
         >
           <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
         </button>
@@ -211,7 +211,7 @@ export function ReceiptsPanel() {
                   <div className="ml-auto flex gap-2">
                     <GameButton
                       variant="p1"
-                      className="h-9 px-3 text-sm"
+                      className="h-12 px-3 text-sm"
                       disabled={busyId === receipt.id}
                       onClick={() => void approve(receipt)}
                     >
@@ -224,7 +224,7 @@ export function ReceiptsPanel() {
                     </GameButton>
                     <GameButton
                       variant="outline"
-                      className="h-9 px-3 text-sm"
+                      className="h-12 px-3 text-sm"
                       disabled={busyId === receipt.id}
                       onClick={() => setConfirm({ receipt, mode: 'reject' })}
                     >
@@ -237,7 +237,7 @@ export function ReceiptsPanel() {
                 {receipt.status !== 'pending' && (
                   <GameButton
                     variant="ghost"
-                    className="ml-auto h-9 px-3 text-sm"
+                    className="ml-auto h-12 px-3 text-sm"
                     disabled={busyId === receipt.id}
                     onClick={() => setConfirm({ receipt, mode: 'delete' })}
                   >

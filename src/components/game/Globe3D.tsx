@@ -114,7 +114,7 @@ export function Globe3D({ className, onLocationClick }: GlobeProps) {
             onClick={() => sendZoom('in')}
             aria-label="Aproximar"
             title="Aproximar"
-            className="w-9 h-9 rounded-full bg-surface-2/90 border border-border text-foreground flex items-center justify-center backdrop-blur hover:bg-surface transition-colors"
+            className="w-12 h-12 rounded-full bg-surface-2/90 border border-border text-foreground flex items-center justify-center backdrop-blur hover:bg-surface transition-colors"
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -123,7 +123,7 @@ export function Globe3D({ className, onLocationClick }: GlobeProps) {
             onClick={() => sendZoom('out')}
             aria-label="Afastar"
             title="Afastar"
-            className="w-9 h-9 rounded-full bg-surface-2/90 border border-border text-foreground flex items-center justify-center backdrop-blur hover:bg-surface transition-colors"
+            className="w-12 h-12 rounded-full bg-surface-2/90 border border-border text-foreground flex items-center justify-center backdrop-blur hover:bg-surface transition-colors"
           >
             <Minus className="w-4 h-4" />
           </button>
@@ -132,7 +132,7 @@ export function Globe3D({ className, onLocationClick }: GlobeProps) {
             onClick={() => sendZoom('reset')}
             aria-label="Repor zoom"
             title="Repor zoom"
-            className="w-9 h-9 rounded-full bg-surface-2/90 border border-border text-foreground flex items-center justify-center backdrop-blur hover:bg-surface transition-colors"
+            className="w-12 h-12 rounded-full bg-surface-2/90 border border-border text-foreground flex items-center justify-center backdrop-blur hover:bg-surface transition-colors"
           >
             <Maximize className="w-4 h-4" />
           </button>

@@ -78,6 +78,8 @@ export type TournamentErrorCode =
   | 'not_enough_players'
   | 'not_tournament_owner'
   | 'not_a_participant'
+  | 'invalid_name'
+  | 'too_many_invites'
   | 'match_not_ready'
   | 'match_not_started'
   | 'match_not_finished'
@@ -97,6 +99,8 @@ const KNOWN_ERROR_CODES: TournamentErrorCode[] = [
   'not_enough_players',
   'not_tournament_owner',
   'not_a_participant',
+  'invalid_name',
+  'too_many_invites',
   'match_not_ready',
   'match_not_started',
   'match_not_finished',
@@ -343,6 +347,7 @@ export async function fetchTournamentDetail(
 
 export type CreateTournamentInput = {
   name: string;
+  description?: string;
   entryFee?: number;
   prize?: number;
   maxPlayers?: number;
@@ -365,6 +370,7 @@ export async function createTournament(
     p_prize: input.prize ?? 0,
     p_max_players: input.maxPlayers ?? 8,
     p_room_id: input.roomId ?? 'global',
+    p_description: input.description ?? '',
   });
   if (error) return { ok: false, code: parseTournamentErrorCode(error.message) ?? 'unknown' };
   const id = (data as { tournament_id?: string } | null)?.tournament_id;
@@ -399,6 +405,47 @@ export async function leaveTournament(tournamentId: string): Promise<boolean> {
   if (!sb) return false;
   const { error } = await sb.rpc('leave_tournament', { p_tournament_id: tournamentId });
   return !error;
+}
+
+export type UpdateTournamentInput = {
+  tournamentId: string;
+  name: string;
+  description?: string;
+};
+
+/** Edita nome/descrição — só o criador e só enquanto o torneio está aberto. */
+export async function updateTournament(
+  input: UpdateTournamentInput,
+): Promise<{ ok: boolean; code?: TournamentErrorCode }> {
+  const sb = client();
+  if (!sb) return { ok: false, code: 'unknown' };
+  const { error } = await sb.rpc('update_tournament', {
+    p_tournament_id: input.tournamentId,
+    p_name: input.name,
+    p_description: input.description ?? '',
+  });
+  if (error) return { ok: false, code: parseTournamentErrorCode(error.message) ?? 'unknown' };
+  return { ok: true };
+}
+
+export type InviteTournamentResult =
+  | { ok: true; invited: number }
+  | { ok: false; code: TournamentErrorCode };
+
+/** Convida amigos (notificação) — criador ou inscrito, torneio ainda aberto. */
+export async function inviteTournamentFriends(
+  tournamentId: string,
+  userIds: readonly string[],
+): Promise<InviteTournamentResult> {
+  const sb = client();
+  if (!sb) return { ok: false, code: 'unknown' };
+  const { data, error } = await sb.rpc('invite_to_tournament', {
+    p_tournament_id: tournamentId,
+    p_user_ids: [...userIds],
+  });
+  if (error) return { ok: false, code: parseTournamentErrorCode(error.message) ?? 'unknown' };
+  const count = Number((data as { count?: number } | null)?.count ?? 0);
+  return { ok: true, invited: Number.isFinite(count) ? count : 0 };
 }
 
 /** Inicia o torneio (só o criador) e gera a chave. */

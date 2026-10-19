@@ -365,7 +365,7 @@ function CtrlButton({
       disabled={disabled}
       aria-label={ariaLabel}
       className={cn(
-        'h-11 rounded-xl flex items-center justify-center transition-all',
+        'h-12 rounded-xl flex items-center justify-center transition-all',
         'disabled:opacity-40 disabled:pointer-events-none',
         'active:scale-95',
         variant === 'p1'

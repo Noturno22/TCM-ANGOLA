@@ -214,7 +214,7 @@ export function OnlineMatchScreen() {
           <button
             type="button"
             onClick={handleLeave}
-            className="w-9 h-9 rounded-full bg-surface/60 flex items-center justify-center hover:bg-surface"
+            className="w-12 h-12 rounded-full bg-surface/60 flex items-center justify-center hover:bg-surface"
             aria-label="Sair"
           >
             <ChevronRight className="w-5 h-5 rotate-180" />
@@ -226,7 +226,7 @@ export function OnlineMatchScreen() {
             </p>
             <p className="text-xs font-medium truncate">Tu vs {oppName ?? '…'}</p>
           </div>
-          <div className="w-9 h-9" />
+          <div className="w-12 h-12" />
         </div>
       </header>
 
