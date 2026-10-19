@@ -9,7 +9,7 @@
  *
  * Gated pela chave-mestra `REAL_MONEY_ENABLED` (D6) e por sessão iniciada.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
@@ -18,6 +18,7 @@ import {
   ArrowUpRight,
   Banknote,
   Clock,
+  Copy,
   Landmark,
   Loader2,
   Lock,
@@ -25,12 +26,24 @@ import {
   Send,
   Smartphone,
   Trash2,
+  Zap,
 } from 'lucide-react';
 import { useAuth } from '@/store/auth';
 import { useApp } from '@/store/app';
 import { useWalletMovements, type WalletMovement } from '@/store/walletMovements';
 import { REAL_MONEY_ENABLED } from '@/lib/config/flags';
 import { fetchAccount, fetchBalanceMinor } from '@/lib/payments/client';
+import { enabledProvidersForCurrency } from '@/lib/payments/providers';
+import {
+  autoErrorMessage,
+  fetchIntentById,
+  findResumableAutoIntent,
+  normalizeAutoPhone,
+  startAutoDeposit,
+  type AutoCheckoutInfo,
+  type AutoDepositMethod,
+} from '@/lib/payments/auto';
+import type { PaymentIntentRow } from '@/lib/payments/types';
 import {
   MAX_DEPOSIT,
   MAX_WITHDRAWAL,
@@ -105,13 +118,31 @@ export function DepositScreen() {
   const [pendingDeposit, setPendingDeposit] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  // Depósito automático (AppyPay)
+  const [autoMethod, setAutoMethod] = useState<AutoDepositMethod>('gpo');
+  const [phone, setPhone] = useState('');
+  const [autoStart, setAutoStart] = useState<{
+    intent: PaymentIntentRow;
+    info: AutoCheckoutInfo;
+  } | null>(null);
+  const [autoBusy, setAutoBusy] = useState(false);
+  const [autoChecking, setAutoChecking] = useState(false);
+
   const amount = parseAmount(amountStr);
   const methods = methodsForCurrency(currency);
   const activeMethod = methods.find((m) => m.id === method) ?? methods[0];
+  const autoEnabled = useMemo(
+    () => enabledProvidersForCurrency('AOA').some((p) => p.id === 'appypay'),
+    [],
+  );
+  /** Bloqueia o formulário: comprovativo pendente ou pagamento automático a decorrer. */
+  const formBlocked = pendingDeposit || autoStart !== null;
+  const autoIntentId = autoStart?.intent.id ?? null;
+  const resumedRef = useRef(false);
 
-  const refreshBalance = useCallback(async () => {
+  const refreshBalance = useCallback(async (c: ManualCurrency = currency) => {
     try {
-      const acc = await fetchAccount(currency === 'usd' ? 'USD' : 'AOA');
+      const acc = await fetchAccount(c === 'usd' ? 'USD' : 'AOA');
       setBalanceMinor(acc ? await fetchBalanceMinor(acc.id) : 0);
     } catch {
       setBalanceMinor(0);
@@ -141,6 +172,117 @@ export function DepositScreen() {
     if (!REAL_MONEY_ENABLED || !user) return;
     void refreshBalance();
   }, [currency, methods, method, user, refreshBalance]);
+
+  /** Pagamento confirmado: fecha o cartão pendente e atualiza saldo/histórico. */
+  const finishAutoPaid = useCallback(async () => {
+    setAutoStart(null);
+    setAmountStr('');
+    setPhone('');
+    toast.success('Pagamento confirmado!', {
+      description: 'O valor foi creditado na tua carteira.',
+    });
+    if (currency === 'aoa') void refreshBalance('aoa');
+    if (user) void loadMovements(user.id);
+  }, [currency, refreshBalance, loadMovements, user]);
+
+  /** Consulta o estado da intenção (usado no polling e no botão "Já paguei"). */
+  const checkAutoIntent = useCallback(
+    async (manual: boolean) => {
+      if (!autoStart) return;
+      if (manual) setAutoChecking(true);
+      try {
+        const intent = await fetchIntentById(autoStart.intent.id);
+        if (!intent) return;
+        if (intent.status === 'paid') {
+          await finishAutoPaid();
+          return;
+        }
+        const expired = new Date(intent.expires_at).getTime() <= Date.now();
+        if (intent.status === 'failed' || intent.status === 'expired' || expired) {
+          setAutoStart(null);
+          setAmountStr('');
+          toast.error(intent.status === 'failed' ? 'Pagamento falhou.' : 'Pedido expirado.', {
+            description: 'Podes iniciar um novo depósito.',
+          });
+          return;
+        }
+        setAutoStart((prev) => (prev ? { ...prev, intent } : prev));
+      } catch {
+        // Sem rede: tenta outra vez no intervalo seguinte.
+      } finally {
+        if (manual) setAutoChecking(false);
+      }
+    },
+    [autoStart, finishAutoPaid],
+  );
+
+  // Mantém o ponteiro sempre com a versão mais recente do handler.
+  const checkAutoRef = useRef(checkAutoIntent);
+  checkAutoRef.current = checkAutoIntent;
+
+  // Polling do pagamento automático (5 s) enquanto a intenção estiver pendente.
+  useEffect(() => {
+    if (!autoIntentId) return;
+    void checkAutoRef.current(false);
+    const id = setInterval(() => void checkAutoRef.current(false), 5000);
+    return () => clearInterval(id);
+  }, [autoIntentId]);
+
+  // Retoma uma intenção automática pendente ao abrir o ecrã (só uma vez).
+  useEffect(() => {
+    if (!user || resumedRef.current) return;
+    resumedRef.current = true;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const found = await findResumableAutoIntent();
+        if (!cancelled && found) setAutoStart(found);
+      } catch {
+        // Sem rede: fica o formulário normal.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  /** Arranca um depósito automático (AppyPay) com o valor/método escolhidos. */
+  const handleStartAuto = async () => {
+    if (!amount || depositError) {
+      toast.error(depositError || 'Indica um valor válido.');
+      return;
+    }
+    const phoneDigits = autoMethod === 'gpo' ? normalizeAutoPhone(phone) : undefined;
+    if (autoMethod === 'gpo' && !phoneDigits) {
+      toast.error('Telemóvel inválido.', { description: 'Usa o formato 9XX XXX XXX.' });
+      return;
+    }
+    setAutoBusy(true);
+    try {
+      const started = await startAutoDeposit({
+        amountMinor: Math.round(amount * 100),
+        method: autoMethod,
+        phone: phoneDigits ?? undefined,
+      });
+      setAutoStart(started);
+    } catch (err) {
+      console.error('auto deposit failed', err);
+      toast.error(autoErrorMessage(err));
+    } finally {
+      setAutoBusy(false);
+    }
+  };
+
+  const handleCopyReference = async () => {
+    const reference = autoStart?.info.reference;
+    if (!reference) return;
+    try {
+      await navigator.clipboard.writeText(reference);
+      toast.success('Referência copiada.');
+    } catch {
+      toast.error('Não foi possível copiar. Copia manualmente.');
+    }
+  };
 
   const depositError = useMemo(() => {
     if (!amountStr) return null;
@@ -328,7 +470,7 @@ export function DepositScreen() {
             </button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Depósitos e levantamentos manuais com comprovativo.
+            Depósitos automáticos (AppyPay) ou manuais com comprovativo; levantamentos manuais.
           </p>
         </GameCard>
       </motion.div>
@@ -386,7 +528,7 @@ export function DepositScreen() {
                 value={amountStr}
                 onChange={(e) => setAmountStr(e.target.value)}
                 className="h-12 pr-20 font-display text-lg"
-                disabled={pendingDeposit}
+                disabled={formBlocked}
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">
                 {currency.toUpperCase()}
@@ -404,60 +546,250 @@ export function DepositScreen() {
             )}
           </div>
 
-          {/* Método */}
-          <div className="space-y-1.5">
-            <Label>Método de pagamento</Label>
-            <div className="grid grid-cols-1 gap-2">
-              {methods.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setMethod(m.id)}
-                  disabled={pendingDeposit}
-                  aria-pressed={method === m.id}
-                  className={cn(
-                    'flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors min-h-12',
-                    method === m.id
-                      ? 'border-gold/60 bg-gold/10'
-                      : 'border-border/50 bg-surface/60 hover:border-gold/40',
-                    pendingDeposit && 'opacity-60 pointer-events-none',
+          {/* -------------------- Depósito automático (AppyPay) -------------------- */}
+          {autoStart && (
+            <GameCard className="p-4 space-y-3 border border-gold/40" glow="gold">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] uppercase tracking-widest text-gold font-semibold flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" />
+                  Pagamento automático pendente
+                </p>
+                <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  {autoChecking ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin" /> A verificar…
+                    </>
+                  ) : (
+                    'Verificação automática'
                   )}
-                >
-                  <span
-                    className="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0"
-                    style={{ backgroundColor: m.color }}
-                    aria-hidden
-                  >
-                    {METHOD_ICONS[m.id]}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold truncate">{m.label}</span>
-                    <span className="block text-xs text-muted-foreground truncate">
-                      {m.details}
-                    </span>
-                  </span>
-                  <span
-                    className={cn(
-                      'w-4 h-4 rounded-full border-2 shrink-0',
-                      method === m.id ? 'border-gold bg-gold' : 'border-muted-foreground/50',
-                    )}
-                    aria-hidden
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
+                </span>
+              </div>
 
-          <GameButton
-            variant="gold"
-            className="w-full"
-            disabled={!amount || !!depositError || pendingDeposit || !activeMethod}
-            onClick={() => setProofOpen(true)}
-            aria-label="Continuar para envio de comprovativo"
-          >
-            <Send className="w-4 h-4 mr-2" />
-            {pendingDeposit ? 'Já tens um depósito pendente' : 'Continuar'}
-          </GameButton>
+              {autoStart.info.method === 'gpo' ? (
+                <div className="space-y-2">
+                  <p className="text-sm leading-relaxed">
+                    Enviámos um pedido de pagamento de{' '}
+                    <strong className="text-gold">
+                      {formatMoney(autoStart.intent.amount_minor / 100, 'aoa')}
+                    </strong>{' '}
+                    para o Multicaixa Express
+                    {autoStart.info.phoneMasked ? (
+                      <>
+                        {' '}
+                        do telemóvel{' '}
+                        <span className="font-display">{autoStart.info.phoneMasked}</span>
+                      </>
+                    ) : null}
+                    .
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Abre a aplicação Multicaixa Express no telemóvel e confirma o pedido.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg bg-surface/60 border border-border/50 p-2.5">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Entidade
+                      </p>
+                      <p className="font-display text-lg text-gold tabular-nums">
+                        {autoStart.info.entity || '—'}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-surface/60 border border-border/50 p-2.5">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Referência
+                      </p>
+                      <p className="font-display text-lg text-gold tabular-nums">
+                        {autoStart.info.reference || '—'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="rounded-lg bg-surface/60 border border-border/50 p-2.5">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Montante
+                    </p>
+                    <p className="font-display text-lg tabular-nums">
+                      {formatMoney(autoStart.intent.amount_minor / 100, 'aoa')}
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Paga em qualquer ATM, Internet Banking ou app Multicaixa. Válido até{' '}
+                    {new Date(autoStart.intent.expires_at).toLocaleString('pt-PT')}.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <GameButton
+                  variant="gold"
+                  className="flex-1"
+                  disabled={autoChecking}
+                  onClick={() => void checkAutoIntent(true)}
+                  aria-label="Já paguei — verificar pagamento"
+                >
+                  {autoChecking ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                  )}
+                  Já paguei
+                </GameButton>
+                {autoStart.info.method === 'ref' && autoStart.info.reference && (
+                  <GameButton
+                    variant="ghost"
+                    className="shrink-0"
+                    onClick={() => void handleCopyReference()}
+                    aria-label="Copiar referência"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copiar
+                  </GameButton>
+                )}
+                <GameButton
+                  variant="ghost"
+                  className="shrink-0"
+                  onClick={() => setAutoStart(null)}
+                  aria-label="Cancelar pagamento automático"
+                >
+                  Cancelar
+                </GameButton>
+              </div>
+            </GameCard>
+          )}
+
+          {autoEnabled && currency === 'aoa' && !autoStart && !pendingDeposit && (
+            <div className="space-y-3 rounded-xl border border-gold/30 bg-gold/[0.06] p-4">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-gold" aria-hidden />
+                <p className="text-sm font-semibold">Depósito automático</p>
+                <span className="text-[10px] uppercase tracking-wider text-gold border border-gold/40 rounded px-1.5 py-0.5">
+                  AppyPay
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <GameButton
+                  variant={autoMethod === 'gpo' ? 'gold' : 'ghost'}
+                  className="h-12 text-xs"
+                  onClick={() => setAutoMethod('gpo')}
+                  aria-pressed={autoMethod === 'gpo'}
+                >
+                  <Smartphone className="w-4 h-4 mr-1.5 inline" />
+                  Multicaixa Express
+                </GameButton>
+                <GameButton
+                  variant={autoMethod === 'ref' ? 'gold' : 'ghost'}
+                  className="h-12 text-xs"
+                  onClick={() => setAutoMethod('ref')}
+                  aria-pressed={autoMethod === 'ref'}
+                >
+                  <Landmark className="w-4 h-4 mr-1.5 inline" />
+                  Referência
+                </GameButton>
+              </div>
+
+              {autoMethod === 'gpo' && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="auto-phone">Telemóvel Multicaixa Express</Label>
+                  <Input
+                    id="auto-phone"
+                    inputMode="tel"
+                    placeholder="9XX XXX XXX"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="h-12"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Recebes o pedido na app do Multicaixa Express e confirmas lá.
+                  </p>
+                </div>
+              )}
+
+              <GameButton
+                variant="gold"
+                className="w-full"
+                disabled={!amount || !!depositError || autoBusy}
+                onClick={() => void handleStartAuto()}
+                aria-label="Pagar com AppyPay"
+              >
+                {autoBusy ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />A iniciar…
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Pagar agora
+                  </>
+                )}
+              </GameButton>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                Processado pela AppyPay — o saldo entra na carteira assim que o pagamento for
+                confirmado. Sem comprovativo nem espera por aprovação.
+              </p>
+            </div>
+          )}
+
+          {/* Método (manual com comprovativo) */}
+          {!autoStart && (
+            <>
+              <div className="space-y-1.5">
+                <Label>Método de pagamento</Label>
+                <div className="grid grid-cols-1 gap-2">
+                  {methods.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setMethod(m.id)}
+                      disabled={formBlocked}
+                      aria-pressed={method === m.id}
+                      className={cn(
+                        'flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors min-h-12',
+                        method === m.id
+                          ? 'border-gold/60 bg-gold/10'
+                          : 'border-border/50 bg-surface/60 hover:border-gold/40',
+                        formBlocked && 'opacity-60 pointer-events-none',
+                      )}
+                    >
+                      <span
+                        className="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0"
+                        style={{ backgroundColor: m.color }}
+                        aria-hidden
+                      >
+                        {METHOD_ICONS[m.id]}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold truncate">{m.label}</span>
+                        <span className="block text-xs text-muted-foreground truncate">
+                          {m.details}
+                        </span>
+                      </span>
+                      <span
+                        className={cn(
+                          'w-4 h-4 rounded-full border-2 shrink-0',
+                          method === m.id ? 'border-gold bg-gold' : 'border-muted-foreground/50',
+                        )}
+                        aria-hidden
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <GameButton
+                variant="gold"
+                className="w-full"
+                disabled={!amount || !!depositError || formBlocked || !activeMethod}
+                onClick={() => setProofOpen(true)}
+                aria-label="Continuar para envio de comprovativo"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                {pendingDeposit ? 'Já tens um depósito pendente' : 'Continuar'}
+              </GameButton>
+            </>
+          )}
         </TabsContent>
 
         {/* ---------------------------- Levantamento ---------------------------- */}

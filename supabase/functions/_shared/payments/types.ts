@@ -15,6 +15,10 @@ export interface CreateCheckoutParams {
   idempotencyKey: string;
   returnUrl: string;
   webhookUrl: string;
+  /** Método específico do provider (ex.: `gpo` Multicaixa Express | `ref` na AppyPay). */
+  method?: string;
+  /** Telemóvel Multicaixa Express (AppyPay GPO), dígitos livres de formatação. */
+  customerPhone?: string;
 }
 
 export interface CreateCheckoutResult {
@@ -65,6 +69,8 @@ export type NormalizedEventType =
   | 'payment.paid'
   | 'payment.failed'
   | 'payment.expired'
+  /** Estado ainda não resolvido (ex.: AppyPay "Pending") — ignora-se sem efeito. */
+  | 'payment.pending'
   | 'refund.completed'
   | 'payout.paid'
   | 'payout.failed';

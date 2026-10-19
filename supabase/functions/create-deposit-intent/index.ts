@@ -14,6 +14,7 @@ import {
   MIN_DEPOSIT_MINOR,
 } from '../_shared/payments/types.ts';
 import { getProvider, isKnownProvider } from '../_shared/payments/providers.ts';
+import { merchantTxnFor } from '../_shared/payments/appypay.ts';
 import { realMoneyEnabled } from '../_shared/flags.ts';
 
 const corsHeaders = {
@@ -35,6 +36,10 @@ interface DepositBody {
   provider?: string;
   idempotencyKey?: string;
   returnUrl?: string;
+  /** Método automático do provider (ex.: `gpo` | `ref` na AppyPay). */
+  method?: string;
+  /** Telemóvel Multicaixa Express (AppyPay GPO). */
+  customerPhone?: string;
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
@@ -129,6 +134,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   // ---- Cria a intenção ANTES do checkout (referência de merchant = intent.id) ----
   const expiresAt = new Date(Date.now() + 15 * 60_000).toISOString();
+  // A AppyPay só aceita `merchantTransactionId` com 15 caracteres — guardamo-lo
+  // já no insert (antes de contactar o PSP) para o webhook localizar a intenção
+  // mesmo que a escrita de `provider_ref` ainda não tenha acontecido.
+  const metadata: Record<string, unknown> =
+    providerId === 'appypay' ? { merchant_txn: merchantTxnFor(idempotencyKey) } : {};
   const inserted = await admin
     .from('payment_intents')
     .insert({
@@ -139,6 +149,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       status: 'created',
       idempotency_key: idempotencyKey,
       expires_at: expiresAt,
+      metadata,
     })
     .select('*')
     .single();
@@ -168,6 +179,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       idempotencyKey,
       returnUrl,
       webhookUrl,
+      method: body.method,
+      customerPhone: body.customerPhone,
     });
 
     const updated = await admin

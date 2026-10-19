@@ -38,7 +38,7 @@ supabase functions deploy send-sms-hook      --project-ref ogqnbhuvoypmqefxbijr
 supabase functions deploy admin-manage       --project-ref ogqnbhuvoypmqefxbijr --use-api
 ```
 
-Funções de pagamento por PSP (só relevantes quando o PSP automático for ligado):
+Funções de pagamento (manual + PSP automático):
 
 ```bash
 supabase functions deploy create-deposit-intent --project-ref ogqnbhuvoypmqefxbijr
@@ -62,6 +62,26 @@ supabase secrets set --project-ref ogqnbhuvoypmqefxbijr \
 > a Edge Function `admin-manage`. Com `REAL_MONEY_ENABLED=false` todas as funções
 > de pagamento respondem `403 real_money_disabled`.
 
+### Segredos AppyPay (depósitos automáticos)
+
+Só quando o PSP automático for ligado (sem eles `create-deposit-intent`
+responde `checkout_failed appypay_not_configured`); detalhes em
+`supabase/functions/PAYMENTS.md`:
+
+```bash
+supabase secrets set --project-ref ogqnbhuvoypmqefxbijr \
+  APPYPAY_ENV=sandbox \
+  APPYPAY_CLIENT_ID=<client-id> \
+  APPYPAY_CLIENT_SECRET=<client-secret> \
+  APPYPAY_PAYMENT_METHOD_GPO=<GPO_uuid> \
+  APPYPAY_PAYMENT_METHOD_REF=<REF_uuid>
+```
+
+No portal AppyPay, configurar o webhook de cada aplicação (GPO e REF) para
+`https://ogqnbhuvoypmqefxbijr.supabase.co/functions/v1/psp-webhook?provider=appypay`
+(método POST). A AppyPay não assina os payloads — `psp-webhook` valida por
+reconsulta `GET /v2.0/charges/{id}`.
+
 ## 2. Web (Vercel)
 
 - **Build command:** `bun run build` · **Output:** Next.js standalone.
@@ -72,7 +92,7 @@ supabase secrets set --project-ref ogqnbhuvoypmqefxbijr \
   - `NEXT_PUBLIC_REAL_MONEY_ENABLED=true`
   - `NEXT_PUBLIC_PAYOUTS_ENABLED=true`
   - `NEXT_PUBLIC_ADMIN_EMAILS` (emails com acesso ao painel admin)
-  - `NEXT_PUBLIC_PAYMENTS_ENABLED_PROVIDERS=mock` *(nunca `mock` em produção)*
+  - `NEXT_PUBLIC_PAYMENTS_ENABLED_PROVIDERS=appypay` *(nunca `mock` em produção)*
 
 **Nunca** definir `NEXT_PUBLIC_E2E_AUTH` em produção (só para testes).
 
@@ -110,4 +130,5 @@ service role) e os builds EAS (exigem `EXPO_TOKEN`).
 - [ ] Gate 18+ ao entrar numa sala com aposta.
 - [ ] Depósito manual (comprovativo) submetido e visível no painel admin.
 - [ ] Admin aprova → saldo creditado; levantamento pago → saldo debitado.
+- [ ] Depósito automático AppyPay (Express e referência) → webhook credita o saldo.
 - [ ] Migrations/functions sem erros nos logs do Supabase.

@@ -102,11 +102,14 @@ suas próprias linhas (RLS). Idempotência: `receipt:<id>` / `withdrawal:<id>`.
 | I18 | Notificações: lidas ao sair da lista | `NotificationsScreen` marca tudo como lida no unmount — o sino limpa o badge depois de abrires a lista, e enquanto lá estás continuas a ver pontos/contador "por ler". |
 | I19 | Top-up de KZ = backfill + RLS de `profiles` fechado | `0016_profile_topup.sql`: dá 5.000 KZ a contas com `coins = 0` (criadas antes do bónus de boas-vindas) e revoga o UPDATE do cliente em `profiles` (só `username`/`avatar`/`updated_at`) — antes qualquer um podia fazer `update profiles set coins = 999999`. Sem bónus diário nem botão de claim. |
 | I20 | Torneios: editar/descrever + convidar amigos via RPC | `0017_tournament_edit_invite.sql`: `create_tournament` ganhou `p_description`; `update_tournament` (só `created_by` e `status = 'open'`) e `invite_to_tournament` (criador ou inscrito → `_notify` `tournament_invite`, máx. 50 por chamada, ignora quem já está inscrito). Cliente continua sem escrever em `tournaments`. |
+| I21 | PSP automático = **AppyPay** (GPO + referência), coexistindo com o manual | Adaptador `_shared/payments/appypay.ts`: OAuth2 Client Credentials (Azure AD + `resource` por ambiente), `POST /v2.0/charges` (`gpo` = Multicaixa Express com `customerPhone`; `ref` = entidade/referência gerada por nós com recuo progressivo de `paymentInfo` se o ambiente gerar a referência). **Webhook sem assinatura** → `verifyAndParse` só confia na reconsulta `GET /v2.0/charges/{id}` (recomendação da própria AppyPay); estado `Pending` vira `payment.pending` e é ignorado sem efeito. `merchantTransactionId` ≤15 alnum derivado da `idempotency_key` (`merchantTxnFor`) e guardado **no insert** em `payment_intents.metadata.merchant_txn` → o webhook procura `idempotency_key` → `provider_ref` → `metadata.merchant_txn` (sem corrida). Sem página externa: o `checkout_url` é o **nosso app** com `psp/intent/method/entity/reference/phone_masked` em query → cartão pendente no `DepositScreen` com polling de 5 s (e retoma ao reabrir o ecrã). `supportsPayouts: false` (levantamentos continuam manuais); sem credenciais responde `appypay_not_configured`. |
 
 ## PROPOSTAS (não implementadas; aguardam autorização)
 
-- **PSP automático** (WiPay/AppyPay/Stripe) para substituir/coexistir com os
-  depósitos manuais — depende de integração e licenciamento.
+- **Outros PSP** — WiPay (Angola) e Stripe para cartão internacional: stubs
+  explícitos em `_shared/payments/providers.ts`, a ligar quando houver
+  credenciais/contrato. O **AppyPay** para depósitos está implementado (I21) e
+  só precisa das credenciais sandbox/produção + webhook no portal.
 
 > **Contas de recebimento** (`BINANCE_ID`/`RODOTPAY_UID`/`EXPRESS_PHONE` em
 > `src/lib/payments/manual.ts`): confirmadas pelo SAMA (`547723572` /

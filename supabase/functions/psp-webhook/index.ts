@@ -30,6 +30,35 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
+/**
+ * Procura a intenção pela referência do evento: idempotency_key →
+ * provider_ref → `metadata.merchant_txn` (AppyPay). Cada consulta é uma
+ * igualdade simples (sem filtros compostos interpolados).
+ */
+// deno-lint-ignore no-explicit-any
+async function findIntent(admin: any, reference: string) {
+  const byKey = await admin
+    .from('payment_intents')
+    .select('*')
+    .eq('idempotency_key', reference)
+    .maybeSingle();
+  if (byKey.data) return byKey.data;
+
+  const byProviderRef = await admin
+    .from('payment_intents')
+    .select('*')
+    .eq('provider_ref', reference)
+    .maybeSingle();
+  if (byProviderRef.data) return byProviderRef.data;
+
+  const byMerchantTxn = await admin
+    .from('payment_intents')
+    .select('*')
+    .contains('metadata', { merchant_txn: reference })
+    .maybeSingle();
+  return byMerchantTxn.data;
+}
+
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
@@ -60,12 +89,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ ok: true, duplicate: true }, 200);
   }
 
-  // ---- Localiza a intenção (via idempotency_key = reference) ----
-  const { data: intent } = await admin
-    .from('payment_intents')
-    .select('*')
-    .eq('idempotency_key', event.reference)
-    .maybeSingle();
+  // ---- Localiza a intenção ----
+  // `reference` pode ser a idempotency_key (mock) ou a referência curta de
+  // merchant (AppyPay: `merchantTransactionId` guardado em metadata já no
+  // insert, antes de o PSP ser contactado).
+  const intent = await findIntent(admin, event.reference);
 
   if (!intent) return json({ ok: false, reason: 'intent_not_found' }, 200);
 

@@ -1,9 +1,11 @@
 // Registo de providers PSP (Deno).
 //
 // `mock` está implementado de ponta a ponta (sandbox / testes).
-// `wipay` / `appypay` / `paypay` / `stripe` são stubs explícitos: falham com
-// erro claro até haver credenciais e endpoints reais ligados — nunca fingem
-// sucesso, para não creditarmos saldo sem dinheiro real.
+// `appypay` está implementado para depósitos automáticos (GPO/REF) e só
+// funciona com credenciais — sem elas responde `appypay_not_configured`.
+// `wipay` / `stripe` são stubs explícitos: falham com erro claro até haver
+// credenciais e endpoints reais ligados — nunca fingem sucesso, para não
+// creditarmos saldo sem dinheiro real.
 
 import type {
   CreateCheckoutParams,
@@ -15,6 +17,7 @@ import type {
   PSPProvider,
   PaymentProviderId,
 } from './types.ts';
+import { appypayProvider } from './appypay.ts';
 
 // --------------------------- utilitários HMAC ---------------------------
 
@@ -131,12 +134,13 @@ function notConfigured(id: string): PSPProvider {
 
 /** WiPay é o provider-alvo para Angola; ligar endpoints+credenciais aqui. */
 const wipayProvider: PSPProvider = notConfigured('wipay');
-const appypayProvider: PSPProvider = notConfigured('appypay');
 const stripeProvider: PSPProvider = notConfigured('stripe');
 
 const REGISTRY: Record<string, PSPProvider> = {
   mock: mockProvider,
   wipay: wipayProvider,
+  // Implementado em `appypay.ts`; sem APPYPAY_CLIENT_ID/SECRET responde
+  // `appypay_not_configured` (nunca fingindo sucesso).
   appypay: appypayProvider,
   stripe: stripeProvider,
 };

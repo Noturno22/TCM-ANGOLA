@@ -76,12 +76,21 @@
   `update_tournament`/`invite_to_tournament` (ambas `security definer`, cliente
   continua sem escrever em `tournaments`), convite `tournament_invite` com deep
   link para o torneio a partir da lista de notificações.
-- **Dívidas conhecidas**: PSP automático (WiPay/AppyPay/Stripe).
+- **Feito**: **PSP automático com AppyPay** para depósitos AOA (`I21`) —
+  adaptador `_shared/payments/appypay.ts` (OAuth2 + `POST /v2.0/charges`;
+  `gpo` Multicaixa Express e `ref` entidade/referência), webhook **sem
+  assinatura** validado por reconsulta `GET /charges/{id}` em `psp-webhook`,
+  lookup da intenção por `metadata.merchant_txn`, e UI em `DepositScreen`
+  (bloco "Depósito automático" + cartão pendente com polling de 5 s e retoma
+  ao reabrir). Coexiste com o fluxo manual; levantamentos continuam manuais;
+  sem credenciais responde `appypay_not_configured`.
+- **Dívidas conhecidas**: PSP WiPay e Stripe (stubs); credenciais AppyPay
+  sandbox/produção por configurar.
 
 ## F7 — QA, e2e, release e docs · em curso
 
 - **Feito**:
-  - Testes unitários **137/137** (13 ficheiros); typecheck limpo; lint **0 erros**.
+  - Testes unitários **145/145** (14 ficheiros); typecheck limpo; lint **0 erros**.
   - e2e web **offline 8/8** (`e2e/`) e **online 3/3** (`e2e/online/`: 2
     contextos + depósito/levantamento manuais, contra o Supabase real).
   - CI (`.github/workflows/ci.yml`).

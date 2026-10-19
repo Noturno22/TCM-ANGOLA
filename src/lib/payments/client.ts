@@ -93,6 +93,10 @@ export interface CreateDepositParams {
   provider: PaymentProviderId;
   idempotencyKey: string;
   returnUrl?: string;
+  /** Método automático do provider (ex.: `gpo` | `ref` na AppyPay). */
+  method?: string;
+  /** Telemóvel Multicaixa Express (AppyPay GPO), dígitos livres. */
+  customerPhone?: string;
 }
 
 /**
@@ -116,12 +120,19 @@ export async function createDeposit(params: CreateDepositParams): Promise<Paymen
       provider: params.provider,
       idempotencyKey: params.idempotencyKey,
       returnUrl,
+      method: params.method,
+      customerPhone: params.customerPhone,
     },
   });
 
   if (error) throw new Error(error.message || 'Falha ao criar o depósito.');
   if (data && typeof data === 'object' && 'error' in data) {
-    throw new Error(String((data as { error: unknown }).error));
+    // Inclui o `detail` (mensagem vinda do PSP) para depuração — o chamador
+    // decide o que mostrar ao utilizador.
+    const { error: code, detail } = data as { error: unknown; detail?: unknown };
+    throw new Error(
+      typeof detail === 'string' && detail ? `${String(code)}: ${detail}` : String(code),
+    );
   }
   return data as PaymentIntentRow;
 }

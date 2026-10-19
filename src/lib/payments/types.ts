@@ -16,6 +16,9 @@ export type PaymentProviderId = 'mock' | 'wipay' | 'appypay' | 'paypay' | 'strip
 
 export type IntentStatus = 'created' | 'pending' | 'paid' | 'failed' | 'expired' | 'refunded';
 
+/** Métodos de cobrança automáticos (AppyPay): Express (push) ou referência. */
+export type AutoDepositMethod = 'gpo' | 'ref';
+
 export type AccountStatus = 'active' | 'frozen' | 'closed';
 
 export type LedgerEntryType = 'debit' | 'credit';

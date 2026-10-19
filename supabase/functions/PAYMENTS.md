@@ -66,6 +66,9 @@ supabase secrets set --project-ref <REF> \
   PAYMENTS_DEFAULT_PROVIDER=mock \
   PAYMENTS_RETURN_URL=http://localhost:3000 \
   PAYOUTS_ENABLED=false
+# AppyPay (depósitos automáticos) — ver secção "Ligar um PSP real":
+#   APPYPAY_ENV, APPYPAY_CLIENT_ID, APPYPAY_CLIENT_SECRET,
+#   APPYPAY_PAYMENT_METHOD_GPO, APPYPAY_PAYMENT_METHOD_REF
 ```
 
 ## Deploy
@@ -97,11 +100,61 @@ Estados: `requested → processing → paid` (ou `failed` / `rejected`).
 - Funções: `PAYMENTS_DEFAULT_PROVIDER`.
 - **Nunca** ativar `mock` em produção.
 
-## Ligar um PSP real (ex.: WiPay)
+## Ligar um PSP real
+
+### AppyPay (implementado — depósitos automáticos)
+
+Adaptador `_shared/payments/appypay.ts` (registado em `providers.ts`):
+
+| Método | O que faz |
+|---|---|
+| `gpo` | Multicaixa Express — envia um pedido para o telemóvel (`customerPhone`). |
+| `ref` | Entidade + referência a pagar em ATM/Internet Banking (geradas por nós, com recuo automático se a AppyPay gerar a referência). |
+
+Segredos (sem eles a função responde `appypay_not_configured`):
+
+```bash
+supabase secrets set --project-ref <REF> \
+  APPYPAY_ENV=sandbox \
+  APPYPAY_CLIENT_ID=<client-id> \
+  APPYPAY_CLIENT_SECRET=<client-secret> \
+  APPYPAY_PAYMENT_METHOD_GPO=<GPO_uuid> \
+  APPYPAY_PAYMENT_METHOD_REF=<REF_uuid>
+# opcionais (defaults são os públicos da AppyPay):
+#   APPYPAY_RESOURCE_ID   (resource do merchant por ambiente)
+#   APPYPAY_BASE_URL      (https://gwy-api-tst.appypay.co.ao/v2.0 | .../gwy-api...)
+#   APPYPAY_TOKEN_URL     (login.microsoftonline.com/<tenant>/oauth2/token)
+```
+
+Passos no portal (sandbox: `https://app-tst.appypay.co.ao`, produção:
+`https://app.appypay.co.ao`):
+
+1. **Definições → Credenciais de API**: gerar `Client ID` + `Client Secret`.
+2. **Aplicações**: criar a aplicação **GPO** e a **REF** e copiar a *API Key*
+   (`GPO_…` / `REF_…`) para `APPYPAY_PAYMENT_METHOD_*`.
+3. **Aplicação → Programador → Webhook**: ativar e apontar para
+   `<SUPABASE_URL>/functions/v1/psp-webhook?provider=appypay` (método POST).
+   A AppyPay **não assina** os webhooks — a validação é a reconsulta
+   `GET /v2.0/charges/{id}` feita dentro de `psp-webhook`.
+4. Cliente: `NEXT_PUBLIC_PAYMENTS_ENABLED_PROVIDERS` tem de incluir `appypay`.
+
+Notas de integração (porquês no código):
+
+- `merchantTransactionId` é limitado a **15 caracteres alfanuméricos** →
+  derivado da `idempotency_key` (`merchantTxnFor`) e guardado no insert em
+  `payment_intents.metadata.merchant_txn`, para o webhook localizar a intenção
+  mesmo antes de `provider_ref` existir.
+- Montantes: AOA com 2 casas (`amountMinor / 100`).
+- Estado `Pending` → evento `payment.pending` (ignorado; só `paid` credita).
+- Sandbox: telemóvel `900000000` = sucesso, `999999999` = cancelado,
+  `900000001` = saldo insuficiente, `900000002` = valor inválido.
+- **Levantamentos**: `supportsPayouts: false` — continuam manuais.
+
+### Outros providers
 
 Implementar o adaptador em `_shared/payments/providers.ts` (`createCheckout` +
 `verifyAndParse`) e ativá-lo. Sem credenciais o adaptador falha com
-`wipay_not_configured` — nunca finge sucesso.
+`wipay_not_configured` / `stripe_not_configured` — nunca finge sucesso.
 
 ## Limitação do `mock` (sandbox)
 

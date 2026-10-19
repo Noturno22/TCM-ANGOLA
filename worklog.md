@@ -1384,3 +1384,29 @@ Stage Summary:
 Unresolved issues / próximas fases:
 - Verificação visual das alterações de layout não foi possível neste ambiente.
 - PSP automático continua pendente (PROPOSTAS).
+
+---
+
+Task ID: appypay-psp
+Agent: Main Builder
+Task: PSP automático — AppyPay para depósitos AOA (Express GPO + referência)
+
+Contexto/verificação:
+- Pedido do SAMA: depósitos automáticos com AppyPay; sem credenciais → tudo por env/secrets (configurável depois); os depósitos/levantamentos manuais com comprovativo continuam como fallback.
+- Investigação (Freshdesk oficial AppyPay): auth Azure AD v1 form-urlencoded (`grant_type=client_credentials` + `resource`) — sandbox `login.microsoftonline.com/appypaydev.onmicrosoft.com/oauth2/token` (resource `2aed7612-de64-46b5-9e59-1f48f8902d14`), produção `appypay.co.ao` (resource `bee57785-7a19-4f1c-9c8d-aa03f2f0e333`); base sandbox `gwy-api-tst.appypay.co.ao/v2.0`, produção `gwy-api.appypay.co.ao/v2.0`; `POST /charges` com `merchantTransactionId` ≤15 alfanuméricos; **webhook sem assinatura** → revalidar por `GET /charges/{id}` (artigos 501000385501–504).
+
+Work Log:
+- `_shared/payments/appypay.ts` (novo): `config()` (env vars `APPYPAY_*`, sem segredos → erro `appypay_not_configured`), `getAccessToken()` (cache com refresh 60 s antes de expirar), `merchantTxnFor()` (`'T' + 2×FNV-1a base36` = 15 alnum determinístico), `normalizePhone()` (`9…` → `2449…`), `createCheckout()` (GPO com `customerPhone` + expiração 15 min; REF com `referenceNumber` `'2'+8 dígitos`, `dueDate` +72 h e 3 candidatos de payload — recuo de `paymentInfo` só em 4xx, nunca duplica), `verifyAndParse()` (reconsulta por `id`, `eventId = appypay_<id>_<status>`), `mapStatus()` (success|paid|completed → `payment.paid`; pending → `payment.pending`; expir → `payment.expired`; senão `payment.failed`), `supportsPayouts: false`.
+- Registo em `providers.ts` (Deno) com o adaptador real; `types.ts` (server + cliente) ganhou `method?`/`customerPhone?` em `CreateCheckoutParams`/`CreateDepositParams` e o novo evento `'payment.pending'` (webhook responde 200 sem efeito); `AutoDepositMethod = 'gpo' | 'ref'`.
+- `create-deposit-intent`: aceita `method`/`customerPhone`, grava `metadata.merchant_txn` **no insert** (antes da chamada AppyPay) para o webhook resolver sem corrida; `psp-webhook`: `findIntent()` por `idempotency_key` → `provider_ref` → `.contains('metadata',{merchant_txn})`.
+- Cliente: `src/lib/payments/auto.ts` (novo) — `normalizeAutoPhone`, `parseCheckoutUrl`, `startAutoDeposit`, `fetchIntentById`, `findResumableAutoIntent`, `autoErrorMessage` (mapa PT) + `auto.test.ts` (8 testes); `client.ts` envia `method`/`customerPhone` e inclui o `detail` do PSP no erro.
+- UI `DepositScreen.tsx`: bloco "Depósito automático (AppyPay)" (GPO/REF, input `Telemóvel Multicaixa Express`, `Pagar com AppyPay`), cartão pendente (entidade/referência ou instrução Express; `Já paguei`/`Copiar`/`Cancelar`), polling de 5 s, retoma uma vez ao reabrir o ecrã (`findResumableAutoIntent`); manual oculto enquanto há auto em curso. Bloco só aparece se `appypay` estiver em `NEXT_PUBLIC_PAYMENTS_ENABLED_PROVIDERS` e a moeda for AOA. Rótulos exigidos pelo e2e preservados.
+- Docs/config: `DECISIONS.md` **I21** (+ PROPOSTAS revistas), `PROGRESS.md` (F6/F7), `RELEASE.md` (secrets `APPYPAY_*` + webhook do portal), `PAYMENTS.md` (secção AppyPay completa: segredos, portal, notas, telemóveis mágicos), `.env.example` (doc de `appypay`), `.env` (`NEXT_PUBLIC_PAYMENTS_ENABLED_PROVIDERS=mock,appypay`).
+
+Stage Summary:
+- **Unit**: 145/145 (14 ficheiros; +8: `auto.test.ts`). **Typecheck**: limpo. **Lint**: 0 erros (6 avisos pré-existentes). `deno check` ✓ nos 4 ficheiros Deno alterados.
+- Depósitos automáticos só exigem `supabase secrets set APPYPAY_*` + webhook no portal + deploy de `create-deposit-intent`/`psp-webhook`.
+
+Unresolved issues / próximas fases:
+- Sem credenciais não há validação ao vivo (sandbox AppyPay por configurar); levantamentos continuam manuais (`supportsPayouts: false`).
+- WiPay/Stripe seguem como stubs (PROPOSTAS).
