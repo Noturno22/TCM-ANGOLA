@@ -63,7 +63,7 @@ export default function ChallengeScreen() {
   const addCoins = useProfile((s) => s.addCoins);
   const { width } = useWindowDimensions();
   const boardSize = Math.min(
-    boardGeometry.gridSizePresets.md,
+    boardGeometry.gridSizePresets.lg,
     width - spacing[4] * 2 - boardGeometry.framePadding * 2,
   );
 
@@ -247,7 +247,7 @@ export default function ChallengeScreen() {
               <Badge label={t('challenge.victory_in', { n: todayPuzzle.mateIn })} color="muted" />
               {isTodaySolved ? <Badge label={`✓ ${t('challenge.solved')}`} color="p1" /> : null}
             </View>
-            <TiraHeading level="h2" numberOfLines={2}>
+            <TiraHeading level="h2" numberOfLines={2} style={{ letterSpacing: 0.675, lineHeight: 33.75 }}>
               {todayPuzzle.title}
             </TiraHeading>
             <TiraText size="xs" variant="muted">
@@ -310,7 +310,7 @@ export default function ChallengeScreen() {
               >
                 <TiraText style={{ fontSize: 44 }}>✓</TiraText>
               </View>
-              <TiraHeading level="h2" color="p1">
+              <TiraHeading level="h3" color="p1" style={{ lineHeight: 20.25 }}>
                 {t('challenge.solved')}
               </TiraHeading>
               <TiraText size="xs" variant="gold" style={{ marginTop: spacing[1] }}>
@@ -355,7 +355,7 @@ export default function ChallengeScreen() {
               }}
             >
               <TiraText style={{ fontSize: 48 }}>✕</TiraText>
-              <TiraHeading level="h3" color="p2" style={{ marginTop: spacing[2] }}>
+              <TiraHeading level="h3" color="p2" style={{ marginTop: spacing[2], lineHeight: 20.25 }}>
                 {t('challenge.status.wrong')}
               </TiraHeading>
             </View>
@@ -407,7 +407,7 @@ export default function ChallengeScreen() {
 
       {/* Estatísticas de puzzles */}
       <TiraCard>
-        <TiraHeading level="h3" style={{ marginBottom: spacing[3] }}>
+        <TiraHeading level="h3" style={{ marginBottom: spacing[3], fontSize: 16, letterSpacing: -0.4, lineHeight: 24, fontWeight: '600' }}>
           {t('challenge.stats')}
         </TiraHeading>
         <View style={{ flexDirection: 'row' }}>
@@ -423,7 +423,7 @@ export default function ChallengeScreen() {
 
       {/* Lista de todos os puzzles */}
       <View style={{ gap: spacing[2] }}>
-        <TiraHeading level="h3">{t('challenge.all')}</TiraHeading>
+        <TiraHeading level="h3" style={{ fontSize: 16, letterSpacing: -0.4, lineHeight: 24, fontWeight: '600' }}>{t('challenge.all')}</TiraHeading>
         {PUZZLES.map((p) => (
           <PuzzleRow
             key={p.id}
@@ -468,7 +468,7 @@ function StatCol({
 }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', gap: 2 }}>
-      <TiraHeading level="h2" color={color}>
+      <TiraHeading level="h2" color={color} style={{ lineHeight: 36 }}>
         {value}
       </TiraHeading>
       <TiraText size="xs" variant="muted" style={{ textTransform: 'uppercase' }}>

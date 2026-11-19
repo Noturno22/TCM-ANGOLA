@@ -75,7 +75,7 @@ export function AgeGateSheet({ visible, onClose, onVerified }: AgeGateSheetProps
                 <TiraText style={{ fontSize: 22 }}>🛡️</TiraText>
               </View>
               <View style={{ flex: 1 }}>
-                <TiraHeading level="h3">Verificação de idade</TiraHeading>
+                <TiraHeading level="h3" style={{ fontSize: 22.5, letterSpacing: 0.5625, lineHeight: 31.5 }}>Verificação de idade</TiraHeading>
                 <TiraText size="xs" variant="muted">
                   Salas com aposta são só para maiores de 18 anos.
                 </TiraText>
@@ -116,7 +116,7 @@ export function AgeGateSheet({ visible, onClose, onVerified }: AgeGateSheetProps
                   backgroundColor: alpha(colors.surface, 0.6),
                   paddingHorizontal: spacing[3],
                   color: colors.text,
-                  fontSize: 15,
+                  fontSize: 15.75,
                 }}
               />
               <TiraText size="xs" variant="muted">

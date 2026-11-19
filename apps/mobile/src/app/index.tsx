@@ -1,437 +1,797 @@
 /**
- * Home — port reduzido do HomeScreen web: logo/título, saldo, cartão do
- * jogador (XP/nível/Elo), hint da próxima dificuldade, ações principais
- * (offline/2 jogadores/desafio/salas) e estatísticas rápidas.
+ * Home — port 1:1 do `HomeScreen` web: cabeçalho com sino/saldo, cartão do
+ * utilizador, banner do torneio, CTAs online/offline, desafio diário,
+ * atalhos, modos secundários, salas em destaque, estatísticas e tutorial.
  */
-import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import type { Difficulty } from '@tira/ai';
-import { Pressable, View } from 'react-native';
+import {
+  Bell,
+  Bot,
+  Building2,
+  Check,
+  ChevronRight,
+  Eye,
+  Flag,
+  Gamepad2,
+  Mountain,
+  Share2,
+  ShoppingBag,
+  Target,
+  Trophy,
+  UserPlus,
+  Users,
+  Waves,
+  X,
+  Zap,
+} from 'lucide-react-native';
+import type { ComponentType } from 'react';
+import { useState } from 'react';
+import { Pressable, Image, Text, View } from 'react-native';
+import { AdSlot } from '@/components/game/AdSlot';
+import {
+  BalancePill,
+  GameButton,
+  GameCard,
+  LevelAvatar,
+  SectionTitle,
+  XpBar,
+} from '@/components/game/ui';
 import { getTodayPuzzle } from '@/content';
-import { TiraCard, TiraHeading, TiraScreen, TiraText, alpha } from '@/components/tira';
-import { useT } from '@/lib/i18n/hook';
-import { getUnlockText, useProgression } from '@/store/progression';
-import { useProfile, xpProgress } from '@/store/profile';
-import { colors, radii, spacing, type ColorToken } from '@/theme';
+import { useChallenge } from '@/store/challenge';
+import { useNotifications } from '@/store/notifications';
+import { useProfile } from '@/store/profile';
+import { colors, radii, spacing, typography } from '@/theme';
+import { TiraScreen } from '@/components/tira';
+
+type IconType = ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+
+interface FeaturedRoom {
+  name: string;
+  players: string;
+  stake: number;
+  icon: IconType;
+}
+
+const FEATURED_ROOMS: FeaturedRoom[] = [
+  { name: 'Luanda', players: '32/50', stake: 100, icon: Building2 },
+  { name: 'Benguela', players: '18/40', stake: 50, icon: Waves },
+  { name: 'Huambo', players: '12/30', stake: 25, icon: Mountain },
+];
 
 export default function HomeScreen() {
-  const { t } = useT();
   const profile = useProfile();
-  const unlocked = useProgression((s) => s.unlocked);
-  const puzzle = getTodayPuzzle();
-  const reward = puzzle.mateIn === 2 ? 400 : 200;
-
-  const nextDiff: Difficulty | null = !unlocked.medium
-    ? 'medium'
-    : !unlocked.hard
-      ? 'hard'
-      : !unlocked.perfect
-        ? 'perfect'
-        : null;
+  const unread = useNotifications((s) => s.unread);
+  const [showTournamentBanner, setShowTournamentBanner] = useState(true);
 
   return (
-    <TiraScreen headerRight={<BalancePill coins={profile.coins} />}>
-      {/* Logo + título */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-        <TiraLogo />
-        <View style={{ flex: 1, gap: 2 }}>
-          <TiraHeading level="h3" numberOfLines={1}>
-            {t('app.title')}
-          </TiraHeading>
-          <TiraText size="xs" variant="muted">
-            {t('app.tagline')}
-          </TiraText>
-        </View>
-      </View>
-
-      {/* Cartão do utilizador → Perfil */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t('nav.profile')}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-          router.push('/profile');
-        }}
-        style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
-      >
-        <TiraCard glow="gold">
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[4] }}>
-            <LevelAvatar emoji="🦁" level={profile.level} />
-            <View style={{ flex: 1, gap: 2 }}>
-              <TiraText size="sm" weight="semibold">
-                {t('home.player_name')}
-              </TiraText>
-              <TiraText size="xs" variant="muted">
-                {t('home.level_elo', { level: profile.level, elo: profile.elo })}
-              </TiraText>
-              <XpBar xp={profile.xp} level={profile.level} />
-            </View>
-            <TiraText size="lg" variant="muted">
-              ›
-            </TiraText>
-          </View>
-        </TiraCard>
-      </Pressable>
-
-      {/* Hint da próxima dificuldade (progressão) */}
-      <TiraCard>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
-          <TiraText size="lg">{nextDiff ? '🔒' : '✅'}</TiraText>
-          <TiraText size="sm" variant={nextDiff ? 'muted' : 'p1'} style={{ flex: 1 }}>
-            {nextDiff ? getUnlockText(nextDiff) : t('home.all_unlocked')}
-          </TiraText>
-        </View>
-      </TiraCard>
-
-      {/* Ações principais */}
-      <View style={{ gap: spacing[2] }}>
-        <ActionRow
-          emoji="🤖"
-          title={t('home.offline')}
-          desc={t('home.offline.desc')}
-          tint="orange"
-          onPress={() => router.push('/offline')}
-        />
-        <ActionRow
-          emoji="👥"
-          title={t('mode.pvp')}
-          desc={t('mode.pvp.desc')}
-          tint="p1"
-          onPress={() => router.push('/offline')}
-        />
-        <ActionRow
-          emoji="🎯"
-          title={t('home.daily_challenge')}
-          desc={t('home.daily_challenge.meta', { difficulty: puzzle.difficulty, reward })}
-          tint="gold"
-          onPress={() => router.push('/challenge')}
-        />
-        <ActionRow
-          emoji="🏰"
-          title={t('home.campaign')}
-          desc={t('home.campaign.desc')}
-          tint="gold"
-          onPress={() => router.push('/campaign')}
-        />
-        <ActionRow
-          emoji="⚡"
-          title={t('home.lightning')}
-          desc={t('home.lightning.desc')}
-          tint="orange"
-          onPress={() => router.push('/lightning')}
-        />
-        <ActionRow
-          emoji="🎬"
-          title={t('home.replay')}
-          desc={t('home.replay.desc')}
-          tint="neutral"
-          onPress={() => router.push('/replay')}
-        />
-        <ActionRow
-          emoji="📤"
-          title={t('home.share')}
-          desc={t('home.share.desc')}
-          tint="neutral"
-          onPress={() => router.push('/share')}
-        />
-        <ActionRow
-          emoji="🌍"
-          title={t('nav.rooms')}
-          desc={t('rooms.subtitle')}
-          tint="neutral"
-          onPress={() => router.push('/rooms')}
-        />
-        <ActionRow
-          emoji="👁️"
-          title={t('home.watch')}
-          desc={t('home.watch.desc')}
-          tint="gold"
-          onPress={() => router.push('/watch')}
-        />
-        <ActionRow
-          emoji="📚"
-          title={t('home.tutorial')}
-          desc={t('home.tutorial.desc')}
-          tint="p1"
-          onPress={() => router.push('/tutorial')}
-        />
-        <ActionRow
-          emoji="📖"
-          title={t('settings.how_to_play')}
-          desc={t('home.how_to_play.desc')}
-          tint="orange"
-          onPress={() => router.push('/how-to-play')}
-        />
-      </View>
-
-      {/* Estatísticas rápidas */}
-      <TiraCard>
-        <TiraHeading level="h3" style={{ marginBottom: spacing[3] }}>
-          {t('home.stats')}
-        </TiraHeading>
-        <View style={{ flexDirection: 'row' }}>
-          <StatCol label={t('home.wins')} value={profile.wins} color="p1" />
-          <StatCol label={t('home.losses')} value={profile.losses} color="p2" />
-          <StatCol label={t('home.draws')} value={profile.draws} color="textMuted" />
-        </View>
-      </TiraCard>
-    </TiraScreen>
-  );
-}
-
-type ActionTint = 'orange' | 'p1' | 'gold' | 'neutral';
-
-const TINTS: Record<ActionTint, { border: string; icon: string }> = {
-  orange: { border: alpha(colors.orange, 0.4), icon: alpha(colors.orange, 0.2) },
-  p1: { border: alpha(colors.p1, 0.5), icon: alpha(colors.p1, 0.2) },
-  gold: { border: alpha(colors.gold, 0.4), icon: alpha(colors.gold, 0.2) },
-  neutral: { border: colors.border, icon: colors.surfaceAlt },
-};
-
-function ActionRow({
-  emoji,
-  title,
-  desc,
-  tint,
-  onPress,
-}: {
-  emoji: string;
-  title: string;
-  desc: string;
-  tint: ActionTint;
-  onPress: () => void;
-}) {
-  const c = TINTS[tint];
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={title}
-      onPress={() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-        onPress();
-      }}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing[4],
-        padding: spacing[4],
-        borderRadius: radii.cardLg,
-        borderWidth: 1,
-        borderColor: c.border,
-        backgroundColor: colors.surface,
-        opacity: pressed ? 0.85 : 1,
-      })}
+    <TiraScreen
+      style={{ gap: spacing[6] }}
+      backgroundImage={require('@/assets/images/Background.png')}
     >
-      <View
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: radii.xl,
-          backgroundColor: c.icon,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <TiraText style={{ fontSize: 22 }}>{emoji}</TiraText>
-      </View>
-      <View style={{ flex: 1, gap: 2 }}>
-        <TiraHeading level="h3" numberOfLines={1}>
-          {title}
-        </TiraHeading>
-        <TiraText size="xs" variant="muted" numberOfLines={2}>
-          {desc}
-        </TiraText>
-      </View>
-      <TiraText size="lg" variant="muted">
-        ›
-      </TiraText>
-    </Pressable>
-  );
-}
-
-function StatCol({ label, value, color }: { label: string; value: number; color: ColorToken }) {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', gap: 2 }}>
-      <TiraHeading level="h2" color={color}>
-        {value}
-      </TiraHeading>
-      <TiraText size="xs" variant="muted" align="center">
-        {label}
-      </TiraText>
-    </View>
-  );
-}
-
-function BalancePill({ coins }: { coins: number }) {
-  const { t } = useT();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={t('wallet.title')}
-      onPress={() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-        router.push('/wallet');
-      }}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing[2],
-        backgroundColor: colors.surfaceAlt,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: radii.lg,
-        paddingHorizontal: spacing[3],
-        paddingVertical: spacing[2],
-        opacity: pressed ? 0.85 : 1,
-      })}
-    >
-      <TiraText size="sm">🪙</TiraText>
-      <TiraText size="sm" weight="semibold">
-        {coins.toLocaleString('pt-PT')}
-      </TiraText>
-      <TiraText size="xs" variant="muted">
-        KZ
-      </TiraText>
-    </Pressable>
-  );
-}
-
-function XpBar({ xp, level }: { xp: number; level: number }) {
-  const { t } = useT();
-  const progress = xpProgress(xp, level);
-  return (
-    <View style={{ gap: spacing[1], marginTop: spacing[2] }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <TiraText size="xs" variant="muted">{`${t('home.level')} ${level}`}</TiraText>
-        <TiraText size="xs" variant="muted">
-          {`${progress.current.toLocaleString('pt-PT')} / ${progress.needed.toLocaleString('pt-PT')} XP`}
-        </TiraText>
-      </View>
-      <View
-        style={{
-          height: 8,
-          borderRadius: radii.pill,
-          backgroundColor: colors.surfaceAlt,
-          overflow: 'hidden',
-        }}
-      >
-        <View
-          style={{
-            width: `${progress.pct}%`,
-            height: '100%',
-            backgroundColor: colors.p1,
-            borderRadius: radii.pill,
-          }}
+      {/* Cabeçalho com logo + saldo */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 2 }}>
+        <Image
+          source={require('@/assets/images/logoh.png')}
+          resizeMode="contain"
+          accessibilityLabel="Tira o Coco do Meio"
+          style={{ width: 138, height: 46 }}
         />
-      </View>
-    </View>
-  );
-}
-
-function LevelAvatar({ emoji, level }: { emoji: string; level: number }) {
-  return (
-    <View style={{ width: 48, height: 48 }}>
-      <View
-        style={{
-          width: 48,
-          height: 48,
-          borderRadius: radii.pill,
-          backgroundColor: colors.surfaceAlt,
-          borderWidth: 2,
-          borderColor: alpha(colors.gold, 0.6),
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <TiraText style={{ fontSize: 22 }}>{emoji}</TiraText>
-      </View>
-      <View
-        style={{
-          position: 'absolute',
-          bottom: -4,
-          right: -4,
-          minWidth: 20,
-          height: 20,
-          borderRadius: radii.pill,
-          backgroundColor: colors.gold,
-          borderWidth: 1,
-          borderColor: colors.bg,
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingHorizontal: 4,
-        }}
-      >
-        <TiraText size="xs" weight="bold" variant="inverse">
-          {level}
-        </TiraText>
-      </View>
-    </View>
-  );
-}
-
-/** Mini-logo 3×3 (grelha p1/surf/p2 com alvo dourado ao centro). */
-function TiraLogo({ size = 40 }: { size?: number }) {
-  const cell = (size - 2) / 3; // gap de 1 entre células
-  const cells: ('p1' | 'surfaceAlt' | 'p2')[] = [
-    'p1',
-    'p1',
-    'p1',
-    'surfaceAlt',
-    'surfaceAlt',
-    'surfaceAlt',
-    'p2',
-    'p2',
-    'p2',
-  ];
-  return (
-    <View
-      style={{
-        width: size,
-        height: size,
-        borderRadius: radii.lg,
-        borderWidth: 2,
-        borderColor: colors.gold,
-        overflow: 'hidden',
-        backgroundColor: colors.border,
-      }}
-    >
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 1 }}>
-        {cells.map((c, i) => (
-          <View
-            key={i}
-            style={{
-              width: cell,
-              height: cell,
-              backgroundColor: colors[c],
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Notificações"
+            onPress={() => router.push('/notifications')}
+            style={({ pressed }) => ({
+              width: 48,
+              height: 48,
+              borderRadius: radii.pill,
+              backgroundColor: pressed ? colors.surface : colors.surfaceAlt,
+              borderWidth: 1,
+              borderColor: colors.border,
               alignItems: 'center',
               justifyContent: 'center',
-            }}
+            })}
           >
-            {i === 4 ? (
+            <Bell size={20} color={colors.text} />
+            {unread > 0 ? (
               <View
                 style={{
-                  width: cell * 0.55,
-                  height: cell * 0.55,
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  minWidth: 18,
+                  height: 18,
+                  paddingHorizontal: 4,
                   borderRadius: radii.pill,
-                  borderWidth: 1.5,
-                  borderColor: colors.gold,
+                  backgroundColor: colors.p2,
+                  borderWidth: 2,
+                  borderColor: colors.bg,
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
+                <Text
+                  style={{
+                    color: colors.white,
+                    fontSize: 10,
+                    fontWeight: typography.fontWeight.bold,
+                    lineHeight: 12,
+                    fontFamily: typography.fontFamily.body,
+                  }}
+                >
+                  {unread > 9 ? '9+' : unread}
+                </Text>
+              </View>
+            ) : null}
+          </Pressable>
+          <BalancePill coins={profile.coins} onClick={() => router.push('/wallet')} />
+        </View>
+      </View>
+
+      {/* Cartão do utilizador */}
+      <GameCard glow="gold" style={{ padding: spacing[4] }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[4] }}>
+          <LevelAvatar name="Jogador" level={profile.level} size="md" online />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], marginBottom: 4 }}>
+              <Text
+                numberOfLines={1}
+                style={{
+                  fontSize: 18,
+                  fontWeight: typography.fontWeight.semibold,
+                  color: colors.text,
+                  fontFamily: typography.fontFamily.body,
+                  flexShrink: 1,
+                }}
+              >
+                Jogador
+              </Text>
+              <View
+                style={{
+                  paddingHorizontal: spacing[2],
+                  paddingVertical: 2,
+                  borderRadius: radii.md,
+                  backgroundColor: alphaP1,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: typography.fontWeight.medium,
+                    color: colors.p1,
+                    fontFamily: typography.fontFamily.body,
+                  }}
+                >
+                  Online
+                </Text>
+              </View>
+            </View>
+            <Text
+              style={{
+                fontSize: 13.5,
+                color: colors.textMuted,
+                marginBottom: 10,
+                fontFamily: typography.fontFamily.body,
+              }}
+            >
+              Nível {profile.level} · Elo {profile.elo}
+            </Text>
+            <XpBar xp={profile.xp} level={profile.level} />
+          </View>
+        </View>
+      </GameCard>
+
+      {/* Banner do torneio semanal */}
+      {showTournamentBanner ? (
+        <View
+          style={{
+            position: 'relative',
+            borderRadius: radii.cardLg,
+            overflow: 'hidden',
+            backgroundColor: colors.surface,
+            borderWidth: 1,
+            borderColor: alphaGold30,
+            padding: spacing[4],
+          }}
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Fechar banner"
+            onPress={() => setShowTournamentBanner(false)}
+            style={{
+              position: 'absolute',
+              top: 10,
+              right: 10,
+              width: 48,
+              height: 48,
+              borderRadius: radii.pill,
+              backgroundColor: alphaBg60,
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1,
+            }}
+          >
+            <X size={16} color={colors.textMuted} />
+          </Pressable>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[4] }}>
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: radii.xl,
+                backgroundColor: alphaGold12,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Trophy size={24} color={colors.gold} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text
+                style={{
+                  fontSize: 11,
+                  letterSpacing: 0.55,
+                  textTransform: 'uppercase',
+                  color: colors.gold,
+                  fontWeight: typography.fontWeight.semibold,
+                  fontFamily: typography.fontFamily.body,
+                }}
+              >
+                Torneio Semanal
+              </Text>
+              <Text
+                style={{
+                  fontFamily: typography.fontFamily.display,
+                  fontSize: 27,
+                  letterSpacing: 0.54,
+                  lineHeight: 27,
+                  marginTop: 4,
+                  color: colors.text,
+                }}
+              >
+                PRÉMIO: 50.000 KZ
+              </Text>
+              <Text
+                style={{
+                  fontSize: 13.5,
+                  color: colors.textMuted,
+                  marginTop: 4,
+                  fontFamily: typography.fontFamily.body,
+                }}
+              >
+                Inscrições abertas • Eliminatória simples
+              </Text>
+            </View>
+          </View>
+          <GameButton
+            variant="primary"
+            style={{ width: '100%', height: 48, marginTop: spacing[4] }}
+            onPress={() => router.push('/rooms')}
+          >
+            Participar agora
+          </GameButton>
+        </View>
+      ) : null}
+
+      {/* Google Ads — banner topo */}
+      <AdSlot format="banner-top" />
+
+      {/* CTAs principais: JOGAR ONLINE / JOGAR OFFLINE */}
+      <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+        <GameButton
+          variant="primary"
+          style={{
+            flex: 1,
+            height: 'auto',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            justifyContent: 'flex-start',
+            gap: spacing[3],
+            padding: spacing[4],
+          }}
+          onPress={() => router.push('/rooms')}
+        >
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: radii.xl,
+              backgroundColor: alphaBg20,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Users size={20} color={colors.primaryForeground} />
+          </View>
+          <View>
+            <Text
+              style={{
+                fontFamily: typography.fontFamily.display,
+                fontSize: 22.5,
+                letterSpacing: 0.45,
+                lineHeight: 22.5,
+                color: colors.primaryForeground,
+              }}
+            >
+              JOGAR ONLINE
+            </Text>
+            <Text
+              style={{
+                fontSize: 13.5,
+                marginTop: 4,
+                color: colors.primaryForeground,
+                opacity: 0.9,
+                fontFamily: typography.fontFamily.body,
+              }}
+            >
+              Jogadores em tempo real
+            </Text>
+          </View>
+        </GameButton>
+
+        <GameButton
+          variant="outline"
+          style={{
+            flex: 1,
+            height: 'auto',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            justifyContent: 'flex-start',
+            gap: spacing[3],
+            padding: spacing[4],
+          }}
+          onPress={() => router.push('/offline')}
+        >
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: radii.xl,
+              backgroundColor: colors.surfaceAlt,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Bot size={20} color={colors.gold} />
+          </View>
+          <View>
+            <Text
+              style={{
+                fontFamily: typography.fontFamily.display,
+                fontSize: 22.5,
+                letterSpacing: 0.45,
+                lineHeight: 22.5,
+                color: colors.text,
+              }}
+            >
+              JOGAR OFFLINE
+            </Text>
+            <Text
+              style={{
+                fontSize: 13.5,
+                marginTop: 4,
+                color: colors.textMuted,
+                fontFamily: typography.fontFamily.body,
+              }}
+            >
+              Contra a IA ou um amigo
+            </Text>
+          </View>
+        </GameButton>
+      </View>
+
+      {/* Desafio Diário */}
+      <DailyChallengeCard />
+
+      {/* Atalhos rápidos */}
+      <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+        <Shortcut icon={Users} label="Salas" onClick={() => router.push('/rooms')} />
+        <Shortcut icon={UserPlus} label="Amigos" onClick={() => router.push('/friends')} />
+        <Shortcut icon={ShoppingBag} label="Loja" onClick={() => router.push('/shop')} />
+        <Shortcut icon={Zap} label="Apostas" onClick={() => router.push('/wallet')} />
+        <Shortcut icon={Share2} label="Partilhar" onClick={() => router.push('/share')} />
+      </View>
+
+      {/* Modos secundários */}
+      <View style={{ flexDirection: 'row', gap: spacing[3] }}>
+        <FeatureCard
+          icon={Flag}
+          eyebrow="Modo História"
+          title="Campanha"
+          description="8 níveis progressivos"
+          onClick={() => router.push('/campaign')}
+        />
+        <FeatureCard
+          icon={Eye}
+          eyebrow="Modo Espetador"
+          title="Assistir IA vs IA"
+          description="Competição com comentário"
+          onClick={() => router.push('/watch')}
+        />
+      </View>
+
+      {/* Jogos em destaque */}
+      <View>
+        <SectionTitle
+          title="Salas em destaque"
+          action={
+            <Pressable accessibilityRole="button" onPress={() => router.push('/rooms')}>
+              <Text
+                style={{
+                  fontSize: 13.5,
+                  color: colors.gold,
+                  fontFamily: typography.fontFamily.body,
+                }}
+              >
+                Ver todas
+              </Text>
+            </Pressable>
+          }
+        />
+        <View style={{ gap: 10 }}>
+          {FEATURED_ROOMS.map((room) => {
+            const Icon = room.icon;
+            return (
+              <GameCard
+                key={room.name}
+                style={{
+                  padding: 14,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 14,
+                }}
+              >
                 <View
                   style={{
-                    width: cell * 0.18,
-                    height: cell * 0.18,
-                    borderRadius: radii.pill,
-                    backgroundColor: colors.gold,
+                    width: 44,
+                    height: 44,
+                    borderRadius: radii.xl,
+                    backgroundColor: colors.surfaceAlt,
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
-                />
+                >
+                  <Icon size={20} color={colors.gold} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: 15.75,
+                        fontWeight: typography.fontWeight.semibold,
+                        color: colors.text,
+                        fontFamily: typography.fontFamily.body,
+                        flexShrink: 1,
+                      }}
+                    >
+                      Sala {room.name}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color: colors.textMuted,
+                        fontFamily: typography.fontFamily.body,
+                      }}
+                    >
+                      {room.players}
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 13.5,
+                      color: colors.gold,
+                      fontWeight: typography.fontWeight.medium,
+                      marginTop: 2,
+                      fontFamily: typography.fontFamily.body,
+                    }}
+                  >
+                    Aposta: {room.stake} KZ
+                  </Text>
+                </View>
+                <GameButton
+                  variant="outline"
+                  style={{ height: 48, paddingHorizontal: 14 }}
+                  textStyle={{ fontSize: 13.5 }}
+                  onPress={() => router.push('/rooms')}
+                >
+                  Entrar
+                </GameButton>
+              </GameCard>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* Estatísticas rápidas */}
+      <GameCard style={{ padding: spacing[4] }}>
+        <SectionTitle title="As tuas estatísticas" />
+        <View style={{ flexDirection: 'row' }}>
+          <Stat label="Vitórias" value={profile.wins} color={colors.p1} />
+          <Stat label="Derrotas" value={profile.losses} color={colors.p2} />
+          <Stat label="Empates" value={profile.draws} color={colors.textMuted} />
+        </View>
+      </GameCard>
+
+      {/* Botão de tutorial para novos */}
+      {profile.totalMatches < 3 ? (
+        <GameButton
+          variant="outline"
+          style={{ width: '100%' }}
+          onPress={() => router.push('/tutorial')}
+        >
+          <Gamepad2 size={16} color={colors.text} style={{ marginRight: spacing[2] }} />
+          <Text
+            style={{
+              fontSize: 15.75,
+              fontWeight: typography.fontWeight.semibold,
+              color: colors.text,
+              fontFamily: typography.fontFamily.body,
+            }}
+          >
+            Aprender a jogar (Tutorial)
+          </Text>
+        </GameButton>
+      ) : null}
+    </TiraScreen>
+  );
+}
+
+const alphaP1 = 'rgba(16, 178, 90, 0.15)';
+const alphaGold30 = 'rgba(242, 176, 30, 0.30)';
+const alphaGold12 = 'rgba(242, 176, 30, 0.12)';
+const alphaBg60 = 'rgba(5, 10, 8, 0.60)';
+const alphaBg20 = 'rgba(5, 10, 8, 0.20)';
+
+function Shortcut({
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  icon: IconType;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onClick}
+      style={({ pressed }) => ({
+        flex: 1,
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing[2],
+        padding: spacing[3],
+        borderRadius: radii.cardLg,
+        backgroundColor: pressed ? colors.surfaceAlt : colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+        minHeight: 76,
+      })}
+    >
+      <Icon size={20} color={colors.gold} />
+      <Text
+        style={{
+          fontSize: 13.5,
+          color: colors.textMuted,
+          fontWeight: typography.fontWeight.medium,
+          fontFamily: typography.fontFamily.body,
+          textAlign: 'center',
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function Stat({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <View style={{ flex: 1, alignItems: 'center' }}>
+      <Text
+        style={{
+          fontFamily: typography.fontFamily.display,
+          fontSize: 33.75,
+          letterSpacing: 0.675,
+          lineHeight: 33.75,
+          color,
+        }}
+      >
+        {value}
+      </Text>
+      <Text
+        style={{
+          fontSize: 13.5,
+          color: colors.textMuted,
+          marginTop: 4,
+          fontFamily: typography.fontFamily.body,
+        }}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function FeatureCard({
+  icon: Icon,
+  eyebrow,
+  title,
+  description,
+  onClick,
+}: {
+  icon: IconType;
+  eyebrow: string;
+  title: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      onPress={onClick}
+      style={({ pressed }) => ({
+        flex: 1,
+        alignItems: 'flex-start',
+        gap: spacing[3],
+        borderRadius: radii.cardLg,
+        backgroundColor: pressed ? colors.surfaceAlt : colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+        padding: spacing[4],
+      })}
+    >
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: radii.xl,
+          backgroundColor: colors.surfaceAlt,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Icon size={20} color={colors.gold} />
+      </View>
+      <View style={{ minWidth: 0 }}>
+        <Text
+          style={{
+            fontSize: 11,
+            letterSpacing: 0.55,
+            textTransform: 'uppercase',
+            color: colors.textMuted,
+            fontWeight: typography.fontWeight.semibold,
+            fontFamily: typography.fontFamily.body,
+          }}
+        >
+          {eyebrow}
+        </Text>
+        <Text
+          style={{
+            fontFamily: typography.fontFamily.display,
+            fontSize: 20.25,
+            letterSpacing: 0.405,
+            lineHeight: 25.31,
+            marginTop: 2,
+            color: colors.text,
+          }}
+        >
+          {title}
+        </Text>
+        <Text
+          style={{
+            fontSize: 13.5,
+            color: colors.textMuted,
+            marginTop: 4,
+            fontFamily: typography.fontFamily.body,
+          }}
+        >
+          {description}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function DailyChallengeCard() {
+  const isSolved = useChallenge((s) => s.isSolved);
+  const puzzle = getTodayPuzzle();
+  const solved = isSolved(puzzle.id);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Desafio Diário"
+      onPress={() => router.push('/challenge')}
+      style={({ pressed }) => ({
+        width: '100%',
+        borderRadius: radii.cardLg,
+        backgroundColor: pressed ? colors.surfaceAlt : colors.surface,
+        borderWidth: 1,
+        borderColor: alphaGold30,
+        padding: spacing[4],
+      })}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+        <View
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: radii.xl,
+            backgroundColor: alphaGold12,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Target size={24} color={colors.gold} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], marginBottom: 4 }}>
+            <Text
+              style={{
+                fontSize: 11,
+                letterSpacing: 0.55,
+                textTransform: 'uppercase',
+                color: colors.gold,
+                fontWeight: typography.fontWeight.semibold,
+                fontFamily: typography.fontFamily.body,
+              }}
+            >
+              Desafio Diário
+            </Text>
+            {solved ? (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                  paddingHorizontal: spacing[2],
+                  paddingVertical: 2,
+                  borderRadius: radii.md,
+                  backgroundColor: 'rgba(16, 178, 90, 0.20)',
+                }}
+              >
+                <Check size={12} color={colors.p1} />
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: typography.fontWeight.semibold,
+                    color: colors.p1,
+                    fontFamily: typography.fontFamily.body,
+                  }}
+                >
+                  Resolvido
+                </Text>
               </View>
             ) : null}
           </View>
-        ))}
+          <Text
+            style={{
+              fontFamily: typography.fontFamily.display,
+              fontSize: 22.5,
+              letterSpacing: 0.45,
+              lineHeight: 28.13,
+              color: colors.text,
+            }}
+          >
+            {puzzle.title}
+          </Text>
+          <Text
+            style={{
+              fontSize: 13.5,
+              color: colors.textMuted,
+              marginTop: 2,
+              fontFamily: typography.fontFamily.body,
+            }}
+          >
+            {puzzle.difficulty} • +200 KZ • {solved ? 'Já resolvido' : 'Por resolver'}
+          </Text>
+        </View>
+        <ChevronRight size={20} color={colors.gold} />
       </View>
-    </View>
+    </Pressable>
   );
 }

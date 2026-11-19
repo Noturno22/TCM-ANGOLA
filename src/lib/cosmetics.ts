@@ -5,9 +5,8 @@
  * comprar = spendCoins(price) + ownCosmetic(id); equipar = equipCosmetic(kind, id).
  * Itens gratuitos têm `price: 0` e estão sempre em `ownedCosmetics`.
  *
- * Os FREE_* reproduzem o aspeto atual do jogo:
- * fundo branco #FFFFFF, linha #373435 (largura 7, round cap),
- * peças #00A859 (P1) / #ED3237 (P2).
+ * Os FREE_* são o aspeto por omissão: fundo "Arena Neon" (escuro, premium),
+ * linha #373435 (largura 7, round cap), peças #00A859 (P1) / #ED3237 (P2).
  *
  * NOTA: este ficheiro NÃO importa nenhum store (evita ciclos de dependência).
  */
@@ -53,6 +52,19 @@ const PIECE_SHADOW =
   'inset 0 -3px 6px rgba(0, 0, 0, 0.28), inset 0 3px 5px rgba(255, 255, 255, 0.3), 0 3px 8px rgba(0, 0, 0, 0.3)';
 
 export const BOARD_BACKGROUNDS: BoardBackgroundDef[] = [
+  {
+    id: 'bg_arena',
+    name: 'Arena Neon',
+    price: 0,
+    css: {
+      backgroundColor: '#080d0b',
+      backgroundImage:
+        'radial-gradient(120% 85% at 50% -10%, rgba(45,255,120,0.14), rgba(45,255,120,0) 55%),' +
+        'repeating-linear-gradient(45deg, rgba(255,255,255,0.035) 0 1px, rgba(255,255,255,0) 1px 14px),' +
+        'repeating-linear-gradient(-45deg, rgba(255,255,255,0.035) 0 1px, rgba(255,255,255,0) 1px 14px),' +
+        'linear-gradient(180deg, #0c1512 0%, #070c0a 60%, #050908 100%)',
+    },
+  },
   {
     id: 'bg_white',
     name: 'Branco Clássico',
@@ -177,8 +189,8 @@ export const PIECE_STYLES: PieceStyleDef[] = [
   },
 ];
 
-/** Id do fundo gratuito por omissão (aspeto atual: branco #FFFFFF). */
-export const FREE_BACKGROUND_ID = 'bg_white';
+/** Id do fundo gratuito por omissão (arena neon premium, ver `public/TelaGame.png`). */
+export const FREE_BACKGROUND_ID = 'bg_arena';
 /** Id do estilo de linha gratuito por omissão (aspeto atual: #373435, 7, round). */
 export const FREE_LINE_STYLE_ID = 'line_solid';
 /** Id do estilo de peça gratuito por omissão (aspeto atual: #00A859 / #ED3237). */

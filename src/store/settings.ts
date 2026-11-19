@@ -72,6 +72,17 @@ export const useSettings = create<SettingsStore>()(
     }),
     {
       name: 'tira-coco-settings',
+      version: 1,
+      // v0 → v1: fundo padrão passou a ser a "Arena Neon" (game premium);
+      // quem tinha o antigo default (branco) migra e passa a possuir o novo.
+      migrate: (persisted) => {
+        const s = persisted as Partial<Settings>;
+        if (s.backgroundId === 'bg_white') s.backgroundId = FREE_BACKGROUND_ID;
+        if (Array.isArray(s.ownedCosmetics) && !s.ownedCosmetics.includes(FREE_BACKGROUND_ID)) {
+          s.ownedCosmetics = [...s.ownedCosmetics, FREE_BACKGROUND_ID];
+        }
+        return s as Settings;
+      },
     },
   ),
 );

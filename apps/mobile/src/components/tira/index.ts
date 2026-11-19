@@ -5,6 +5,7 @@ export { alpha } from './alpha';
 export { TiraButton, type TiraButtonProps, type TiraButtonVariant, type TiraButtonSize } from './TiraButton';
 export { TiraCard, type TiraCardProps, type TiraCardGlow } from './TiraCard';
 export { TiraHeading, type TiraHeadingProps, type TiraHeadingLevel } from './TiraHeading';
+export { TiraLogo } from './TiraLogo';
 export { TiraScreen, type TiraScreenProps } from './TiraScreen';
 export {
   TiraText,
@@ -28,3 +29,4 @@ export {
   type MatchSide,
 } from './ResultBadge';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
+export { ConfirmSheet, type ConfirmSheetProps } from './ConfirmSheet';

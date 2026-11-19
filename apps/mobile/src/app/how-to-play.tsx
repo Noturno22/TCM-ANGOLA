@@ -72,7 +72,7 @@ function SectionCard({
           <TiraText size="sm">{emoji}</TiraText>
         </View>
         <View style={{ flex: 1, gap: spacing[2] }}>
-          <TiraHeading level="h3">{title}</TiraHeading>
+          <TiraHeading level="h3" style={{ letterSpacing: 0.506, lineHeight: 31.5 }}>{title}</TiraHeading>
           {children}
         </View>
       </View>
@@ -185,7 +185,7 @@ export default function HowToPlayScreen() {
 
       {/* Tabela resumo */}
       <TiraCard>
-        <TiraHeading level="h3" style={{ marginBottom: spacing[3] }}>
+        <TiraHeading level="h3" style={{ marginBottom: spacing[3], fontSize: 16, letterSpacing: -0.4, lineHeight: 24, fontWeight: '600' }}>
           {t('howto.summary')}
         </TiraHeading>
         <SummaryRow k="Tabuleiro" v="3×3 (9 casas)" />
@@ -287,7 +287,7 @@ function NumberedBoard() {
             borderColor: n === 5 ? alpha(colors.gold, 0.4) : colors.border,
           }}
         >
-          <TiraHeading level="h3" color={n === 5 ? 'gold' : 'textMuted'}>
+          <TiraHeading level="h3" color={n === 5 ? 'gold' : 'textMuted'} style={{ lineHeight: 31.5 }}>
             {n}
           </TiraHeading>
         </View>

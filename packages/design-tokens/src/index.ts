@@ -4,76 +4,116 @@
  * Pacote TypeScript puro, SEM dependências runtime. Todos os valores são
  * `as const` e portáveis (web + React Native + react-native-svg).
  *
- * Fontes de verdade:
- *  - docs/PROMPT_AGENTS.md §8.3 (paleta do mockup, docs/design/mockups.png):
- *    fundo `#050A08`, superfícies `#0B1A14`, esmeralda `#10B25A`,
- *    vermelho `#D7141B`, dourado `#F2B01E`, laranja `#E8830C`
- *  - src/app/globals.css (tema escuro — valores oklch convertidos para hex
- *    com precisão sRGB; opacidades alpha replicam as classes /10 /20 /30…)
- *  - src/components/game/Board.tsx (geometria do tabuleiro: presets
- *    280/360/440, padding de moldura 8, gap 4, célula arredondada 6,
- *    marca-alvo em 3 anéis, peças a ~35% da célula)
- *  - docs/spec/especificacao.md §17 + docs/PROMPT_AGENTS.md (fontes:
- *    display Bebas Neue, corpo Inter — self-hosted)
+ * FONTE DE VERDADE = a implementação web:
+ *  - src/app/globals.css (paleta oklch dark; convertida para hex sRGB com as
+ *    mesmas fórmulas OKLab usadas em apps/mobile/src/theme/tokens.ts)
+ *  - html { font-size: 18px } (globals.css:175) → todos os raios/tamanhos
+ *    `rem` da web são resolvidos à base 18px (ex.: --radius 0.75rem = 13.5px)
+ *  - src/components/game/Board.tsx (geometria e estados do tabuleiro:
+ *    viewBox 300, linhas 50→250 stroke 7, peças 40dp, sem moldura/padding)
+ *  - src/components/game/ui.tsx + src/components/ui/* (raios e textos)
+ *  - Fontes: Inter (corpo) + Bebas Neue (display), self-hosted
  */
 
 /* ============================================================
-   CORES
+   CONVERSÃO oklch → hex (fórmulas oficiais OKLab, D65, gamut clamp)
+   ============================================================ */
+
+function oklchToRgb(l: number, c: number, hDeg: number): [number, number, number] {
+  const hRad = (hDeg * Math.PI) / 180;
+  const a = c * Math.cos(hRad);
+  const b = c * Math.sin(hRad);
+
+  const l_ = l + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = l - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = l - 0.0894841775 * a - 1.291485548 * b;
+
+  const l3 = l_ ** 3;
+  const m3 = m_ ** 3;
+  const s3 = s_ ** 3;
+
+  const lr = 4.0767416621 * l3 - 3.3077115913 * m3 + 0.2309699292 * s3;
+  const gm = -1.2684380046 * l3 + 2.6097574011 * m3 - 0.3413193965 * s3;
+  const bl = -0.0041960863 * l3 - 0.7034186147 * m3 + 1.707614701 * s3;
+
+  const gamut = (x: number) =>
+    x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055;
+  const to255 = (x: number) => Math.round(Math.min(1, Math.max(0, gamut(x))) * 255);
+
+  return [to255(lr), to255(gm), to255(bl)];
+}
+
+/** oklch(L C H) → "#RRGGBB" (mesmo arredondamento do tema NativeWind). */
+function ok(l: number, c: number, h: number): string {
+  const [r, g, b] = oklchToRgb(l, c, h);
+  const hex = (v: number) => v.toString(16).padStart(2, '0');
+  return `#${hex(r)}${hex(g)}${hex(b)}`.toUpperCase();
+}
+
+/** rgba de uma cor oklch com alfa (ex.: gold / 0.14 → bg-gold/[0.14]). */
+function okA(l: number, c: number, h: number, a: number): string {
+  const [r, g, b] = oklchToRgb(l, c, h);
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+}
+
+/* ============================================================
+   CORES — tema escuro (:root do globals.css, o default da web)
    ============================================================ */
 
 export const colors = {
-  /* Fundo e superfícies (mockup §8.3 + globals.css dark) */
-  bg: '#050A08',
-  surface: '#0B1A14',
-  surfaceAlt: '#212523',
-  card: '#181B1A',
-  secondary: '#252A28',
+  /* Fundo e superfícies (--background / --surface / --surface-2 / --card) */
+  bg: ok(0.15, 0.012, 160),
+  surface: ok(0.195, 0.013, 160),
+  surfaceAlt: ok(0.245, 0.015, 160),
+  secondary: ok(0.245, 0.015, 160),
+  card: ok(0.2, 0.013, 160),
+  popover: ok(0.21, 0.013, 160),
 
-  /* Marca — ação/P1, CTA/P2, acentos (mockup §8.3) */
-  emerald: '#10B25A',
-  red: '#D7141B',
-  gold: '#F2B01E',
-  orange: '#E8830C',
+  /* Tabuleiro (--board-surface / --board-line) */
+  boardSurface: ok(0.21, 0.014, 160),
+  boardLine: ok(0.6, 0.012, 160),
 
-  /* Jogadores — aliases da web (--p1 / --p2) */
-  p1: '#10B25A',
-  p2: '#D7141B',
-  p1Soft: 'rgba(16, 178, 90, 0.15)',
-  p2Soft: 'rgba(215, 20, 27, 0.15)',
-  goldSoft: 'rgba(242, 176, 30, 0.15)',
-  orangeSoft: 'rgba(232, 131, 12, 0.15)',
+  /* Marca — gold é o único acento (--gold) */
+  gold: ok(0.83, 0.14, 85),
+  goldSoft: okA(0.83, 0.14, 85, 0.14),
 
-  /* Texto (globals.css dark --foreground / --muted-foreground) */
-  text: '#EEEFEC',
-  textMuted: '#8E908B',
-  textInverse: '#050A08',
+  /* Peças do jogo — semânticas (--p1 / --p2 / --orange) */
+  p1: ok(0.72, 0.16, 155),
+  p1Soft: okA(0.72, 0.16, 155, 0.16),
+  p2: ok(0.66, 0.2, 27),
+  p2Soft: okA(0.66, 0.2, 27, 0.16),
+  orange: ok(0.76, 0.15, 60),
+  orangeSoft: okA(0.76, 0.15, 60, 0.14),
+
+  /* Texto (--foreground / --muted-foreground / --primary-foreground) */
+  text: ok(0.97, 0.006, 160),
+  textMuted: ok(0.71, 0.012, 160),
+  textInverse: ok(0.18, 0.03, 80),
   onColor: '#FFFFFF',
 
-  /* Contornos, overlay e estados (globals.css dark --border/--input) */
-  border: 'rgba(255, 255, 255, 0.10)',
-  borderStrong: 'rgba(255, 255, 255, 0.12)',
-  overlay: 'rgba(0, 0, 0, 0.60)',
-  disabled: 'rgba(142, 144, 139, 0.40)',
-  disabledText: 'rgba(238, 239, 236, 0.30)',
-
-  /* Semânticos (globals.css --primary/--destructive/--ring, tema escuro) */
-  primary: '#10B25A',
-  primaryForeground: '#FFFFFF',
-  destructive: '#D7141B',
+  /* Semânticos (--primary = gold; --primary-foreground escuro sobre gold) */
+  primary: ok(0.83, 0.14, 85),
+  primaryForeground: ok(0.18, 0.03, 80),
+  destructive: ok(0.66, 0.2, 27),
   destructiveForeground: '#FFFFFF',
-  ring: '#10B25A',
+  ring: ok(0.83, 0.14, 85),
 
-  /* Alvos do tabuleiro — passos de alpha replicados do Board.tsx web
-     (bg-gold/20, bg-gold/30, border-gold/40, bg-p1/10, bg-p1/60,
-      bg-p1/5, bg-p2/10, ring-p2/40) */
-  boardSelectedCell: 'rgba(242, 176, 30, 0.20)',
-  boardWinningCell: 'rgba(242, 176, 30, 0.30)',
-  boardLastMoveDash: 'rgba(242, 176, 30, 0.40)',
-  boardValidCell: 'rgba(16, 178, 90, 0.10)',
-  boardValidDot: 'rgba(16, 178, 90, 0.60)',
-  boardLastMoveCell: 'rgba(16, 178, 90, 0.05)',
-  boardThreatCell: 'rgba(215, 20, 27, 0.10)',
-  boardThreatRing: 'rgba(215, 20, 27, 0.40)',
+  /* Contornos (--border / --input) */
+  border: 'rgba(255, 255, 255, 0.09)',
+  borderStrong: 'rgba(255, 255, 255, 0.1)',
+  input: 'rgba(255, 255, 255, 0.1)',
+  overlay: 'rgba(0, 0, 0, 0.6)',
+  disabled: 'rgba(155, 164, 159, 0.4)',
+  disabledText: 'rgba(242, 246, 244, 0.3)',
+
+  /* Estados do tabuleiro — classes do Board.tsx web
+     (bg-gold/[0.14] selecionada, bg-gold/[0.16] vitória, bg-p2/[0.08]
+      ameaça, border-[#373435]/30 origem tracejada, bg-p1 alvo) */
+  boardSelectedCell: okA(0.83, 0.14, 85, 0.14),
+  boardWinningCell: okA(0.83, 0.14, 85, 0.16),
+  boardThreatCell: okA(0.66, 0.2, 27, 0.08),
+  boardLastMoveDash: 'rgba(55, 52, 53, 0.3)',
+  boardValidDot: ok(0.72, 0.16, 155),
 
   /* Utilitários */
   white: '#FFFFFF',
@@ -82,7 +122,7 @@ export const colors = {
 } as const;
 
 /* ============================================================
-   ESPAÇAMENTO (grelha de 4 dp, escala tailwind)
+   ESPAÇAMENTO (grelha de 4 dp, escala tailwind — px, não escala com rem)
    ============================================================ */
 
 export const spacing = {
@@ -101,24 +141,27 @@ export const spacing = {
 } as const;
 
 /* ============================================================
-   RAIOS (globals.css --radius: 0.5rem = 8 + generosos 14–20 do mockup)
+   RAIOS — resolução web à base 18px (globals.css:
+   --radius: 0.75rem = 13.5px; --radius-sm/md/lg/xl/2xl = calc(...))
    ============================================================ */
 
 export const radii = {
   none: 0,
-  sm: 4,
-  md: 6,
-  lg: 8,
-  xl: 12,
-  card: 14,
-  cardLg: 16,
-  cardXl: 20,
+  sm: 9.5,
+  md: 11.5,
+  lg: 13.5,
+  xl: 17.5,
+  card: 17.5,
+  cardLg: 23.5,
+  cardXl: 27.5,
   pill: 999,
   full: 9999,
 } as const;
 
 /* ============================================================
-   TIPOGRAFIA (self-hosted: Bebas Neue display, Inter corpo)
+   TIPOGRAFIA (Inter corpo, Bebas Neue display — self-hosted)
+   fontSize = utilitários text-* da web resolvidos à base 18px
+   (text-xs 0.75rem → 13.5, text-sm 0.875rem → 15.75, text-base 1rem → 18…)
    ============================================================ */
 
 export const typography = {
@@ -128,16 +171,16 @@ export const typography = {
     mono: 'Geist Mono',
   },
   fontSize: {
-    xs: 12,
-    sm: 14,
-    base: 16,
-    lg: 18,
-    xl: 20,
-    '2xl': 24,
-    '3xl': 30,
-    '4xl': 36,
-    '5xl': 48,
-    '6xl': 60,
+    xs: 13.5,
+    sm: 15.75,
+    base: 18,
+    lg: 20.25,
+    xl: 22.5,
+    '2xl': 27,
+    '3xl': 33.75,
+    '4xl': 40.5,
+    '5xl': 54,
+    '6xl': 72,
   },
   fontWeight: {
     regular: '400',
@@ -145,11 +188,12 @@ export const typography = {
     semibold: '600',
     bold: '700',
   },
-  /* 0.02em do `.font-display` (globals.css), expresso em px à base 16 */
+  /* tracking da web: .font-display letter-spacing 0.02em; tracking-tight
+     -0.025em — expressos em px (RN não aceita em) para o tamanho médio */
   letterSpacing: {
     none: 0,
-    display: 0.32,
-    tight: -0.2,
+    display: 0.6,
+    tight: -0.4,
   },
   lineHeight: {
     tight: 1.1,
@@ -159,7 +203,7 @@ export const typography = {
 } as const;
 
 /* ============================================================
-   SOMBRAS (globals.css: shadow-*-clean, board-frame, gold-frame, glows)
+   SOMBRAS (números; a web usa classes shadow-*-clean do globals.css)
    ============================================================ */
 
 export interface ShadowValue {
@@ -172,7 +216,7 @@ export interface ShadowValue {
 export const shadows = {
   sm: { offsetX: 0, offsetY: 1, blur: 2, color: 'rgba(0, 0, 0, 0.06)' },
   md: { offsetX: 0, offsetY: 2, blur: 4, color: 'rgba(0, 0, 0, 0.08)' },
-  lg: { offsetX: 0, offsetY: 4, blur: 8, color: 'rgba(0, 0, 0, 0.10)' },
+  lg: { offsetX: 0, offsetY: 4, blur: 8, color: 'rgba(0, 0, 0, 0.1)' },
   boardFrame: { offsetX: 0, offsetY: 8, blur: 24, color: 'rgba(0, 0, 0, 0.12)' },
   glowGold: { offsetX: 0, offsetY: 0, blur: 12, color: 'rgba(242, 176, 30, 0.35)' },
   glowP1: { offsetX: 0, offsetY: 0, blur: 12, color: 'rgba(16, 178, 90, 0.35)' },
@@ -186,6 +230,8 @@ export const shadows = {
 /**
  * Casa 1–9 → posição no grelho 3×3. Mesmo mapeamento de SQUARE_COORDS
  * do motor (packages/engine): índice do board = casa - 1, linha = índice / 3.
+ * NOTA: o Board web apresenta as casas rotacionadas 180° por omissão
+ * (casa 1 em baixo à direita) via `SQUARE_POS[10 - sq]`.
  */
 export const squarePosition = {
   1: { row: 0, col: 0 },
@@ -199,41 +245,45 @@ export const squarePosition = {
   9: { row: 2, col: 2 },
 } as const;
 
-/** Casa central com emblema-alvo quando vazia (spec §8.2 / web Board). */
-export const targetMark = {
-  viewBox: 40,
-  outerRadius: 16,
-  midRadius: 10,
-  innerRadius: 4,
-  strokeWidth: 2,
-  /** diâmetro da marca em relação à célula (web: w-1/2) */
-  cellRatio: 0.5,
-  opacity: 0.6,
-} as const;
-
 export const boardGeometry = {
   gridSize: 3,
   squareCount: 9,
   centerSquare: 5,
-  /** Largura da grelha por preset (web: max-w 280 / 360 / 440) */
+  /** Largura total do tabuleiro por preset (web: max-w 280 / 360 / 440) */
   gridSizePresets: { sm: 280, md: 360, lg: 440 },
-  /** padding da moldura (web: p-2) */
-  framePadding: 8,
-  /** espaço entre casas (web: gap-1) */
-  gap: 4,
-  /** anel dourado da moldura (web: 0 0 0 3px gold) */
-  frameRingWidth: 3,
-  /** raio da casa (web: rounded-md com --radius 0.5rem) */
-  cellRadius: 6,
-  /** diâmetro da peça em relação à célula (web: 40dp em ~117dp) */
-  pieceDiameterRatio: 0.35,
-  /** ponto de destino válido (web: w-3 em ~117dp) */
-  validDotDiameterRatio: 0.10,
-  /** traço tracejado da origem da última jogada (web: inset-1) */
-  lastMoveDashInset: 4,
-  /** ampliação da peça selecionada / vencedora (web: scale-110 / 125) */
+  /** Sem moldura nem gaps — o web desenha as linhas por cima da grelha */
+  framePadding: 0,
+  gap: 0,
+  /** Espessura do anel dourado (web não usa moldura) */
+  frameRingWidth: 0,
+  /** Raio das casas (web: células quadradas, sem bg) */
+  cellRadius: 0,
+  /** viewBox do SVG web: linhas de 50 a 250, stroke 7 */
+  viewBox: 300,
+  lineInset: 50,
+  strokeWidth: 7,
+  /** Raio do contêiner (web: rounded-2xl = --radius + 10px = 23.5px) */
+  containerRadius: 23.5,
+  /** Sombra do contêiner (web Board.tsx boxShadow) */
+  containerShadow: '0 20px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.08)',
+  /** Diâmetro da peça por preset (web: w-8 / w-10 / w-12) */
+  pieceDiameterPresets: { sm: 32, md: 40, lg: 48 },
+  /** Símbolo gravado por preset (web: w-3.5 / w-5 / w-6) */
+  symbolSizePresets: { sm: 14, md: 20, lg: 24 },
+  /** Ponto de destino válido fixo (web: w-3.5 = 14px) */
+  validDotSize: 14,
+  /** Anel do selecionado (web: ring-2 = 2px) */
+  ringStroke: 2,
+  /** Tracejado da origem da última jogada (web: border = 1px) */
+  markerStroke: 1,
+  /** inset-[30%] → raio = (1 - 0.6) / 2 = 0.2 da casa */
+  markerInset: 0.3,
+  /** inset-[12%] do brilho da vitória → raio = 0.38 da casa */
+  winGlowInset: 0.12,
+  /** Ampliação da peça (web: scale-110 selecionada/vencedora, scale-105 última jogada) */
   selectedPieceScale: 1.1,
-  winningPieceScale: 1.25,
+  winningPieceScale: 1.1,
+  lastMovedPieceScale: 1.05,
 } as const;
 
 /* ============================================================
@@ -248,7 +298,6 @@ export const tokens = {
   shadows,
   boardGeometry,
   squarePosition,
-  targetMark,
 } as const;
 
 export type ColorToken = keyof typeof colors;
@@ -263,5 +312,4 @@ export type LineHeightToken = keyof typeof typography.lineHeight;
 export type ShadowToken = keyof typeof shadows;
 export type BoardGeometryToken = keyof typeof boardGeometry;
 export type SquarePositionToken = keyof typeof squarePosition;
-export type TargetMarkToken = keyof typeof targetMark;
 export type Tokens = typeof tokens;

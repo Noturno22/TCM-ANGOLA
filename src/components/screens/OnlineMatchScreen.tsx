@@ -27,6 +27,8 @@ import {
 import { fetchProfiles } from '@/lib/online/rooms';
 import { Board } from '@/components/game/Board';
 import { GameButton, GameCard } from '@/components/game/ui';
+import { CocoDoMeioPopup } from '@/components/game/CocoDoMeioPopup';
+import { isTrappedInMiddle } from '@/lib/cocoDoMeio';
 import { playSound } from '@/lib/sound';
 import { cn } from '@/lib/utils';
 
@@ -111,11 +113,29 @@ export function OnlineMatchScreen() {
     else playSound('error');
   }, [match, mySide]);
 
+  // Som de movimento das jogadas do adversário (chegadas via Realtime).
+  // As nossas já tocam ao submeter (otimista); depois de uma jogada nossa
+  // a vez passa ao adversário, por isso só tocamos quando a vez volta a nós.
+  const prevMoveCount = useRef<{ id: string; count: number } | null>(null);
+  useEffect(() => {
+    if (!match) {
+      prevMoveCount.current = null;
+      return;
+    }
+    const prev = prevMoveCount.current;
+    prevMoveCount.current = { id: match.id, count: match.moveCount };
+    if (!prev || prev.id !== match.id || match.moveCount <= prev.count) return;
+    if (match.status !== 'active' || match.turn !== mySide) return;
+    playSound('move');
+  }, [match, mySide]);
+
   const handleSquareClick = (sq: Square) => {
     if (!state || !mySide || !isMyTurn) return;
     if (state.board[sq - 1] === mySide) {
       setSelected(sq);
+      playSound('select');
     } else if (selected && validTargets.includes(sq)) {
+      playSound('move');
       void playMove(selected, sq);
       setSelected(null);
     }
@@ -301,6 +321,9 @@ export function OnlineMatchScreen() {
           </GameButton>
         </div>
       </div>
+
+      {/* "Tira o coco do meio" — pop-ups animados (a minha vez encurralada) */}
+      <CocoDoMeioPopup active={!finished && isMyTurn && isTrappedInMiddle(state)} moveCount={match.moveCount} />
 
       {/* Overlay de resultado */}
       <AnimatePresence>

@@ -10,11 +10,12 @@
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { createGame, isGameOver, type GameState, type Square } from '@tira/engine';
+import { createGame, isGameOver, type GameState, type PlayerId, type Square } from '@tira/engine';
 import { createAsyncStorage } from '@/lib/storage';
 import {
   aiSeed,
   applyAiMove,
+  applyForfeit,
   applyHumanMove,
   applyResign,
   applyUndo,
@@ -38,6 +39,7 @@ export interface GameStore extends MatchSnapshot {
   selectSquare: (sq: Square) => void;
   attemptMove: (to: Square) => void;
   resign: () => void;
+  forfeit: (loser: PlayerId) => void;
   restart: () => void;
   undo: () => void;
   toggleThreats: () => void;
@@ -106,6 +108,13 @@ export const useGameStore = create<GameStore>()(
         recordCurrentMatch(get(), next.state, 'RESIGN');
       },
 
+      forfeit: (loser) => {
+        const next = applyForfeit(get(), loser);
+        if (!next) return;
+        set({ ...next, isAiThinking: false });
+        recordCurrentMatch(get(), next.state, 'FORFEIT');
+      },
+
       restart: () => {
         const { mode, difficulty, humanSide, showThreats, timePerTurn } = get();
         get().startGame({ mode, difficulty, humanSide, showThreats, timePerTurn });
@@ -139,12 +148,14 @@ function recordCurrentMatch(
   const opponent =
     mode === 'pve'
       ? `IA ${difficulty === 'easy' ? 'Fácil' : difficulty === 'medium' ? 'Média' : difficulty === 'hard' ? 'Difícil' : 'Perfeita'}`
-      : 'Jogador 2';
+      : mode === 'cvc'
+        ? 'IA vs IA'
+        : 'Jogador 2';
   profile.recordMatch({
     mode,
     difficulty,
     result: finalState.winner ?? 'DRAW',
-    playerSide: humanSide,
+    playerSide: mode === 'cvc' ? undefined : humanSide,
     opponent,
     moves: [...finalState.history],
     moveCount: finalState.moveCount,

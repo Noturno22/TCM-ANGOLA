@@ -84,7 +84,7 @@ export default function LightningScreen() {
   const addCoins = useProfile((s) => s.addCoins);
   const { width } = useWindowDimensions();
   const boardSize = Math.min(
-    boardGeometry.gridSizePresets.md,
+    boardGeometry.gridSizePresets.lg,
     width - spacing[4] * 2 - boardGeometry.framePadding * 2,
   );
 
@@ -264,7 +264,7 @@ export default function LightningScreen() {
             >
               <TiraText style={{ fontSize: 30 }}>⚡</TiraText>
             </View>
-            <TiraHeading level="h2" align="center">
+            <TiraHeading level="display" align="center" style={{ letterSpacing: 0.844, lineHeight: 40.5 }}>
               {t('lightning.title')}
             </TiraHeading>
             <TiraText size="sm" variant="muted" align="center">
@@ -299,7 +299,7 @@ export default function LightningScreen() {
         </TiraCard>
 
         <TiraCard>
-          <TiraHeading level="h3" style={{ marginBottom: spacing[2] }}>
+          <TiraHeading level="h3" style={{ marginBottom: spacing[2], fontSize: 16, letterSpacing: -0.4, lineHeight: 24, fontWeight: '600' }}>
             {t('lightning.how')}
           </TiraHeading>
           <View style={{ gap: spacing[1] }}>
@@ -332,7 +332,7 @@ export default function LightningScreen() {
         <TiraCard glow={isPerfect ? 'gold' : undefined}>
           <View style={{ alignItems: 'center', gap: spacing[2] }}>
             <TiraText style={{ fontSize: 56 }}>{isPerfect ? '🏆' : solvedCount >= 3 ? '🥈' : '🎯'}</TiraText>
-            <TiraHeading level="h2" color={isPerfect ? 'gold' : 'text'} align="center">
+            <TiraHeading level="display" color={isPerfect ? 'gold' : 'text'} align="center" style={{ letterSpacing: 0.844, lineHeight: 40.5 }}>
               {isPerfect ? t('lightning.perfect') : t('lightning.result_title', { n: solvedCount })}
             </TiraHeading>
             <TiraText size="sm" variant="muted">
@@ -394,14 +394,14 @@ export default function LightningScreen() {
   const statusVariant = feedback === 'correct' ? 'p1' : feedback === 'wrong' ? 'p2' : 'muted';
 
   return (
-    <TiraScreen scroll={false} showBack title={t('lightning.title')} style={{ gap: spacing[3] }}>
+    <TiraScreen showBack title={t('lightning.title')} style={{ gap: spacing[3] }}>
       <TiraCard style={{ padding: spacing[3] }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing[2] }}>
           <View style={{ gap: 2 }}>
             <TiraText size="xs" variant="muted" weight="semibold" style={{ textTransform: 'uppercase' }}>
               {t('lightning.puzzle_of', { n: puzzleIndex + 1, total: runPuzzles.length })}
             </TiraText>
-            <TiraHeading level="h2" color="gold">
+            <TiraHeading level="h2" color="gold" style={{ lineHeight: 36 }}>
               {formatTime(elapsed)}
             </TiraHeading>
           </View>
@@ -536,7 +536,7 @@ function StatCol({
 }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', gap: 2 }}>
-      <TiraHeading level="h2" color={color}>
+      <TiraHeading level="h2" color={color} style={{ lineHeight: 36 }}>
         {value}
       </TiraHeading>
       <TiraText size="xs" variant="muted" align="center" style={{ textTransform: 'uppercase' }}>

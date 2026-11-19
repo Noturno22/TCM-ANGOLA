@@ -10,6 +10,8 @@ import { getEntrant } from '@/lib/tournament';
 import { isGameOver, type Square } from '@tira/engine';
 import { Board } from '@/components/game/Board';
 import { GameButton, GameCard } from '@/components/game/ui';
+import { CocoDoMeioPopup } from '@/components/game/CocoDoMeioPopup';
+import { isTrappedInMiddle } from '@/lib/cocoDoMeio';
 import { playSound } from '@/lib/sound';
 import { cn } from '@/lib/utils';
 
@@ -179,6 +181,12 @@ export function TournamentPlayScreen() {
           </GameButton>
         </div>
       </div>
+
+      {/* "Tira o coco do meio" — pop-ups animados (a minha vez encurralada) */}
+      <CocoDoMeioPopup
+        active={!gameEnded && game.state.currentPlayer === game.humanSide && isTrappedInMiddle(game.state)}
+        moveCount={game.moveCount}
+      />
 
       <AnimatePresence>
         {result && (

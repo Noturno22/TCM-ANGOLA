@@ -92,7 +92,7 @@ export default function AuthScreen() {
       <TiraCard>
         <View style={{ gap: spacing[4] }}>
           <View style={{ gap: 2 }}>
-            <TiraHeading level="h3">{mode === 'signin' ? 'Entrar' : 'Criar conta'}</TiraHeading>
+            <TiraHeading level="display" style={{ letterSpacing: 0.844, lineHeight: 40.5 }}>{mode === 'signin' ? 'Entrar' : 'Criar conta'}</TiraHeading>
             <TiraText size="xs" variant="muted">
               {mode === 'signin'
                 ? 'Usa o teu email e palavra-passe.'
@@ -208,7 +208,7 @@ function Field({
           backgroundColor: alpha(colors.surface, 0.6),
           paddingHorizontal: spacing[3],
           color: colors.text,
-          fontSize: 15,
+          fontSize: 15.75,
         }}
       />
     </View>

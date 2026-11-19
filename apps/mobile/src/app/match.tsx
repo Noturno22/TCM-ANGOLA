@@ -79,7 +79,7 @@ export default function MatchScreen() {
 
   const { width } = useWindowDimensions();
   const boardSize = Math.min(
-    boardGeometry.gridSizePresets.md,
+    boardGeometry.gridSizePresets.lg,
     width - spacing[4] * 2 - boardGeometry.framePadding * 2,
   );
 
@@ -211,7 +211,7 @@ export default function MatchScreen() {
         <TiraCard glow="gold" style={{ alignItems: 'center' }}>
           <View style={{ alignItems: 'center', gap: spacing[3] }}>
             <ActivityIndicator size="large" color={colors.gold} />
-            <TiraHeading level="h3">À procura de adversário…</TiraHeading>
+            <TiraHeading level="h3" style={{ fontSize: 22.5, letterSpacing: 0.5625, lineHeight: 31.5 }}>À procura de adversário…</TiraHeading>
             <TiraText size="xs" variant="muted" align="center">
               {queuedStake > 0
                 ? `Aposta retida: ${queuedStake} KZ. Prémio: ${potForStake(queuedStake)} KZ.`
@@ -270,7 +270,6 @@ export default function MatchScreen() {
 
   return (
     <TiraScreen
-      scroll={false}
       showBack
       title={
         <TiraText size="xs" variant="muted" weight="semibold" style={{ textTransform: 'uppercase', letterSpacing: 1 }}>
@@ -407,7 +406,7 @@ function PlayerChip({
         ) : null}
       </View>
       {time !== null ? (
-        <TiraHeading level="h3" color={low ? 'p2' : active ? 'text' : 'textMuted'}>
+        <TiraHeading level="h2" color={low ? 'p2' : active ? 'text' : 'textMuted'} style={{ lineHeight: 36 }}>
           {formatClock(time)}
         </TiraHeading>
       ) : null}
@@ -449,7 +448,7 @@ function MatchOverlay({
       <TiraCard glow="gold" style={{ width: '100%', maxWidth: 360 }}>
         <View style={{ alignItems: 'center', gap: spacing[3] }}>
           <TiraText style={{ fontSize: 56 }}>{emoji}</TiraText>
-          <TiraHeading level="h1" color={titleColor} align="center">{title}</TiraHeading>
+          <TiraHeading level="display" color={titleColor} align="center" style={{ letterSpacing: 0.844, lineHeight: 33.75 }}>{title}</TiraHeading>
           {prize ? (
             <TiraText size="sm" variant="gold" align="center">{`🪙 ${prize}`}</TiraText>
           ) : null}

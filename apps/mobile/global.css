@@ -1,0 +1,244 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Fontes Inter + Bebas Neue + Geist Mono: carregadas via expo-font em
+ * src/app/_layout.tsx (Font.loadAsync funciona no web via FontFace API —
+ * um @font-face aqui com url() relativo NÃO é reescrito pelo Metro e
+ * acaba em 404).
+ *
+ * NOTA: as CSS vars do tema (--background, --gold, ...) são injetadas na
+ * camada base pelo plugin em tailwind.config.js a partir de src/theme/tokens.ts
+ * (fonte única). Não duplicar os valores aqui.
+ */
+
+@layer base {
+  html {
+    font-size: 18px;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ============================================================
+   TIPOGRAFIA — utilitários de tamanho aumentados para legibilidade
+   ============================================================ */
+@layer utilities {
+  .text-xs-sm { font-size: 0.75rem; line-height: 1.4; }
+  .text-sm-sm { font-size: 0.8125rem; line-height: 1.4; }
+  .text-base-sm { font-size: 0.875rem; line-height: 1.5; }
+
+  .font-display {
+    @apply tracking-[0.02em];
+  }
+}
+
+/* ============================================================
+   PADRÃO GEOMÉTRICO — sussurro de fundo, dourado, quase invisível
+   ============================================================ */
+.angolan-pattern {
+  background-image:
+    linear-gradient(45deg, transparent 46%, var(--gold) 46% 54%, transparent 54%),
+    linear-gradient(-45deg, transparent 46%, var(--gold) 46% 54%, transparent 54%);
+  background-size: 30px 30px;
+  opacity: 0.018;
+}
+
+.angolan-border {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--gold) 0 6px,
+    transparent 6px 18px
+  );
+  opacity: 0.4;
+}
+
+.angolan-diamond {
+  background-image:
+    linear-gradient(135deg, var(--gold) 25%, transparent 25%),
+    linear-gradient(225deg, var(--gold) 25%, transparent 25%),
+    linear-gradient(45deg, var(--gold) 25%, transparent 25%),
+    linear-gradient(315deg, var(--gold) 25%, transparent 25%);
+  background-size: 24px 24px;
+  background-position: 12px 0, 12px 0, 0 0, 0 0;
+  opacity: 0.05;
+}
+
+/* ============================================================
+   SOMBRAS — profundas, para superfícies escuras
+   ============================================================ */
+.shadow-sm-clean {
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+}
+.shadow-md-clean {
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.4);
+}
+.shadow-lg-clean {
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.5);
+}
+
+/* ============================================================
+   PEÇAS
+   ============================================================ */
+.piece-p1 {
+  background: #00a859;
+  box-shadow:
+    inset 0 -3px 6px rgba(0, 0, 0, 0.28),
+    inset 0 3px 5px rgba(255, 255, 255, 0.3),
+    0 3px 8px rgba(0, 0, 0, 0.3);
+}
+.piece-p2 {
+  background: #ed3237;
+  box-shadow:
+    inset 0 -3px 6px rgba(0, 0, 0, 0.28),
+    inset 0 3px 5px rgba(255, 255, 255, 0.3),
+    0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================================
+   MOLDURA DO TABULEIRO
+   ============================================================ */
+.board-frame {
+  box-shadow:
+    0 0 0 3px var(--gold),
+    0 0 0 4px rgb(0 0 0 / 0.4),
+    0 12px 32px rgb(0 0 0 / 0.5);
+}
+
+/* ============================================================
+   SCROLLBAR (web)
+   ============================================================ */
+.scrollbar-custom::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.14);
+  border-radius: 4px;
+}
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 0.22);
+}
+
+/* ============================================================
+   ANIMAÇÕES
+   ============================================================ */
+@keyframes piece-place {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-piece-place {
+  animation: piece-place 0.2s ease-out;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.animate-pulse-soft {
+  animation: pulse-soft 1.5s ease-in-out infinite;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+.confetti-piece {
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  top: -20px;
+  animation-name: confetti-fall;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+/* ============================================================
+   ACESSIBILIDADE
+   ============================================================ */
+.reduce-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+.colorblind .piece-p1 {
+  filter: saturate(0.3);
+}
+.colorblind .piece-p2 {
+  filter: saturate(0.3) brightness(0.85);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--gold-soft);
+}
+
+/* ============================================================
+   CLASSES DE COMPATIBILIDADE
+   ============================================================ */
+.animate-pulse-glow {
+  animation: pulse-soft 1.5s ease-in-out infinite;
+}
+.text-glow-gold {
+  text-shadow: 0 0 12px rgb(217 197 128 / 0.35);
+}
+.text-glow-p1 {
+  text-shadow: 0 0 12px rgb(128 201 145 / 0.35);
+}
+.text-glow-p2 {
+  text-shadow: 0 0 12px rgb(217 89 65 / 0.35);
+}
+.gold-frame {
+  box-shadow: 0 0 0 2px var(--gold), 0 0 0 3px rgb(0 0 0 / 0.4), 0 12px 32px rgb(0 0 0 / 0.5);
+}
+.elevation-1, .elevation-2, .elevation-3, .elevation-4, .elevation-5 {
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.4);
+}
+.glass, .glass-light {
+  background: rgb(51 57 58 / 0.7);
+  backdrop-filter: blur(12px);
+}
+.mesh-gradient {
+  background: var(--surface-2);
+}
+.animate-victory-rays {
+  animation: pulse-soft 1s ease-in-out;
+}
+.animate-pop-in {
+  animation: piece-place 0.3s ease-out;
+}
+.animate-slide-in-right {
+  animation: slide-up 0.3s ease-out;
+}
+.animate-scale-in {
+  animation: piece-place 0.2s ease-out;
+}

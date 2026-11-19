@@ -39,9 +39,8 @@ export function TiraHeading({
         {
           color: colors[color],
           fontSize: LEVEL_SIZE[level],
-          fontWeight: typography.fontWeight.bold,
           fontFamily: typography.fontFamily.display,
-          letterSpacing: typography.letterSpacing.display,
+          letterSpacing: LEVEL_SIZE[level] * 0.02,
         },
         align ? { textAlign: align } : null,
         style,

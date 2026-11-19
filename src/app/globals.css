@@ -400,3 +400,29 @@
 .animate-scale-in {
   animation: piece-place 0.2s ease-out;
 }
+
+/* ============================================================
+   ARENA PREMIUM — cintilação de estrelas, anel e brilho central
+   ============================================================ */
+@keyframes arena-twinkle {
+  0%, 100% { opacity: 0.18; }
+  50% { opacity: 1; }
+}
+.arena-star-animated {
+  animation: arena-twinkle 3.2s ease-in-out infinite;
+}
+
+@keyframes arena-spin {
+  to { transform: rotate(360deg); }
+}
+.arena-spin {
+  animation: arena-spin 22s linear infinite;
+}
+
+@keyframes board-flare-pulse {
+  0%, 100% { opacity: 0.72; }
+  50% { opacity: 1; }
+}
+.board-flare {
+  animation: board-flare-pulse 2.8s ease-in-out infinite;
+}

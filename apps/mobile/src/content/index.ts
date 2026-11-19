@@ -1,11 +1,9 @@
 /**
- * `@/content` — ÚNICO ponto onde o app mobile acede aos dados partilhados
- * do protótipo web (árvore `src/` na raiz do monorepo).
+ * `@/content` — fachada de dados partilhados do app.
  *
- * Todos os ecrãs mobile importam conteúdo partilhado daqui — NUNCA com
- * caminhos relativos para fora de `apps/mobile` (o padrão anterior em
- * `src/app/challenge.tsx`/`index.tsx`). Os tipos re-exportados são os
- * mesmos dos ficheiros de origem, pelo que nada muda para os consumidores.
+ * Todos os ecrãs mobile importam conteúdo partilhado daqui. As cópias locais
+ * em `src/lib/` são sincronizadas com o protótipo web (`src/lib/` na raiz do
+ * monorepo) — sem caminhos relativos para fora de `apps/mobile`.
  *
  * Regras: dados puros apenas (sem APIs DOM/browser), sem regras de jogo
  * (essas vivem em `@tira/engine`), sem rede.
@@ -17,17 +15,17 @@ export {
   getPuzzleByIndex,
   TOTAL_PUZZLES,
   type Puzzle,
-} from '../../../../src/lib/puzzles';
+} from '@/lib/puzzles';
 
 export {
   CAMPAIGN_LEVELS,
   TOTAL_CAMPAIGN_LEVELS,
   getCampaignLevel,
   type CampaignLevel,
-} from '../../../../src/lib/campaign';
+} from '@/lib/campaign';
 
 export {
   commentOnMove,
   commentOnStart,
   type Commentary,
-} from '../../../../src/lib/commentary';
+} from '@/lib/commentary';

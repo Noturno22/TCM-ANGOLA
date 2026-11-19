@@ -245,7 +245,7 @@ export default function RoomsScreen() {
                 <TiraText size="xs" variant="gold" weight="bold" style={{ textTransform: 'uppercase' }}>
                   {t('rooms.official')}
                 </TiraText>
-                <TiraHeading level="h2">{featured.name.toUpperCase()}</TiraHeading>
+                <TiraHeading level="h2" style={{ letterSpacing: 0.675, lineHeight: 36 }}>{featured.name.toUpperCase()}</TiraHeading>
                 <TiraText size="xs" variant="muted">{t('rooms.angola.desc')}</TiraText>
               </View>
             </View>

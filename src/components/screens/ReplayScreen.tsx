@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   Play,
@@ -24,6 +24,7 @@ import { Board } from '@/components/game/Board';
 import { GameButton, GameCard, ResultBadge } from '@/components/game/ui';
 import { replayFrom } from '@tira/engine';
 import { decodeMatch } from '@/lib/share';
+import { playSound } from '@/lib/sound';
 import { cn } from '@/lib/utils';
 
 export function ReplayScreen() {
@@ -113,6 +114,15 @@ function ReplayView({ match }: { match: MatchRecord; isShared?: boolean }) {
   }
 
   const isAtEnd = ply >= totalPlies;
+
+  // Som de movimento quando a jogada avança (stepping + auto-play)
+  const prevPly = useRef<{ id: string; ply: number } | null>(null);
+  useEffect(() => {
+    const prev = prevPly.current;
+    prevPly.current = { id: match.id, ply };
+    if (!prev || prev.id !== match.id || ply <= prev.ply) return;
+    playSound('move');
+  }, [ply, match.id]);
 
   // Auto-play: agenda o próximo tick se estiver a reproduzir e não estiver no fim.
   // O "stop at end" é implícito: isAtEnd torna-se true, o effect re-corre e o

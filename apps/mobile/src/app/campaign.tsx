@@ -1,88 +1,48 @@
-/**
- * Campaign — port do CampaignScreen web: lista dos 8 níveis da campanha
- * com objetivo/recompensa/dificuldade, barra de progresso e desbloqueio.
- *
- * Desbloqueio (adaptado ao mobile): um nível abre quando a dificuldade
- * está desbloqueada em `useProgression` (a mesma progressão que governa
- * o modo Offline) e o nível anterior está completo. O estado "completo"
- * é derivado do histórico de partidas (`useProfile.matches`): existe uma
- * vitória PvE nessa dificuldade com o lado exigido pelo nível. Assim a
- * campanha persiste sem um store novo — dados reais, offline.
- */
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
-import { Pressable, View } from 'react-native';
-import { CAMPAIGN_LEVELS, TOTAL_CAMPAIGN_LEVELS, type CampaignLevel } from '@/content';
 import {
-  Pill,
-  TiraCard,
-  TiraHeading,
-  TiraScreen,
-  TiraText,
-  alpha,
-} from '@/components/tira';
+  Check,
+  ChevronRight,
+  Clock,
+  Crown,
+  Flag,
+  Lock,
+  Star,
+  Target,
+  Trophy,
+  Zap,
+} from 'lucide-react-native';
+import type { ReactNode } from 'react';
+import { Pressable, View } from 'react-native';
+import { Defs, LinearGradient, Rect, Stop, Svg } from 'react-native-svg';
+import { GameCard } from '@/components/game/ui';
+import { TiraHeading, TiraScreen, TiraText, alpha } from '@/components/tira';
+import {
+  CAMPAIGN_LEVELS,
+  TOTAL_CAMPAIGN_LEVELS,
+  type CampaignLevel,
+} from '@/content';
 import { useT } from '@/lib/i18n/hook';
-import { useProfile, type MatchRecord } from '@/store/profile';
-import { useProgression } from '@/store/progression';
-import { colors, radii, spacing } from '@/theme';
-
-type DifficultyLabelKey = 'diff.easy' | 'diff.medium' | 'diff.hard' | 'diff.perfect';
-
-const DIFF_KEY: Record<CampaignLevel['difficulty'], DifficultyLabelKey> = {
-  easy: 'diff.easy',
-  medium: 'diff.medium',
-  hard: 'diff.hard',
-  perfect: 'diff.perfect',
-};
-
-function levelCompleted(level: CampaignLevel, matches: MatchRecord[]): boolean {
-  return matches.some(
-    (m) =>
-      m.mode === 'pve' &&
-      m.difficulty === level.difficulty &&
-      m.playerSide === level.humanSide &&
-      m.result === level.humanSide,
-  );
-}
-
-function attemptsFor(level: CampaignLevel, matches: MatchRecord[]): number {
-  return matches.filter(
-    (m) =>
-      m.mode === 'pve' &&
-      m.difficulty === level.difficulty &&
-      m.playerSide === level.humanSide,
-  ).length;
-}
+import { useCampaign } from '@/store/campaign';
+import { colors, radii, spacing, typography } from '@/theme';
 
 export default function CampaignScreen() {
   const { t } = useT();
   const router = useRouter();
-  const matches = useProfile((s) => s.matches);
-  const unlocked = useProgression((s) => s.unlocked);
+  const completed = useCampaign((s) => s.completed);
+  const currentLevel = useCampaign((s) => s.currentLevel);
+  const attemptsByLevel = useCampaign((s) => s.attemptsByLevel);
 
-  const completedIds = useMemo(
-    () => new Set(CAMPAIGN_LEVELS.filter((l) => levelCompleted(l, matches)).map((l) => l.id)),
-    [matches],
-  );
-  const progressPct = Math.round((completedIds.size / TOTAL_CAMPAIGN_LEVELS) * 100);
+  const completedCount = completed.length;
+  const progressPct = Math.round((completedCount / TOTAL_CAMPAIGN_LEVELS) * 100);
 
-  const isUnlocked = (level: CampaignLevel): boolean => {
-    if (!unlocked[level.difficulty]) return false;
-    const prev = CAMPAIGN_LEVELS.find((l) => l.id === level.id - 1);
-    return !prev || completedIds.has(prev.id);
-  };
-
-  const currentId =
-    CAMPAIGN_LEVELS.find((l) => !completedIds.has(l.id) && isUnlocked(l))?.id ?? null;
-
-  const openLevel = (level: CampaignLevel) => {
-    if (!isUnlocked(level)) return;
+  const handlePlay = (level: CampaignLevel) => {
+    if (level.id > currentLevel) return;
     router.push({ pathname: '/campaign-play', params: { id: String(level.id) } });
   };
 
   return (
-    <TiraScreen title={t('campaign.title')} showBack>
-      <TiraCard glow="gold">
+    <TiraScreen>
+      <GameCard glow="gold" style={{ padding: spacing[5] }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[4] }}>
           <View
             style={{
@@ -94,13 +54,13 @@ export default function CampaignScreen() {
               justifyContent: 'center',
             }}
           >
-            <TiraText style={{ fontSize: 26 }}>🚩</TiraText>
+            <Flag size={28} color={colors.gold} />
           </View>
-          <View style={{ flex: 1, gap: spacing[1] }}>
-            <TiraHeading level="h2">{t('campaign.title')}</TiraHeading>
+          <View style={{ flex: 1 }}>
+            <TiraHeading level="h2" style={{ letterSpacing: 0.675, lineHeight: 36 }}>{t('campaign.title')}</TiraHeading>
             <TiraText size="xs" variant="muted">
               {t('campaign.progress', {
-                done: completedIds.size,
+                done: completedCount,
                 total: TOTAL_CAMPAIGN_LEVELS,
               })}
             </TiraText>
@@ -110,170 +70,286 @@ export default function CampaignScreen() {
                 borderRadius: radii.pill,
                 backgroundColor: colors.surfaceAlt,
                 overflow: 'hidden',
-                marginTop: spacing[1],
+                marginTop: spacing[2],
               }}
             >
-              <View
-                style={{
-                  width: `${progressPct}%`,
-                  height: '100%',
-                  backgroundColor: colors.gold,
-                  borderRadius: radii.pill,
-                }}
-              />
+              <View style={{ width: `${progressPct}%`, height: '100%' }}>
+                <Svg
+                  width="100%"
+                  height="100%"
+                  viewBox="0 0 100 8"
+                  preserveAspectRatio="none"
+                >
+                  <Defs>
+                    <LinearGradient
+                      id="campaignProgress"
+                      x1={0}
+                      y1={0}
+                      x2={100}
+                      y2={0}
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      <Stop offset={0} stopColor={colors.p1} />
+                      <Stop offset={1} stopColor={colors.gold} />
+                    </LinearGradient>
+                  </Defs>
+                  <Rect
+                    x={0}
+                    y={0}
+                    width={100}
+                    height={8}
+                    fill="url(#campaignProgress)"
+                  />
+                </Svg>
+              </View>
             </View>
           </View>
         </View>
-      </TiraCard>
+      </GameCard>
 
-      <View style={{ gap: spacing[2] }}>
+      <View style={{ gap: 10 }}>
         {CAMPAIGN_LEVELS.map((level) => {
-          const completed = completedIds.has(level.id);
-          const open = isUnlocked(level);
-          const isCurrent = level.id === currentId;
-          const attempts = attemptsFor(level, matches);
+          const isCompleted = completed.includes(level.id);
+          const isUnlocked = level.id <= currentLevel;
+          const isCurrent = level.id === currentLevel && !isCompleted;
+          const attempts = attemptsByLevel[level.id] ?? 0;
 
           return (
             <Pressable
               key={level.id}
               accessibilityRole="button"
-              accessibilityState={{ disabled: !open }}
+              accessibilityState={{ disabled: !isUnlocked }}
               accessibilityLabel={level.title}
-              disabled={!open}
-              onPress={() => openLevel(level)}
+              disabled={!isUnlocked}
+              onPress={() => handlePlay(level)}
               style={({ pressed }) => ({
-                opacity: !open ? 0.55 : pressed ? 0.85 : 1,
+                opacity: !isUnlocked ? 0.5 : pressed ? 0.85 : 1,
               })}
             >
-              <TiraCard
+              <GameCard
                 style={{
-                  borderColor: completed
-                    ? alpha(colors.p1, 0.35)
+                  padding: spacing[4],
+                  borderColor: isCompleted
+                    ? alpha(colors.p1, 0.3)
                     : isCurrent
                       ? alpha(colors.gold, 0.5)
                       : colors.border,
                 }}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing[3] }}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'flex-start',
+                    gap: spacing[3],
+                  }}
+                >
                   <View
                     style={{
                       width: 44,
                       height: 44,
-                      borderRadius: radii.lg,
-                      backgroundColor: completed
-                        ? alpha(colors.p1, 0.15)
-                        : open
-                          ? alpha(colors.gold, 0.15)
-                          : colors.surfaceAlt,
+                      borderRadius: radii.xl,
                       alignItems: 'center',
                       justifyContent: 'center',
+                      backgroundColor: isCompleted
+                        ? alpha(colors.p1, 0.15)
+                        : isCurrent
+                          ? alpha(colors.gold, 0.15)
+                          : isUnlocked
+                            ? colors.surfaceAlt
+                            : alpha(colors.surfaceAlt, 0.5),
                     }}
                   >
-                    {completed ? (
-                      <TiraText size="lg" variant="p1" weight="bold">
-                        ✓
+                    {isCompleted ? (
+                      <Check size={24} color={colors.p1} strokeWidth={3} />
+                    ) : isUnlocked ? (
+                      <TiraText
+                        style={{
+                          fontFamily: typography.fontFamily.display,
+                          fontSize: 20.25,
+                          letterSpacing: 0.405,
+                          lineHeight: 31.5,
+                          color: colors.text,
+                        }}
+                      >
+                        {level.id}
                       </TiraText>
-                    ) : open ? (
-                      <TiraHeading level="h3">{level.id}</TiraHeading>
                     ) : (
-                      <TiraText size="sm" variant="muted">
-                        🔒
-                      </TiraText>
+                      <Lock size={20} color={colors.textMuted} />
                     )}
                   </View>
 
-                  <View style={{ flex: 1, gap: spacing[1] }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: spacing[2],
+                        marginBottom: 2,
+                      }}
+                    >
                       <TiraText
-                        size="sm"
-                        weight="semibold"
-                        variant={completed ? 'p1' : isCurrent ? 'gold' : 'default'}
                         numberOfLines={1}
-                        style={{ flexShrink: 1 }}
+                        style={{
+                          fontFamily: typography.fontFamily.display,
+                          fontSize: 18,
+                          lineHeight: 22.5,
+                          letterSpacing: 0.36,
+                          color: isCompleted
+                            ? colors.p1
+                            : isCurrent
+                              ? colors.gold
+                              : colors.text,
+                          flexShrink: 1,
+                        }}
                       >
                         {level.title}
                       </TiraText>
-                      {isCurrent ? <Pill active>{t('campaign.current')}</Pill> : null}
+                      {isCurrent ? (
+                        <TiraText
+                          style={{
+                            fontSize: 9,
+                            lineHeight: 11,
+                            paddingHorizontal: 6,
+                            paddingVertical: 2,
+                            borderRadius: 4,
+                            overflow: 'hidden',
+                            backgroundColor: alpha(colors.gold, 0.15),
+                            color: colors.gold,
+                            fontWeight: typography.fontWeight.semibold,
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          {t('campaign.current')}
+                        </TiraText>
+                      ) : null}
+                      {isCompleted ? (
+                        <Star size={14} color={colors.gold} fill={colors.gold} />
+                      ) : null}
                     </View>
-                    <TiraText size="xs" variant="muted">
+
+                    <TiraText
+                      style={{
+                        fontSize: 11,
+                        lineHeight: 13,
+                        color: colors.textMuted,
+                        marginBottom: spacing[2],
+                      }}
+                    >
                       {level.description}
                     </TiraText>
+
                     <View
                       style={{
                         flexDirection: 'row',
                         flexWrap: 'wrap',
                         alignItems: 'center',
-                        gap: spacing[2],
-                        marginTop: spacing[1],
+                        gap: spacing[3],
                       }}
                     >
-                      <TiraText size="xs" variant="muted">
-                        🎯 {t(DIFF_KEY[level.difficulty])}
-                      </TiraText>
-                      <TiraText size="xs" variant="gold">
-                        🏆 {level.reward} KZ
-                      </TiraText>
+                      <Meta
+                        icon={<Target size={12} color={colors.textMuted} />}
+                        text={t(`diff.${level.difficulty}`)}
+                        color={colors.textMuted}
+                      />
+                      <Meta
+                        icon={<Trophy size={12} color={colors.gold} />}
+                        text={`${level.reward} KZ`}
+                        color={colors.gold}
+                      />
                       {level.humanSide === 'P2' ? (
-                        <TiraText size="xs" variant="p2">
-                          👑 {t('campaign.red_side')}
-                        </TiraText>
+                        <Meta
+                          icon={<Crown size={12} color={colors.p2} />}
+                          text={t('campaign.red_side')}
+                          color={colors.p2}
+                        />
                       ) : null}
                       {level.objective.type === 'win_fast' ? (
-                        <TiraText size="xs" variant="orange">
-                          ⚡ {t('campaign.win_fast_tag', { n: level.objective.maxMoves ?? 0 })}
-                        </TiraText>
+                        <Meta
+                          icon={<Zap size={12} color={colors.orange} />}
+                          text={t('campaign.win_fast_tag', {
+                            n: level.objective.maxMoves ?? 0,
+                          })}
+                          color={colors.orange}
+                        />
                       ) : null}
                       {level.objective.type === 'survive' ? (
-                        <TiraText size="xs" variant="orange">
-                          ⏱️ {t('campaign.survive_tag', { n: level.objective.minMoves ?? 0 })}
-                        </TiraText>
+                        <Meta
+                          icon={<Clock size={12} color={colors.orange} />}
+                          text={t('campaign.survive_tag', {
+                            n: level.objective.minMoves ?? 0,
+                          })}
+                          color={colors.orange}
+                        />
                       ) : null}
-                      {!open ? (
-                        <TiraText size="xs" variant="muted" style={{ marginLeft: 'auto' }}>
-                          🔒
-                        </TiraText>
-                      ) : attempts > 0 ? (
-                        <TiraText size="xs" variant="muted" style={{ marginLeft: 'auto' }}>
+                      {attempts > 0 ? (
+                        <TiraText
+                          style={{
+                            fontSize: 10,
+                            color: colors.textMuted,
+                            marginLeft: 'auto',
+                          }}
+                        >
                           {attempts === 1
                             ? t('campaign.attempts', { n: attempts })
                             : t('campaign.attempts.plural', { n: attempts })}
                         </TiraText>
                       ) : null}
                     </View>
-                    {!open ? (
-                      <TiraText size="xs" variant="muted" style={{ marginTop: spacing[1] }}>
-                        {unlocked[level.difficulty]
-                          ? t('campaign.locked_hint')
-                          : t('campaign.locked_progress')}
-                      </TiraText>
-                    ) : null}
                   </View>
 
-                  {open ? (
-                    <TiraText size="lg" variant="muted" style={{ marginTop: spacing[1] }}>
-                      ›
-                    </TiraText>
+                  {isUnlocked ? (
+                    <View style={{ marginTop: spacing[1] }}>
+                      <ChevronRight
+                        size={20}
+                        color={isCompleted ? colors.p1 : colors.textMuted}
+                      />
+                    </View>
                   ) : null}
                 </View>
-              </TiraCard>
+              </GameCard>
             </Pressable>
           );
         })}
       </View>
 
-      <TiraCard style={{ borderColor: alpha(colors.gold, 0.3), backgroundColor: alpha(colors.gold, 0.05) }}>
+      <GameCard
+        style={{
+          padding: spacing[4],
+          backgroundColor: alpha(colors.gold, 0.05),
+          borderColor: alpha(colors.gold, 0.3),
+        }}
+      >
         <View style={{ flexDirection: 'row', gap: spacing[3] }}>
-          <TiraText size="lg">🏆</TiraText>
-          <View style={{ flex: 1, gap: spacing[1] }}>
-            <TiraText size="sm" weight="semibold">
+          <View style={{ marginTop: 2 }}>
+            <Trophy size={20} color={colors.gold} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <TiraText size="sm" weight="semibold" style={{ marginBottom: spacing[1] }}>
               {t('campaign.tip.title')}
             </TiraText>
-            <TiraText size="xs" variant="muted">
+            <TiraText style={{ fontSize: 11, lineHeight: 18, color: colors.textMuted }}>
               {t('campaign.tip.desc')}
             </TiraText>
           </View>
         </View>
-      </TiraCard>
+      </GameCard>
     </TiraScreen>
+  );
+}
+
+function Meta({
+  icon,
+  text,
+  color,
+}: {
+  icon: ReactNode;
+  text: string;
+  color: string;
+}) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[1] }}>
+      {icon}
+      <TiraText style={{ fontSize: 10, color }}>{text}</TiraText>
+    </View>
   );
 }

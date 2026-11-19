@@ -8,6 +8,21 @@
       ],
       "@/assets/*": [
         "./assets/*"
+      ],
+      "@tira/engine": [
+        "../../packages/engine/src/index.ts"
+      ],
+      "@tira/ai": [
+        "../../packages/ai/src/index.ts"
+      ],
+      "@tira/engine/*": [
+        "../../packages/engine/src/*"
+      ],
+      "@tira/ai/*": [
+        "../../packages/ai/src/*"
+      ],
+      "@tira/design-tokens": [
+        "../../packages/design-tokens/src/index.ts"
       ]
     }
   },
@@ -15,6 +30,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
   ]
 }

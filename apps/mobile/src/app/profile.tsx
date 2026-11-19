@@ -1,53 +1,129 @@
 /**
- * Profile — port do ProfileScreen web: identidade (avatar/nível/Elo/XP),
- * estatísticas, sequências, progressão de dificuldades (useProgression),
- * histórico de partidas, conquistas e amigos (online em breve).
- * Reset de progresso com confirmação — tudo local, sem rede.
+ * Profile — port 1:1 do ProfileScreen web: identidade (avatar/nível/Elo/XP),
+ * estatísticas, sequências, progressão de dificuldades, histórico de partidas,
+ * conquistas e amigos. Reset de progresso com confirmação — tudo local.
  */
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { router } from 'expo-router';
-import { Alert, View } from 'react-native';
-import type { Difficulty } from '@tira/ai';
 import {
-  EmptyState,
-  Pill,
+  Award,
+  BarChart3,
+  Brain,
+  Calendar,
+  ChevronRight,
+  Clock,
+  Crown,
+  Gem,
+  History,
+  Lock,
+  LogOut,
+  Play,
+  Share2,
+  Smile,
+  TrendingUp,
+  Trophy,
+  Users,
+  type LucideIcon,
+} from 'lucide-react-native';
+import { Alert, Pressable, ScrollView, Text, View, type TextStyle } from 'react-native';
+import type { Difficulty } from '@tira/ai';
+import { AchievementIcon } from '@/components/game/achievement-icon';
+import {
+  FilterChip,
+  GameButton,
+  GameCard,
+  LevelAvatar,
   ResultBadge,
-  TiraButton,
-  TiraCard,
-  TiraHeading,
-  TiraScreen,
-  TiraText,
-  alpha,
-} from '@/components/tira';
-import { useT, type UseTResult } from '@/lib/i18n/hook';
-import { getUnlockRequirement, getUnlockText, useProgression } from '@/store/progression';
-import { useProfile, xpProgress, type MatchRecord } from '@/store/profile';
-import { colors, radii, spacing, type ColorToken } from '@/theme';
+  SectionTitle,
+  XpBar,
+} from '@/components/game/ui';
+import { TiraScreen, alpha } from '@/components/tira';
+import { useAuth } from '@/store/auth';
+import { useProfile, type MatchRecord } from '@/store/profile';
+import { getUnlockRequirement, useProgression } from '@/store/progression';
+import { colors, radii, spacing, typography } from '@/theme';
 
 type Tab = 'history' | 'achievements' | 'friends';
 
-const DIFF_META: { id: Difficulty; emoji: string; color: ColorToken }[] = [
-  { id: 'easy', emoji: '😊', color: 'p1' },
-  { id: 'medium', emoji: '🧠', color: 'gold' },
-  { id: 'hard', emoji: '💎', color: 'orange' },
-  { id: 'perfect', emoji: '👑', color: 'p2' },
+const BODY = typography.fontFamily.body;
+const DISPLAY = typography.fontFamily.display;
+
+const HEADER_NAME: TextStyle = {
+  fontFamily: DISPLAY,
+  fontSize: 27,
+  letterSpacing: 0.675,
+  color: colors.text,
+};
+const HEADER_ACCOUNT: TextStyle = {
+  fontSize: 13.5,
+  color: colors.textMuted,
+  fontFamily: BODY,
+};
+const TINY_UPPER: TextStyle = {
+  fontSize: 10,
+  letterSpacing: 0.5,
+  textTransform: 'uppercase',
+  color: colors.textMuted,
+  fontFamily: BODY,
+};
+const BUTTON_LABEL: TextStyle = {
+  fontSize: 15.75,
+  fontWeight: typography.fontWeight.semibold,
+  fontFamily: BODY,
+};
+
+const DIFF_META: { id: Difficulty; label: string; color: string; Icon: LucideIcon }[] = [
+  { id: 'easy', label: 'Fácil', color: colors.p1, Icon: Smile },
+  { id: 'medium', label: 'Médio', color: colors.gold, Icon: Brain },
+  { id: 'hard', label: 'Difícil', color: colors.orange, Icon: Gem },
+  { id: 'perfect', label: 'Perfeito', color: colors.p2, Icon: Crown },
 ];
 
+const DIFF_LABEL: Record<Difficulty, string> = {
+  easy: 'Fácil',
+  medium: 'Médio',
+  hard: 'Difícil',
+  perfect: 'Perfeito',
+};
+
 export default function ProfileScreen() {
-  const { t } = useT();
   const profile = useProfile();
+  const user = useAuth((s) => s.user);
+  const signOut = useAuth((s) => s.signOut);
+  const signingOut = useAuth((s) => s.pending);
   const [tab, setTab] = useState<Tab>('history');
 
-  const xp = xpProgress(profile.xp, profile.level);
   const winRate =
-    profile.totalMatches > 0 ? Math.round((profile.wins / profile.totalMatches) * 100) : 0;
+    profile.totalMatches > 0
+      ? Math.round((profile.wins / profile.totalMatches) * 100)
+      : 0;
+
   const unlockedAchievements = profile.achievements.filter((a) => a.unlockedAt);
 
+  // Nome/identificador a mostrar: Google (nome) > email > telefone > genérico.
+  const meta = (user?.user_metadata ?? {}) as { full_name?: string; name?: string };
+  const displayName =
+    meta.full_name?.trim() ||
+    meta.name?.trim() ||
+    user?.email?.split('@')[0] ||
+    user?.phone ||
+    'Jogador';
+  const accountLine =
+    user?.email || user?.phone || `Nível ${profile.level} • Elo ${profile.elo}`;
+
+  const handleReplay = (matchId: string) => {
+    router.push({ pathname: '/replay', params: { matchId } });
+  };
+
+  const handleShare = (matchId: string) => {
+    router.push({ pathname: '/share', params: { matchId } });
+  };
+
   const confirmReset = () => {
-    Alert.alert(t('profile.reset'), t('profile.reset_confirm'), [
-      { text: t('common.cancel'), style: 'cancel' },
+    Alert.alert('Reiniciar progresso', 'Reiniciar todo o progresso? Esta ação não pode ser desfeita.', [
+      { text: 'Cancelar', style: 'cancel' },
       {
-        text: t('profile.reset'),
+        text: 'Reiniciar progresso',
         style: 'destructive',
         onPress: () => useProfile.getState().resetProfile(),
       },
@@ -55,81 +131,143 @@ export default function ProfileScreen() {
   };
 
   return (
-    <TiraScreen title={t('nav.profile')} showBack>
+    <TiraScreen>
       {/* Cabeçalho do perfil */}
-      <TiraCard glow="gold">
+      <GameCard glow="gold" style={{ padding: spacing[5] }}>
         <View style={{ alignItems: 'center', gap: spacing[3] }}>
-          <LevelAvatar emoji="🦁" level={profile.level} isTop={profile.elo > 1500} />
-          <View style={{ alignItems: 'center', gap: 2 }}>
-            <TiraHeading level="h2">{t('home.player_name')}</TiraHeading>
-            <TiraText size="xs" variant="muted">
-              {t('home.level_elo', { level: profile.level, elo: profile.elo })}
-            </TiraText>
+          <LevelAvatar
+            name={displayName}
+            level={profile.level}
+            size="lg"
+            isTop={profile.elo > 1500}
+            online
+          />
+          <View style={{ alignItems: 'center' }}>
+            <Text numberOfLines={1} style={HEADER_NAME}>
+              {displayName}
+            </Text>
+            <Text numberOfLines={1} style={HEADER_ACCOUNT}>
+              {accountLine}
+            </Text>
           </View>
-          <View style={{ width: '100%', maxWidth: 280 }}>
-            <XpBar level={profile.level} pct={xp.pct} current={xp.current} needed={xp.needed} />
+          <View style={{ width: '100%', maxWidth: 320 }}>
+            <XpBar xp={profile.xp} level={profile.level} />
           </View>
         </View>
-      </TiraCard>
+      </GameCard>
 
       {/* Estatísticas */}
       <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-        <StatCard emoji="🏆" value={profile.wins} label={t('home.wins')} color="p1" />
-        <StatCard emoji="📈" value={profile.losses} label={t('home.losses')} color="p2" />
-        <StatCard emoji="🤝" value={profile.draws} label={t('home.draws')} color="textMuted" />
-        <StatCard emoji="👑" value={`${winRate}%`} label={t('profile.win_rate')} color="gold" />
+        <StatCard
+          icon={<Trophy size={16} color={colors.p1} />}
+          value={profile.wins}
+          label="Vitórias"
+          color={colors.p1}
+        />
+        <StatCard
+          icon={<TrendingUp size={16} color={colors.p2} />}
+          value={profile.losses}
+          label="Derrotas"
+          color={colors.p2}
+        />
+        <StatCard
+          icon={<Award size={16} color={colors.textMuted} />}
+          value={profile.draws}
+          label="Empates"
+          color={colors.textMuted}
+        />
+        <StatCard
+          icon={<Crown size={16} color={colors.gold} />}
+          value={`${winRate}%`}
+          label="Vitória"
+          color={colors.gold}
+        />
       </View>
 
-      {/* Sequências + partidas */}
-      <TiraCard>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <StreakCol
-            label={t('profile.current_streak')}
-            value={profile.currentStreak}
-            color="p1"
-          />
+      {/* Sequência */}
+      <GameCard style={{ padding: spacing[4] }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <StreakCol label="Sequência atual" value={profile.currentStreak} color={colors.p1} />
           <Divider />
-          <StreakCol label={t('profile.best_streak')} value={profile.bestStreak} color="gold" />
+          <StreakCol label="Melhor sequência" value={profile.bestStreak} color={colors.gold} />
           <Divider />
-          <StreakCol label={t('profile.matches')} value={profile.totalMatches} color="text" />
+          <StreakCol label="Partidas" value={profile.totalMatches} color={colors.text} />
         </View>
-      </TiraCard>
+      </GameCard>
 
       {/* Progressão de dificuldades */}
       <ProgressionPanel />
 
+      {/* Botão de estatísticas detalhadas */}
+      <GameButton variant="gold" style={{ width: '100%' }} onPress={() => router.push('/stats')}>
+        <BarChart3 size={16} color={colors.primaryForeground} />
+        <Text style={[BUTTON_LABEL, { color: colors.primaryForeground }]}>
+          Ver estatísticas detalhadas e gráficos
+        </Text>
+      </GameButton>
+
       {/* Tabs */}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
-        <Pill active={tab === 'history'} onPress={() => setTab('history')}>
-          {t('profile.history')}
-        </Pill>
-        <Pill active={tab === 'achievements'} onPress={() => setTab('achievements')}>
-          {`${t('profile.achievements')} (${unlockedAchievements.length})`}
-        </Pill>
-        <Pill active={tab === 'friends'} onPress={() => setTab('friends')}>
-          {t('profile.friends')}
-        </Pill>
-      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: spacing[2], paddingBottom: spacing[1] }}
+      >
+        <FilterChip active={tab === 'history'} onClick={() => setTab('history')}>
+          Histórico
+        </FilterChip>
+        <FilterChip active={tab === 'achievements'} onClick={() => setTab('achievements')}>
+          {`Conquistas (${unlockedAchievements.length})`}
+        </FilterChip>
+        <FilterChip active={tab === 'friends'} onClick={() => setTab('friends')}>
+          Amigos
+        </FilterChip>
+      </ScrollView>
 
       {/* Conteúdo da tab */}
       {tab === 'history' ? (
         <View style={{ gap: spacing[2] }}>
           {profile.matches.length === 0 ? (
-            <EmptyState
-              emoji="📋"
-              title={t('profile.no_matches')}
-              actionLabel={t('profile.play_now')}
-              onAction={() => router.push('/offline')}
-            />
+            <GameCard style={{ padding: spacing[8], alignItems: 'center' }}>
+              <View style={{ marginBottom: spacing[3] }}>
+                <History size={40} color={colors.textMuted} />
+              </View>
+              <Text
+                style={{
+                  fontSize: 15.75,
+                  color: colors.textMuted,
+                  fontFamily: BODY,
+                  textAlign: 'center',
+                  marginBottom: spacing[4],
+                }}
+              >
+                Ainda não jogaste nenhuma partida.
+              </Text>
+              <GameButton variant="p1" onPress={() => router.push('/offline')}>
+                Jogar agora
+              </GameButton>
+            </GameCard>
           ) : (
             <>
               {profile.matches.slice(0, 20).map((m) => (
-                <MatchRow key={m.id} match={m} />
+                <MatchRow
+                  key={m.id}
+                  match={m}
+                  onShare={() => handleShare(m.id)}
+                  onReplay={() => handleReplay(m.id)}
+                />
               ))}
               {profile.matches.length > 20 ? (
-                <TiraText size="xs" variant="muted" align="center">
-                  {t('profile.recent_note', { n: profile.matches.length })}
-                </TiraText>
+                <Text
+                  style={{
+                    textAlign: 'center',
+                    fontSize: 11,
+                    color: colors.textMuted,
+                    fontFamily: BODY,
+                    paddingVertical: spacing[2],
+                  }}
+                >
+                  {`Mostrando as 20 partidas mais recentes de ${profile.matches.length}.`}
+                </Text>
               ) : null}
             </>
           )}
@@ -137,14 +275,15 @@ export default function ProfileScreen() {
       ) : null}
 
       {tab === 'achievements' ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
-          {profile.achievements.map((a) => (
-            <View key={a.id} style={{ flexGrow: 1, flexBasis: '47%' }}>
-              <TiraCard
-                glow={a.unlockedAt ? 'gold' : undefined}
+        <View style={{ gap: spacing[2] }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
+            {profile.achievements.map((a) => (
+              <GameCard
+                key={a.id}
+                glow={a.unlockedAt ? 'gold' : null}
                 style={{
+                  width: '48%',
                   padding: spacing[3],
-                  height: '100%',
                   opacity: a.unlockedAt ? 1 : 0.5,
                 }}
               >
@@ -159,125 +298,309 @@ export default function ProfileScreen() {
                       justifyContent: 'center',
                     }}
                   >
-                    <TiraText style={{ fontSize: 20 }}>{a.icon}</TiraText>
+                    <AchievementIcon
+                      icon={a.icon}
+                      size={20}
+                      color={a.unlockedAt ? colors.gold : colors.textMuted}
+                    />
                   </View>
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <TiraText size="xs" weight="semibold">
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text
+                      style={{
+                        fontSize: 13.5,
+                        fontWeight: typography.fontWeight.semibold,
+                        lineHeight: 14,
+                        color: colors.text,
+                        fontFamily: BODY,
+                      }}
+                    >
                       {a.title}
-                    </TiraText>
-                    <TiraText size="xs" variant="muted">
+                    </Text>
+                    <Text
+                      style={{
+                        marginTop: 2,
+                        fontSize: 10,
+                        lineHeight: 12,
+                        color: colors.textMuted,
+                        fontFamily: BODY,
+                      }}
+                    >
                       {a.description}
-                    </TiraText>
+                    </Text>
                     {a.unlockedAt ? (
-                      <TiraText size="xs" variant="gold">
-                        {formatDate(a.unlockedAt, t)}
-                      </TiraText>
+                      <Text
+                        style={{
+                          marginTop: spacing[1],
+                          fontSize: 9,
+                          color: colors.gold,
+                          fontFamily: BODY,
+                        }}
+                      >
+                        {formatDate(a.unlockedAt)}
+                      </Text>
                     ) : null}
                   </View>
                 </View>
-              </TiraCard>
-            </View>
-          ))}
+              </GameCard>
+            ))}
+          </View>
+          <GameButton
+            variant="outline"
+            style={{ width: '100%' }}
+            onPress={() => router.push('/achievements')}
+          >
+            <Text style={BUTTON_LABEL}>Ver todas as conquistas</Text>
+            <ChevronRight size={16} color={colors.text} />
+          </GameButton>
         </View>
       ) : null}
 
       {tab === 'friends' ? (
-        <EmptyState
-          emoji="👥"
-          title={t('profile.friends.title')}
-          desc={t('profile.friends.desc')}
-          actionLabel={t('profile.friends.play_ai')}
-          onAction={() => router.push('/offline')}
-        />
+        <GameCard style={{ padding: spacing[8], alignItems: 'center' }}>
+          <View style={{ marginBottom: spacing[3] }}>
+            <Users size={40} color={colors.textMuted} />
+          </View>
+          <Text
+            style={{
+              fontSize: 15.75,
+              color: colors.textMuted,
+              fontFamily: BODY,
+              textAlign: 'center',
+              marginBottom: spacing[1],
+            }}
+          >
+            Sem amigos ainda
+          </Text>
+          <Text
+            style={{
+              fontSize: 11,
+              color: colors.textMuted,
+              fontFamily: BODY,
+              textAlign: 'center',
+              marginBottom: spacing[4],
+            }}
+          >
+            O modo online com amigos chega em breve. Por enquanto, desafia a IA!
+          </Text>
+          <GameButton variant="p1" onPress={() => router.push('/offline')}>
+            Jogar contra a IA
+          </GameButton>
+        </GameCard>
       ) : null}
 
-      {/* Reset (discreto) */}
+      {/* Sessão / conta */}
+      {user ? (
+        <GameButton
+          variant="outline"
+          style={{ width: '100%' }}
+          disabled={signingOut}
+          onPress={() => void signOut()}
+        >
+          <LogOut size={16} color={colors.text} />
+          <Text style={BUTTON_LABEL}>{signingOut ? 'A sair…' : 'Sair da conta'}</Text>
+        </GameButton>
+      ) : null}
+
+      {/* Botão de reset (discreto) */}
       {profile.totalMatches > 0 ? (
-        <TiraButton variant="ghost" size="sm" fullWidth onPress={confirmReset}>
-          {t('profile.reset')}
-        </TiraButton>
+        <Pressable
+          accessibilityRole="button"
+          onPress={confirmReset}
+          style={({ pressed }) => ({
+            width: '100%',
+            paddingVertical: spacing[2],
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Text
+            style={{
+              textAlign: 'center',
+              fontSize: 10,
+              color: colors.textMuted,
+              fontFamily: BODY,
+            }}
+          >
+            Reiniciar progresso
+          </Text>
+        </Pressable>
       ) : null}
     </TiraScreen>
   );
 }
 
-function MatchRow({ match }: { match: MatchRecord }) {
-  const { t } = useT();
-  return (
-    <TiraCard style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3] }}>
-      <ResultBadge result={match.result} playerSide={match.playerSide} />
-      <View style={{ flex: 1, gap: 2 }}>
-        <TiraText size="sm" weight="semibold" numberOfLines={1}>
-          {t('profile.vs', { opponent: match.opponent })}
-        </TiraText>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] }}>
-          <TiraText size="xs" variant="muted">
-            {`📅 ${formatDate(match.date, t)}`}
-          </TiraText>
-          <TiraText size="xs" variant="muted">
-            {`⏱ ${match.durationSec}s`}
-          </TiraText>
-          <TiraText size="xs" variant="muted">
-            {t('profile.moves_count', { n: match.moveCount })}
-          </TiraText>
-        </View>
-      </View>
-    </TiraCard>
-  );
-}
-
 function StatCard({
-  emoji,
+  icon,
   value,
   label,
   color,
 }: {
-  emoji: string;
+  icon: ReactNode;
   value: number | string;
   label: string;
-  color: ColorToken;
+  color: string;
 }) {
   return (
-    <TiraCard style={{ flex: 1, alignItems: 'center', gap: 2, padding: spacing[3] }}>
-      <TiraText style={{ fontSize: 16 }}>{emoji}</TiraText>
-      <TiraHeading level="h3" color={color} numberOfLines={1}>
+    <GameCard style={{ flex: 1, padding: spacing[3], alignItems: 'center' }}>
+      <View style={{ marginBottom: spacing[1] }}>{icon}</View>
+      <Text
+        style={{
+          fontFamily: DISPLAY,
+          fontSize: 22.5,
+          letterSpacing: 0.45,
+          lineHeight: 22.5,
+          color,
+        }}
+      >
         {value}
-      </TiraHeading>
-      <TiraText size="xs" variant="muted" align="center" numberOfLines={1}>
+      </Text>
+      <Text
+        style={{
+          marginTop: 2,
+          fontSize: 9,
+          letterSpacing: 0.5,
+          textTransform: 'uppercase',
+          color: colors.textMuted,
+          fontFamily: BODY,
+          textAlign: 'center',
+        }}
+      >
         {label}
-      </TiraText>
-    </TiraCard>
+      </Text>
+    </GameCard>
   );
 }
 
-function StreakCol({ label, value, color }: { label: string; value: number; color: ColorToken }) {
+function StreakCol({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <View style={{ flex: 1, alignItems: 'center', gap: 2 }}>
-      <TiraText size="xs" variant="muted" align="center" style={{ textTransform: 'uppercase' }}>
-        {label}
-      </TiraText>
-      <TiraHeading level="h2" color={color}>
-        {value}
-      </TiraHeading>
+    <View style={{ flex: 1, alignItems: 'flex-start' }}>
+      <Text style={TINY_UPPER}>{label}</Text>
+      <Text style={{ fontFamily: DISPLAY, fontSize: 27, letterSpacing: 0.54, color }}>{value}</Text>
     </View>
   );
 }
 
 function Divider() {
-  return <View style={{ width: 1, height: spacing[10], backgroundColor: colors.border }} />;
+  return (
+    <View
+      style={{
+        width: 1,
+        height: 40,
+        backgroundColor: alpha(colors.white, 0.04),
+      }}
+    />
+  );
 }
 
+function MatchRow({
+  match,
+  onShare,
+  onReplay,
+}: {
+  match: MatchRecord;
+  onShare: () => void;
+  onReplay: () => void;
+}) {
+  return (
+    <GameCard style={{ padding: spacing[3] }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
+        <ResultBadge result={match.result} playerSide={match.playerSide} />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              fontSize: 15.75,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.text,
+              fontFamily: BODY,
+            }}
+          >
+            {`vs ${match.opponent}`}
+          </Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing[3],
+              marginTop: 2,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[1] }}>
+              <Calendar size={12} color={colors.textMuted} />
+              <Text style={{ fontSize: 10, color: colors.textMuted, fontFamily: BODY }}>
+                {formatDate(match.date)}
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[1] }}>
+              <Clock size={12} color={colors.textMuted} />
+              <Text style={{ fontSize: 10, color: colors.textMuted, fontFamily: BODY }}>
+                {`${match.durationSec}s`}
+              </Text>
+            </View>
+            <Text style={{ fontSize: 10, color: colors.textMuted, fontFamily: BODY }}>
+              {`${match.moveCount} jogadas`}
+            </Text>
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[1] }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Partilhar partida"
+            onPress={onShare}
+            style={({ pressed }) => ({
+              width: 48,
+              height: 48,
+              borderRadius: radii.lg,
+              backgroundColor: pressed ? alpha(colors.gold, 0.2) : colors.surfaceAlt,
+              alignItems: 'center',
+              justifyContent: 'center',
+            })}
+          >
+            <Share2 size={14} color={colors.text} />
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Ver replay"
+            onPress={onReplay}
+            style={({ pressed }) => ({
+              width: 48,
+              height: 48,
+              borderRadius: radii.lg,
+              backgroundColor: pressed ? alpha(colors.gold, 0.2) : colors.surfaceAlt,
+              alignItems: 'center',
+              justifyContent: 'center',
+            })}
+          >
+            <Play size={14} color={colors.text} />
+          </Pressable>
+        </View>
+      </View>
+    </GameCard>
+  );
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = now.getTime() - d.getTime();
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(mins / 60);
+  const days = Math.floor(hours / 24);
+  if (mins < 1) return 'agora';
+  if (mins < 60) return `${mins}min atrás`;
+  if (hours < 24) return `${hours}h atrás`;
+  if (days < 7) return `${days}d atrás`;
+  return d.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' });
+}
+
+// ============ Painel de progressão de dificuldades ============
 function ProgressionPanel() {
-  const { t } = useT();
   const wins = useProgression((s) => s.winsByDifficulty);
   const unlocked = useProgression((s) => s.unlocked);
 
   return (
-    <TiraCard>
-      <TiraHeading level="h3" style={{ marginBottom: spacing[3] }}>
-        {t('profile.ai_levels')}
-      </TiraHeading>
-      <View style={{ gap: spacing[3] }}>
+    <GameCard style={{ padding: spacing[4] }}>
+      <SectionTitle title="Níveis de IA" />
+      <View style={{ gap: 10 }}>
         {DIFF_META.map((d) => {
           const isUnlocked = unlocked[d.id];
           const req = getUnlockRequirement(d.id);
@@ -299,37 +622,44 @@ function ProgressionPanel() {
                   width: 36,
                   height: 36,
                   borderRadius: radii.lg,
-                  backgroundColor: colors.surfaceAlt,
+                  backgroundColor: isUnlocked ? colors.surfaceAlt : alpha(colors.surfaceAlt, 0.5),
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <TiraText size="lg">{isUnlocked ? d.emoji : '🔒'}</TiraText>
+                {isUnlocked ? (
+                  <d.Icon size={20} color={d.color} />
+                ) : (
+                  <Lock size={16} color={colors.textMuted} />
+                )}
               </View>
-              <View style={{ flex: 1, gap: spacing[1] }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <View
                   style={{
                     flexDirection: 'row',
-                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    gap: spacing[2],
+                    justifyContent: 'space-between',
+                    marginBottom: spacing[1],
                   }}
                 >
-                  <TiraText size="xs" weight="semibold" variant={isUnlocked ? undefined : 'muted'} style={isUnlocked ? { color: colors[d.color] } : undefined}>
-                    {t(`diff.${d.id}`)}
-                  </TiraText>
+                  <Text
+                    style={{
+                      fontSize: 13.5,
+                      fontWeight: typography.fontWeight.semibold,
+                      color: isUnlocked ? d.color : colors.textMuted,
+                      fontFamily: BODY,
+                    }}
+                  >
+                    {d.label}
+                  </Text>
                   {isUnlocked ? (
-                    <TiraText size="xs" variant="muted">
-                      {t('profile.wins_count', { n: wins[d.id] })}
-                    </TiraText>
+                    <Text style={{ fontSize: 10, color: colors.textMuted, fontFamily: BODY }}>
+                      {`${wins[d.id]} vitórias`}
+                    </Text>
                   ) : req ? (
-                    <TiraText size="xs" variant="gold">
-                      {t('profile.requirement', {
-                        wins: currentWins,
-                        req: req.wins,
-                        diff: t(`diff.${req.difficulty}`),
-                      })}
-                    </TiraText>
+                    <Text style={{ fontSize: 10, color: colors.gold, fontFamily: BODY }}>
+                      {`${currentWins}/${req.wins} no ${DIFF_LABEL[req.difficulty]}`}
+                    </Text>
                   ) : null}
                 </View>
                 {!isUnlocked && req ? (
@@ -356,101 +686,6 @@ function ProgressionPanel() {
           );
         })}
       </View>
-    </TiraCard>
+    </GameCard>
   );
-}
-
-function XpBar({
-  level,
-  pct,
-  current,
-  needed,
-}: {
-  level: number;
-  pct: number;
-  current: number;
-  needed: number;
-}) {
-  const { t } = useT();
-  return (
-    <View style={{ gap: spacing[1], width: '100%' }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <TiraText size="xs" variant="muted">{`${t('home.level')} ${level}`}</TiraText>
-        <TiraText size="xs" variant="muted">
-          {`${current.toLocaleString('pt-PT')} / ${needed.toLocaleString('pt-PT')} XP`}
-        </TiraText>
-      </View>
-      <View
-        style={{
-          height: 8,
-          borderRadius: radii.pill,
-          backgroundColor: colors.surfaceAlt,
-          overflow: 'hidden',
-        }}
-      >
-        <View
-          style={{
-            width: `${pct}%`,
-            height: '100%',
-            backgroundColor: colors.p1,
-            borderRadius: radii.pill,
-          }}
-        />
-      </View>
-    </View>
-  );
-}
-
-function LevelAvatar({ emoji, level, isTop }: { emoji: string; level: number; isTop: boolean }) {
-  return (
-    <View style={{ width: 72, height: 72 }}>
-      <View
-        style={{
-          width: 72,
-          height: 72,
-          borderRadius: radii.pill,
-          backgroundColor: colors.surfaceAlt,
-          borderWidth: 2,
-          borderColor: alpha(colors[isTop ? 'gold' : 'p1'], 0.6),
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <TiraText style={{ fontSize: 34 }}>{emoji}</TiraText>
-      </View>
-      <View
-        style={{
-          position: 'absolute',
-          bottom: -4,
-          right: -4,
-          minWidth: 24,
-          height: 24,
-          borderRadius: radii.pill,
-          backgroundColor: colors.gold,
-          borderWidth: 1,
-          borderColor: colors.bg,
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingHorizontal: spacing[1],
-        }}
-      >
-        <TiraText size="xs" weight="bold" variant="inverse">
-          {level}
-        </TiraText>
-      </View>
-    </View>
-  );
-}
-
-function formatDate(iso: string, t: UseTResult['t']): string {
-  const d = new Date(iso);
-  const diff = Date.now() - d.getTime();
-  const mins = Math.floor(diff / 60000);
-  const hours = Math.floor(mins / 60);
-  const days = Math.floor(hours / 24);
-  if (mins < 1) return t('time.now');
-  if (mins < 60) return t('time.minutes', { n: mins });
-  if (hours < 24) return t('time.hours', { n: hours });
-  if (days < 7) return t('time.days', { n: days });
-  return d.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' });
 }

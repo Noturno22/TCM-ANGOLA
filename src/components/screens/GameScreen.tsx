@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, forwardRef } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RotateCcw,
@@ -11,10 +12,8 @@ import {
   ChevronLeft,
   Undo2,
   Eye,
-  User,
-  Bot,
-  Handshake,
   Trophy,
+  Handshake,
   Frown,
 } from 'lucide-react';
 import { useApp } from '@/store/app';
@@ -23,8 +22,12 @@ import { useSettings } from '@/store/settings';
 import { isGameOver, type Square, type Threat, type Move, type Cell } from '@tira/engine';
 import { playSound } from '@/lib/sound';
 import { Board } from '@/components/game/Board';
+import { ArenaBackground } from '@/components/game/ArenaBackground';
+import { RobotAvatar } from '@/components/game/RobotAvatar';
 import { GameButton, GameCard } from '@/components/game/ui';
 import { Confetti } from '@/components/game/Confetti';
+import { CocoDoMeioPopup } from '@/components/game/CocoDoMeioPopup';
+import { isTrappedInMiddle } from '@/lib/cocoDoMeio';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -153,6 +156,13 @@ export function GameScreen() {
 
   const gameOver = isGameOver(state);
 
+  // "Tira o coco do meio": vez humana com peça no meio encurralada
+  const cocoActive =
+    !gameOver &&
+    mode !== 'cvc' &&
+    (mode === 'pvp' || state.currentPlayer === humanSide) &&
+    isTrappedInMiddle(state);
+
   const handleExit = () => {
     if (!isGameOver(state) && mode !== 'cvc') {
       forfeit(humanSide);
@@ -160,46 +170,57 @@ export function GameScreen() {
     back();
   };
 
+  const modeText =
+    mode === 'pvp' ? '2 Jogadores' : mode === 'pve' ? 'vs IA' : mode === 'practice' ? 'Treino Livre' : 'IA vs IA';
+  const diffText = mode !== 'pvp' ? diffLabel(difficulty) : null;
+  const bannerTone: 'green' | 'red' | 'gold' = gameOver ? 'gold' : p1Active ? 'green' : 'red';
+
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-background overflow-hidden">
-      {/* Padrão de fundo subtil */}
-      <div className="pointer-events-none absolute inset-0 angolan-pattern opacity-30" />
+      {/* Arena neon de fundo (SVG) */}
+      <ArenaBackground />
 
       {/* Cabeçalho da partida */}
-      <header className="relative z-10 px-4 py-3 border-b border-border/40 bg-background/60 backdrop-blur-md">
+      <header className="relative z-10 px-4 pt-3 pb-1">
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={handleExit}
-            className="w-12 h-12 rounded-full bg-surface/60 flex items-center justify-center hover:bg-surface"
+            className="h-12 w-12 shrink-0 rounded-full border border-white/12 bg-black/55 text-white/90 backdrop-blur-sm transition hover:bg-black/75 active:scale-95"
             aria-label="Voltar"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="mx-auto h-5 w-5" />
           </button>
-          <div className="text-center flex-1 min-w-0">
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-              {mode === 'pvp' ? '2 Jogadores' : mode === 'pve' ? 'vs IA' : mode === 'practice' ? 'Treino Livre' : 'IA vs IA'}
-              {mode !== 'pvp' && ` • ${diffLabel(difficulty)}`}
+          <div className="min-w-0 flex-1 text-center">
+            <p className="truncate text-[13px] font-extrabold uppercase tracking-wide text-white">
+              {modeText}
+              {diffText && (
+                <>
+                  {' · '}
+                  <span className="text-p1 text-glow-p1">{diffText}</span>
+                </>
+              )}
             </p>
-            <p className="text-xs text-gold font-medium truncate">
-              Partida #{moveCount} {showThreats && '• Tutorial'}
+            <p className="text-[12px] font-semibold text-white/85">
+              Partida #{moveCount}
+              {showThreats && ' • Tutorial'}
             </p>
           </div>
           <button
             type="button"
             onClick={() => navigate('how-to-play')}
-            className="w-12 h-12 rounded-full bg-surface/60 flex items-center justify-center hover:bg-surface"
+            className="h-12 w-12 shrink-0 rounded-full border border-white/12 bg-black/55 text-white/90 backdrop-blur-sm transition hover:bg-black/75 active:scale-95"
             aria-label="Como jogar"
           >
-            <MessageCircle className="w-4 h-4" />
+            <MessageCircle className="mx-auto h-[18px] w-[18px]" />
           </button>
         </div>
       </header>
 
       {/* Área principal */}
-      <div className="relative z-10 flex-1 overflow-y-auto scrollbar-custom px-4 py-4">
-        {/* Jogadores + relógios */}
-        <div className="flex items-stretch gap-3 mb-5">
+      <div className="relative z-10 flex-1 overflow-y-auto scrollbar-custom px-4 pb-6">
+        {/* Jogadores + relógios + VS */}
+        <div className="mb-3 flex items-stretch gap-2 pt-1">
           <PlayerCard
             label={p1Label}
             active={p1Active}
@@ -208,8 +229,17 @@ export function GameScreen() {
             isHuman={mode === 'pve' || mode === 'practice' ? humanSide === 'P1' : mode !== 'cvc'}
             isP1
           />
-          <div className="flex items-center justify-center px-1">
-            <span className="font-display text-xl text-muted-foreground">VS</span>
+          <div className="flex shrink-0 items-center px-0.5">
+            <span
+              className="font-display text-[26px] italic leading-none text-white"
+              style={{
+                textShadow:
+                  '0 0 14px rgba(45,255,120,0.85), 0 0 32px rgba(45,255,120,0.45)',
+              }}
+              aria-hidden
+            >
+              VS
+            </span>
           </div>
           <PlayerCard
             label={p2Label}
@@ -221,8 +251,8 @@ export function GameScreen() {
           />
         </div>
 
-        {/* Estado / mensagem */}
-        <div className="text-center mb-4 min-h-[28px]">
+        {/* Banner de estado */}
+        <StatusBanner tone={bannerTone}>
           <AnimatePresence mode="wait">
             <motion.p
               key={state.status + moveCount}
@@ -230,9 +260,9 @@ export function GameScreen() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 5 }}
               className={cn(
-                'text-sm font-medium',
-                p1Active && 'text-p1',
-                p2Active && 'text-p2',
+                'text-[13.5px] font-semibold',
+                p1Active && 'text-[#45ff95]',
+                p2Active && 'text-[#ff6b6b]',
                 gameOver && 'text-gold',
                 !p1Active && !p2Active && !gameOver && 'text-muted-foreground',
               )}
@@ -240,10 +270,10 @@ export function GameScreen() {
               {getStatusMessage(state, mode, humanSide, isAiThinking, showThreats, currentThreats)}
             </motion.p>
           </AnimatePresence>
-        </div>
+        </StatusBanner>
 
         {/* Tabuleiro */}
-        <div className="flex justify-center mb-5">
+        <div className="mb-4 flex justify-center px-1">
           <Board
             board={state.board}
             selectedSquare={selectedSquare}
@@ -257,66 +287,55 @@ export function GameScreen() {
           />
         </div>
 
-        {/* Contadores de jogadas */}
-        <div className="flex justify-center gap-6 text-center mb-4">
-          <div>
-            <div className="font-display text-xl text-foreground">{moveCount}</div>
-            <div className="text-xs text-muted-foreground uppercase">Jogadas</div>
-          </div>
-          <div className="w-px bg-border/40" />
-          <div>
-            <div className="font-display text-xl text-gold">{state.history.length}</div>
-            <div className="text-xs text-muted-foreground uppercase">Histórico</div>
-          </div>
+        {/* Contadores */}
+        <div className="mb-4 flex flex-wrap justify-center gap-3">
+          <StatChip
+            icon={<Trophy className="h-4 w-4 text-white/80" />}
+            value={moveCount}
+            label="Jogadas"
+          />
+          <StatChip
+            icon={<Trophy className="h-4 w-4 text-gold" />}
+            value={state.history.length}
+            label="Histórico"
+          />
           {showThreats && (
-            <>
-              <div className="w-px bg-border/40" />
-              <div>
-                <div className={cn('font-display text-xl', currentThreats.length > 0 ? 'text-p2' : 'text-muted-foreground')}>
-                  {currentThreats.length}
-                </div>
-                <div className="text-xs text-muted-foreground uppercase">Ameaças</div>
-              </div>
-            </>
+            <StatChip
+              icon={<Eye className={cn('h-4 w-4', currentThreats.length > 0 ? 'text-p2' : 'text-white/60')} />}
+              value={currentThreats.length}
+              label="Ameaças"
+            />
           )}
         </div>
 
         {/* Ações */}
-        <div className="grid grid-cols-3 gap-2 max-w-md mx-auto">
-          <GameButton
-            variant="outline"
-            className="h-12 text-xs px-3"
+        <div className="mx-auto mb-2.5 grid max-w-[540px] grid-cols-3 gap-2.5">
+          <NeonButton
+            tone="green"
             onClick={undo}
             disabled={moveCount === 0 || mode === 'cvc' || gameOver}
+            className="px-2 text-[12.5px]"
           >
-            <Undo2 className="w-4 h-4 mr-1" />
+            <Undo2 className="h-4 w-4 shrink-0" />
             Anular
-          </GameButton>
-          <GameButton
-            variant="outline"
-            className="h-12 text-xs px-3"
-            onClick={toggleThreats}
-          >
-            <Eye className="w-4 h-4 mr-1" />
+          </NeonButton>
+          <NeonButton tone="gold" onClick={toggleThreats} className="px-2 text-[12.5px]">
+            <Eye className="h-4 w-4 shrink-0" />
             {showThreats ? 'Ocultar' : 'Ameaças'}
-          </GameButton>
-          <GameButton
-            variant="outline"
-            className="h-12 text-xs px-3"
-            onClick={restart}
-          >
-            <RotateCcw className="w-4 h-4 mr-1" />
+          </NeonButton>
+          <NeonButton tone="green" onClick={restart} className="px-2 text-[12.5px]">
+            <RotateCcw className="h-4 w-4 shrink-0" />
             Reiniciar
-          </GameButton>
+          </NeonButton>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 max-w-md mx-auto mt-2">
+        <div className="mx-auto grid max-w-[540px] grid-cols-[1.45fr_1fr] gap-2.5">
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <GameButton variant="p2" className="h-12 text-xs px-3" disabled={gameOver}>
-                <Flag className="w-4 h-4 mr-1" />
+              <NeonButton tone="red" disabled={gameOver} className="font-extrabold">
+                <Flag className="h-4 w-4 shrink-0" />
                 Desistir
-              </GameButton>
+              </NeonButton>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -341,10 +360,10 @@ export function GameScreen() {
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <GameButton variant="outline" className="h-12 text-xs px-3">
-                <LogOut className="w-4 h-4 mr-1" />
+              <NeonButton tone="green">
+                <LogOut className="h-4 w-4 shrink-0" />
                 Sair
-              </GameButton>
+              </NeonButton>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -370,6 +389,9 @@ export function GameScreen() {
         </div>
       </div>
 
+      {/* "Tira o coco do meio" — pop-ups animados */}
+      <CocoDoMeioPopup active={cocoActive} moveCount={state.moveCount} />
+
       {/* Overlay de fim de jogo */}
       <AnimatePresence>
         {gameOver && (
@@ -390,6 +412,113 @@ export function GameScreen() {
   );
 }
 
+/* ============================================================
+   BANNER DE ESTADO — painel hexagonal com borda neon
+   ============================================================ */
+const BANNER_CLIP =
+  'polygon(16px 0%, calc(100% - 16px) 0%, 100% 50%, calc(100% - 16px) 100%, 16px 100%, 0% 50%)';
+
+const BANNER_TONES: Record<'green' | 'red' | 'gold', { edge: string; glow: string }> = {
+  green: {
+    edge: 'linear-gradient(90deg, rgba(45,255,120,0.12) 0%, rgba(45,255,120,0.95) 50%, rgba(45,255,120,0.12) 100%)',
+    glow: '0 0 18px rgba(45,255,120,0.4)',
+  },
+  red: {
+    edge: 'linear-gradient(90deg, rgba(255,59,59,0.12) 0%, rgba(255,59,59,0.95) 50%, rgba(255,59,59,0.12) 100%)',
+    glow: '0 0 18px rgba(255,59,59,0.4)',
+  },
+  gold: {
+    edge: 'linear-gradient(90deg, rgba(245,180,38,0.12) 0%, rgba(245,180,38,0.95) 50%, rgba(245,180,38,0.12) 100%)',
+    glow: '0 0 18px rgba(245,180,38,0.4)',
+  },
+};
+
+function StatusBanner({ tone, children }: { tone: 'green' | 'red' | 'gold'; children: ReactNode }) {
+  const t = BANNER_TONES[tone];
+  return (
+    <div
+      className="relative mx-auto mb-4 w-full max-w-[440px]"
+      style={{ filter: `drop-shadow(${t.glow})` }}
+    >
+      <div
+        aria-hidden
+        className="absolute inset-0"
+        style={{ clipPath: BANNER_CLIP, background: t.edge }}
+      />
+      <div
+        aria-hidden
+        className="absolute inset-[2px]"
+        style={{
+          clipPath: BANNER_CLIP,
+          background: 'linear-gradient(180deg, rgba(5,12,9,0.97), rgba(2,6,4,0.97))',
+        }}
+      />
+      <div className="relative px-8 py-2 text-center">{children}</div>
+    </div>
+  );
+}
+
+/* ============================================================
+   CHIP DE ESTATÍSTICA
+   ============================================================ */
+function StatChip({ icon, value, label }: { icon: ReactNode; value: number; label: string }) {
+  return (
+    <div className="min-w-[118px] rounded-2xl border border-white/15 bg-black/55 px-5 py-1.5 text-center backdrop-blur-sm">
+      <div className="flex items-center justify-center gap-2">
+        {icon}
+        <span className="font-display text-[26px] leading-none text-white tabular-nums">
+          {value}
+        </span>
+      </div>
+      <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-white/70">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+/* ============================================================
+   BOTÃO NEON (transparente, borda com glow)
+   ============================================================ */
+type NeonTone = 'green' | 'gold' | 'red';
+
+const NEON_TONES: Record<NeonTone, string> = {
+  green:
+    'border-[#2dff7e]/85 bg-[#060d09]/85 backdrop-blur-sm text-white shadow-[0_0_14px_rgba(45,255,120,0.4),inset_0_0_12px_rgba(45,255,120,0.12)] hover:shadow-[0_0_20px_rgba(45,255,120,0.6),inset_0_0_14px_rgba(45,255,120,0.18)]',
+  gold:
+    'border-[#f5b426]/85 bg-[#060d09]/85 backdrop-blur-sm text-white shadow-[0_0_14px_rgba(245,180,38,0.4),inset_0_0_12px_rgba(245,180,38,0.12)] hover:shadow-[0_0_20px_rgba(245,180,38,0.6),inset_0_0_14px_rgba(245,180,38,0.18)]',
+  red:
+    'border-[#ff8080]/60 bg-gradient-to-b from-[#ff4b4b] to-[#cf1414] text-white shadow-[0_8px_20px_rgba(255,60,60,0.45)] hover:from-[#ff5f5f] hover:to-[#dd1b1b]',
+};
+
+const NeonButton = forwardRef<HTMLButtonElement, { tone?: NeonTone } & ComponentProps<'button'>>(
+  function NeonButton({ tone = 'green', className, onClick, children, ...props }, ref) {
+    return (
+      <button
+        {...props}
+        ref={ref}
+        type="button"
+        className={cn(
+          'flex h-11 items-center justify-center gap-1.5 rounded-full border-2 px-3',
+          'text-[13px] font-bold transition-all duration-200',
+          'active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40',
+          NEON_TONES[tone],
+          className,
+        )}
+        onClick={(e) => {
+          if (!props.disabled) playSound('click');
+          onClick?.(e);
+        }}
+      >
+        {children}
+      </button>
+    );
+  },
+);
+
+/* ============================================================
+   CARD DE JOGADOR — avatar robot SVG + relógio + estado
+   ============================================================ */
 function PlayerCard({
   label,
   active,
@@ -406,60 +535,83 @@ function PlayerCard({
   isP1: boolean;
 }) {
   const lowTime = time <= 10;
+  const timeStr = `${String(Math.floor(time / 60)).padStart(2, '0')}:${String(time % 60).padStart(2, '0')}`;
+
   return (
     <div
       className={cn(
-        'flex-1 rounded-xl border p-2.5 transition-all',
+        'relative flex min-w-0 flex-1 items-center gap-2.5 rounded-[20px] border-2 px-2.5 py-2 transition-all duration-300',
         active
           ? isP1
-            ? 'border-p1/60 bg-p1/10 shadow-lg shadow-p1/10'
-            : 'border-p2/60 bg-p2/10 shadow-lg shadow-p2/10'
-          : 'border-border/40 bg-surface/40',
+            ? 'border-[#2dff7e] bg-[#05150c]/85 shadow-[0_0_20px_rgba(45,255,120,0.4),inset_0_0_20px_rgba(45,255,120,0.1)]'
+            : 'border-[#ff3b3b] bg-[#170607]/85 shadow-[0_0_20px_rgba(255,59,59,0.38),inset_0_0_20px_rgba(255,59,59,0.1)]'
+          : 'border-white/12 bg-black/55 backdrop-blur-sm',
       )}
     >
-      <div className="flex items-center gap-2 mb-1.5">
-        <div
-          className={cn(
-            'w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-white',
-            isP1 ? 'bg-p1' : 'bg-p2',
-          )}
-        >
-          {isHuman ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-        </div>
-        <span className="text-xs font-semibold truncate">{label}</span>
-        {active && (
-          <span className="ml-auto">
-            <span className={cn('w-2 h-2 rounded-full block', isP1 ? 'bg-p1' : 'bg-p2', 'animate-pulse-glow')} />
-          </span>
+      {/* Avatar robot */}
+      <div
+        className={cn(
+          'relative h-11 w-11 shrink-0 overflow-hidden rounded-full border-2 bg-[#0a120e]',
+          isP1
+            ? 'border-[#2dff7e] shadow-[0_0_12px_rgba(45,255,120,0.55)]'
+            : 'border-[#ff3b3b] shadow-[0_0_12px_rgba(255,59,59,0.5)]',
         )}
+      >
+        <RobotAvatar variant={isHuman ? 'human' : 'ai'} />
       </div>
-      {showClock ? (
-        <div className="flex items-center gap-1">
-          <Clock className={cn('w-3 h-3', lowTime ? 'text-p2' : 'text-muted-foreground')} />
+
+      <div className="min-w-0 flex-1">
+        <p className="truncate pr-3 text-[15px] font-bold leading-tight text-white">{label}</p>
+        <div className="mt-1 flex items-center gap-1.5">
+          <Clock
+            className={cn(
+              'h-3.5 w-3.5 shrink-0',
+              lowTime && active ? 'text-[#ff5a5a]' : 'text-white/55',
+            )}
+          />
           <span
             className={cn(
-              'font-display text-lg leading-none',
-              lowTime ? 'text-p2' : active ? 'text-foreground' : 'text-muted-foreground',
+              'font-display text-lg leading-none tabular-nums',
+              lowTime && active
+                ? 'text-[#ff5a5a]'
+                : active
+                  ? isP1
+                    ? 'text-[#45ff95]'
+                    : 'text-[#ff6b6b]'
+                  : 'text-white/85',
             )}
           >
-            {String(Math.floor(time / 60)).padStart(2, '0')}:
-            {String(time % 60).padStart(2, '0')}
+            {showClock ? timeStr : '—:—'}
           </span>
           {active && (
-            <span className="text-[11px] text-muted-foreground ml-auto uppercase">
+            <span
+              className={cn(
+                'ml-auto shrink-0 text-[9.5px] font-extrabold uppercase tracking-wider',
+                isP1 ? 'text-[#45ff95]' : 'text-[#ff6b6b]',
+              )}
+            >
               {isHuman ? 'Sua vez' : 'A pensar…'}
             </span>
           )}
-        </div>
-      ) : (
-        <div className="flex items-center gap-1">
-          <span className="text-[10px] text-muted-foreground italic">Sem relógio</span>
-          {active && (
-            <span className="text-[11px] text-muted-foreground ml-auto uppercase">
-              {isHuman ? 'Sua vez' : 'A pensar…'}
+          {!active && !showClock && (
+            <span className="ml-auto shrink-0 text-[9.5px] font-medium text-white/45">
+              Sem relógio
             </span>
           )}
         </div>
+      </div>
+
+      {active && (
+        <span
+          aria-hidden
+          className={cn(
+            'absolute right-2.5 top-2.5 h-2.5 w-2.5 animate-pulse-glow rounded-full',
+            isP1 ? 'bg-[#2dff7e]' : 'bg-[#ff3b3b]',
+          )}
+          style={{
+            boxShadow: isP1 ? '0 0 8px #2dff7e' : '0 0 8px #ff3b3b',
+          }}
+        />
       )}
     </div>
   );

@@ -16,15 +16,15 @@ import { useProgression } from '@/store/progression';
 export interface MatchRecord {
   id: string;
   date: string; // ISO
-  mode: 'pvp' | 'pve' | 'cvc';
+  mode: 'pvp' | 'pve' | 'cvc' | 'practice';
   difficulty?: Difficulty;
   result: 'P1' | 'P2' | 'DRAW';
-  playerSide?: 'P1' | 'P2'; // em pve, que lado o humano jogou
+  playerSide?: 'P1' | 'P2'; // em pve/practice, que lado o humano jogou
   opponent: string; // nome do adversário (IA ou "Jogador 2")
   moves: Move[];
   moveCount: number;
   durationSec: number;
-  reason?: 'LINE' | 'REPETITION' | 'RESIGN';
+  reason?: 'LINE' | 'REPETITION' | 'RESIGN' | 'FORFEIT';
 }
 
 export interface Achievement {
@@ -55,6 +55,7 @@ interface ProfileStore extends ProfileStats {
   recordMatch: (m: Omit<MatchRecord, 'id' | 'date'>) => MatchRecord;
   addXp: (amount: number) => void;
   addCoins: (amount: number) => void;
+  spendCoins: (amount: number) => boolean;
   unlockAchievement: (id: string) => void;
   resetProfile: () => void;
   /** Sincroniza números vindos do servidor (modo online autoritativo). */
@@ -189,6 +190,13 @@ export const useProfile = create<ProfileStore>()(
 
       addCoins: (amount) => {
         set((s) => ({ coins: Math.max(0, s.coins + amount) }));
+      },
+
+      spendCoins: (amount) => {
+        if (amount <= 0) return true;
+        if (get().coins < amount) return false;
+        set((s) => ({ coins: Math.max(0, s.coins - amount) }));
+        return true;
       },
 
       unlockAchievement: (id) => {

@@ -6,6 +6,7 @@
 import * as Haptics from 'expo-haptics';
 import type { ReactNode } from 'react';
 import { Pressable, Text, type StyleProp, type ViewStyle } from 'react-native';
+import { alpha } from '@/components/tira/alpha';
 import { colors, radii, spacing, typography } from '@/theme';
 
 export type TiraButtonVariant = 'primary' | 'gold' | 'outline' | 'ghost' | 'p1' | 'p2';
@@ -15,15 +16,33 @@ interface VariantStyle {
   background: string | null;
   foreground: string;
   border: string | null;
+  borderWidth: number;
 }
 
+// Mesmas variantes do GameButton web (src/components/game/ui.tsx):
+// outline = border-2 border-gold/60 bg-surface; ghost = bg-surface-2 border-border
 const VARIANTS: Record<TiraButtonVariant, VariantStyle> = {
-  primary: { background: colors.primary, foreground: colors.primaryForeground, border: null },
-  gold: { background: colors.gold, foreground: colors.textInverse, border: null },
-  p1: { background: colors.p1, foreground: colors.white, border: null },
-  p2: { background: colors.p2, foreground: colors.white, border: null },
-  outline: { background: colors.surface, foreground: colors.text, border: colors.border },
-  ghost: { background: null, foreground: colors.text, border: null },
+  primary: {
+    background: colors.primary,
+    foreground: colors.primaryForeground,
+    border: null,
+    borderWidth: 0,
+  },
+  gold: { background: colors.gold, foreground: colors.textInverse, border: null, borderWidth: 0 },
+  p1: { background: colors.p1, foreground: colors.white, border: null, borderWidth: 0 },
+  p2: { background: colors.p2, foreground: colors.white, border: null, borderWidth: 0 },
+  outline: {
+    background: colors.surface,
+    foreground: colors.text,
+    border: alpha(colors.gold, 0.6),
+    borderWidth: 2,
+  },
+  ghost: {
+    background: colors.surfaceAlt,
+    foreground: colors.text,
+    border: colors.border,
+    borderWidth: 1,
+  },
 };
 
 const SIZES = {
@@ -95,9 +114,9 @@ export function TiraButton({
           gap: spacing[2],
           height: s.height,
           paddingHorizontal: s.paddingHorizontal,
-          borderRadius: radii.lg,
+          borderRadius: radii.xl, // web GameButton: rounded-xl = 17.5px @ base 18
           backgroundColor: v.background ?? colors.transparent,
-          borderWidth: v.border ? 1 : 0,
+          borderWidth: v.borderWidth,
           borderColor: v.border ?? colors.transparent,
           opacity: disabled ? 0.4 : pressed ? 0.85 : 1,
           alignSelf: fullWidth ? 'stretch' : 'auto',

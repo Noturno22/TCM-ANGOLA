@@ -20,7 +20,8 @@ export type SoundEvent =
   | 'achievement'
   | 'achievementRare'
   | 'countdown'
-  | 'streak';
+  | 'streak'
+  | 'coco';
 
 let ctx: AudioContext | null = null;
 let enabled = true;
@@ -204,6 +205,15 @@ export function playSound(event: SoundEvent) {
         { freq: 784, dur: 0.15, type: 'sine', vol: 0.16 },
         { freq: 1047, dur: 0.2, type: 'sine', vol: 0.18 },
       ], 0.04);
+      break;
+    case 'coco':
+      // Alerta urgente: jogador encurralado no meio — "tira o coco do meio!"
+      playSequence([
+        { freq: 660, dur: 0.09, type: 'square', vol: 0.14 },
+        { freq: 880, dur: 0.09, type: 'square', vol: 0.14 },
+        { freq: 660, dur: 0.09, type: 'square', vol: 0.14 },
+        { freq: 1174, dur: 0.22, type: 'triangle', vol: 0.16 },
+      ], 0.06);
       break;
   }
 }

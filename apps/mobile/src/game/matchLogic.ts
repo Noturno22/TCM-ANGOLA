@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Lógica pura do fluxo de jogo offline — SEM React / React Native.
  *
  * Tudo aqui são funções puras sobre dados:
@@ -6,7 +6,7 @@
  *  - aplicação de jogadas legais via @tira/engine (createGame/applyMove/
  *    getLegalMoves/getThreats/isGameOver) — as regras vivem SÓ no motor;
  *  - respostas da IA via @tira/ai (`chooseMove` com dificuldade + seed);
- *  - resignação, undo e fluxo de turnos (PvE vs IA, PvP local, Treino).
+ *  - resignação, undo e fluxo de turnos (PvE vs IA, PvP local, Treino, CvC).
  *
  * O wiring para React vive em `./useGame`; o estado persistido vive em
  * `@/store/game`. Estritamente offline — sem rede.
@@ -26,8 +26,8 @@ import {
   type Threat,
 } from '@tira/engine';
 
-/** Modos de jogo suportados: PvP local, PvE vs IA e Treino Livre. */
-export type GameMode = 'pvp' | 'pve' | 'practice';
+/** Modos de jogo suportados: PvP local, PvE vs IA, IA vs IA e Treino Livre. */
+export type GameMode = 'pvp' | 'pve' | 'cvc' | 'practice';
 
 export interface StartGameOptions {
   mode: GameMode;
@@ -99,11 +99,12 @@ export function createMatch(opts: StartGameOptions): MatchSnapshot {
 
 /**
  * Alvos legais ao selecionar uma casa, ou `null` se a casa NÃO pode ser
- * selecionada (jogo terminado, vez da IA, peça que não é do jogador atual).
+ * selecionada (jogo terminado, vez da IA/cvc, peça que não é do jogador atual).
  */
 export function selectableTargets(match: MatchSnapshot, sq: Square): Square[] | null {
   const { state, mode, humanSide } = match;
   if (isGameOver(state)) return null;
+  if (mode === 'cvc') return null;
   if (mode !== 'pvp' && state.currentPlayer !== humanSide) return null;
   if (state.board[sq - 1] !== state.currentPlayer) return null;
   return getLegalMoves(state, state.currentPlayer)
@@ -134,6 +135,7 @@ function commitMove(match: MatchSnapshot, move: Move, next: GameState): MatchSna
 export function applyHumanMove(match: MatchSnapshot, to: Square): MatchSnapshot | null {
   const { state, selectedSquare, mode, humanSide } = match;
   if (!selectedSquare) return null;
+  if (mode === 'cvc') return null;
   if (mode !== 'pvp' && state.currentPlayer !== humanSide) return null;
   if (isGameOver(state)) return null;
   const move: Move = { from: selectedSquare, to };
@@ -145,10 +147,11 @@ export function applyHumanMove(match: MatchSnapshot, to: Square): MatchSnapshot 
   }
 }
 
-/** É a vez da IA? (pve/treino, com o humano do outro lado — nunca em pvp) */
+/** É a vez da IA? (cvc sempre; pve/treino quando não é vez do humano; nunca em pvp) */
 export function isAiTurn(match: MatchSnapshot): boolean {
-  if (match.mode === 'pvp') return false;
   if (isGameOver(match.state)) return false;
+  if (match.mode === 'cvc') return true;
+  if (match.mode === 'pvp') return false;
   return match.state.currentPlayer !== match.humanSide;
 }
 
@@ -176,9 +179,10 @@ export function applyAiMove(match: MatchSnapshot, seed: number): MatchSnapshot |
   }
 }
 
-/** Desistência do humano → o adversário vence (`null` se o jogo já terminou). */
+/** Desistência do humano — o adversário vence (`null` se o jogo já terminou ou cvc). */
 export function applyResign(match: MatchSnapshot): MatchSnapshot | null {
   if (isGameOver(match.state)) return null;
+  if (match.mode === 'cvc') return null;
   const winner: PlayerId = match.humanSide === 'P1' ? 'P2' : 'P1';
   const next: GameState = {
     ...match.state,
@@ -186,16 +190,30 @@ export function applyResign(match: MatchSnapshot): MatchSnapshot | null {
     winner,
     winningLine: null,
   };
-  return { ...match, state: next, winner };
+  return { ...match, state: next, winner, selectedSquare: null, validTargets: [] };
+}
+
+/** Derrota por tempo/forfeit de `loser` — adversário vence. */
+export function applyForfeit(match: MatchSnapshot, loser: PlayerId): MatchSnapshot | null {
+  if (isGameOver(match.state)) return null;
+  const winner: PlayerId = loser === 'P1' ? 'P2' : 'P1';
+  const next: GameState = {
+    ...match.state,
+    status: winner === 'P1' ? 'WIN_P1' : 'WIN_P2',
+    winner,
+    winningLine: null,
+  };
+  return { ...match, state: next, winner, selectedSquare: null, validTargets: [] };
 }
 
 /**
  * Nº de plies a anular no undo:
  * Treino Livre = 1 (controlo total); PvE = 2 (humano + IA) quando há
- * histórico suficiente; PvP = 1.
+ * histórico suficiente; PvP = 1; CvC = 0 (desativado).
  */
 export function undoSteps(mode: GameMode, historyLength: number): number {
   if (historyLength < 2) return 0;
+  if (mode === 'cvc') return 0;
   if (mode === 'practice') return 1;
   if (mode === 'pve' && historyLength >= 3) return 2;
   return 1;
@@ -218,5 +236,6 @@ export function applyUndo(match: MatchSnapshot): MatchSnapshot | null {
     winner: restored.winner,
     winningLine: restored.winningLine,
     moveCount: restored.moveCount,
+    currentThreats: activeThreats(restored),
   };
 }

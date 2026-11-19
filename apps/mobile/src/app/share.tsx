@@ -106,7 +106,7 @@ export default function ShareScreen() {
           ) : (
             <>
               <TiraCard>
-                <TiraHeading level="h3" style={{ marginBottom: spacing[2] }}>
+                <TiraHeading level="h3" style={{ marginBottom: spacing[2], fontSize: 16, letterSpacing: -0.4, lineHeight: 24, fontWeight: '600' }}>
                   {t('share.selected')}
                 </TiraHeading>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
@@ -183,7 +183,7 @@ export default function ShareScreen() {
           )}
 
           <TiraCard>
-            <TiraHeading level="h3" style={{ marginBottom: spacing[1] }}>
+            <TiraHeading level="h3" style={{ marginBottom: spacing[1], fontSize: 15.75, letterSpacing: 0, lineHeight: 22.5, fontWeight: '600' }}>
               {t('share.how')}
             </TiraHeading>
             <TiraText size="xs" variant="muted">

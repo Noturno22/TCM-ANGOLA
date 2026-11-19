@@ -260,7 +260,7 @@ function ReplayView({ source, onClose }: { source: ReplaySource; onClose: () => 
 
   const { width } = useWindowDimensions();
   const boardSize = Math.min(
-    boardGeometry.gridSizePresets.md,
+    boardGeometry.gridSizePresets.lg,
     width - spacing[4] * 2 - boardGeometry.framePadding * 2,
   );
 
@@ -436,7 +436,7 @@ function ReplayView({ source, onClose }: { source: ReplaySource; onClose: () => 
       {isAtEnd && totalPlies > 0 ? (
         <TiraCard glow="gold">
           <View style={{ alignItems: 'center', gap: spacing[1] }}>
-            <TiraHeading level="h3" color={source.result === 'DRAW' ? 'textMuted' : 'gold'}>
+            <TiraHeading level="h3" color={source.result === 'DRAW' ? 'textMuted' : 'gold'} style={{ lineHeight: 31.5 }}>
               {source.result === 'DRAW'
                 ? t('replay.end.draw')
                 : t('replay.end.win', {
