@@ -1,15 +1,14 @@
 /**
- * Auth — entrar/criar conta por email e palavra-passe (Supabase Auth).
+ * Auth — entrar/criar conta com Google ou email e palavra-passe (Supabase Auth).
  *
- * Fatia vertical mobile: sem OAuth/telefone (a web tem Google + OTP). Ao
- * autenticar, o layout raiz passa a reconhecer a sessão e o perfil sincroniza
- * os números do servidor. Sem backend configurado, mostramos um aviso.
+ * Ao autenticar, o layout raiz passa a reconhecer a sessão e o perfil sincroniza
+ * os números do servidor. Sem backend/config Google, mostramos um aviso.
  */
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { TextInput, View } from 'react-native';
 import { TiraButton, TiraCard, TiraHeading, TiraScreen, TiraText, alpha } from '@/components/tira';
-import { isSupabaseConfigured } from '@/lib/supabase';
+import { isGoogleSignInConfigured, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuth } from '@/store/auth';
 import { colors, radii, spacing } from '@/theme';
 
@@ -24,7 +23,8 @@ function goBack(): void {
 }
 
 export default function AuthScreen() {
-  const { user, pending, error, info, signInWithEmail, signUpWithEmail, clearError } = useAuth();
+  const { user, pending, error, info, signInWithEmail, signInWithGoogle, signUpWithEmail, clearError } =
+    useAuth();
   const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,6 +44,14 @@ export default function AuthScreen() {
   const switchMode = () => {
     clearError();
     setMode((m) => (m === 'signin' ? 'signup' : 'signin'));
+  };
+
+  const googleSignIn = async () => {
+    const ok = await signInWithGoogle();
+    if (ok) {
+      if (router.canGoBack()) router.back();
+      else router.replace('/');
+    }
   };
 
   if (user) {
@@ -99,6 +107,19 @@ export default function AuthScreen() {
                 : 'Cria conta para jogar online e ganhar moedas virtuais (KZ).'}
             </TiraText>
           </View>
+
+          <TiraButton
+            variant="outline"
+            fullWidth
+            disabled={pending || !isSupabaseConfigured || !isGoogleSignInConfigured}
+            onPress={() => void googleSignIn()}
+          >
+            {pending ? 'A processar…' : 'Continuar com Google'}
+          </TiraButton>
+
+          <TiraText size="xs" variant="muted" align="center">
+            ou
+          </TiraText>
 
           <Field
             label="Email"

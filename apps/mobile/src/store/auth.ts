@@ -1,13 +1,13 @@
 /**
  * Store de autenticação (Supabase Auth) — mobile.
  *
- * A web usa Google OAuth + telefone/OTP. No mobile a fatia vertical usa
- * email + password (sem deep links). Degrada de forma graciosa quando o
- * backend não está configurado.
+ * Login por email/password e por conta Google (ID token nativo). Degrada de
+ * forma graciosa quando o backend ou o Google não estão configurados.
  */
 import { create } from 'zustand';
 import type { User } from '@supabase/supabase-js';
-import { getSupabase } from '@/lib/supabase';
+import { GoogleSignin, isSuccessResponse } from '@react-native-google-signin/google-signin';
+import { getSupabase, GOOGLE_WEB_CLIENT_ID, isGoogleSignInConfigured } from '@/lib/supabase';
 
 /** Traduz os erros mais comuns do Supabase Auth para português. */
 export function translateAuthError(message: string): string {
@@ -40,12 +40,20 @@ interface AuthState {
 
   initialize: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<boolean>;
+  signInWithGoogle: () => Promise<boolean>;
   signUpWithEmail: (email: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   clearError: () => void;
 }
 
 let authListenerBound = false;
+let googleConfigured = false;
+
+function configureGoogle(): void {
+  if (googleConfigured || !GOOGLE_WEB_CLIENT_ID) return;
+  GoogleSignin.configure({ webClientId: GOOGLE_WEB_CLIENT_ID });
+  googleConfigured = true;
+}
 
 export const useAuth = create<AuthState>((set) => ({
   user: null,
@@ -83,6 +91,49 @@ export const useAuth = create<AuthState>((set) => ({
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     set({ pending: false, error: error ? translateAuthError(error.message) : null });
     return !error;
+  },
+
+  signInWithGoogle: async () => {
+    const supabase = getSupabase();
+    if (!supabase) {
+      set({ error: translateAuthError('supabase não configurado') });
+      return false;
+    }
+    if (!isGoogleSignInConfigured) {
+      set({ error: 'Login Google não configurado nesta app.' });
+      return false;
+    }
+    set({ pending: true, error: null, info: null });
+    try {
+      configureGoogle();
+      await GoogleSignin.hasPlayServices();
+      const response = await GoogleSignin.signIn();
+      if (!isSuccessResponse(response)) {
+        set({ pending: false });
+        return false;
+      }
+      const idToken = response.data.idToken;
+      if (!idToken) {
+        set({ pending: false, error: 'Não foi possível obter o token do Google.' });
+        return false;
+      }
+      const tokens = await GoogleSignin.getTokens().catch(() => null);
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: idToken,
+        access_token: tokens?.accessToken,
+      });
+      set({ pending: false, error: error ? translateAuthError(error.message) : null });
+      return !error;
+    } catch (err) {
+      set({
+        pending: false,
+        error: translateAuthError(
+          err instanceof Error ? err.message : 'Não foi possível entrar com o Google.',
+        ),
+      });
+      return false;
+    }
   },
 
   signUpWithEmail: async (email, password) => {

@@ -16,6 +16,14 @@ const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL as string | undefined;
 const SUPABASE_KEY = (process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY) as string | undefined;
 
+/** Client ID Web do Google, usado como audiência do ID token nativo. */
+export const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID as
+  | string
+  | undefined;
+
+/** True quando o login com Google está configurado. */
+export const isGoogleSignInConfigured = Boolean(GOOGLE_WEB_CLIENT_ID);
+
 /** True quando a app tem um projeto Supabase configurado. */
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_KEY);
 

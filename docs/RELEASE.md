@@ -9,16 +9,19 @@ bun run lint && bun run typecheck && bun run test && bun run e2e
 
 ## 1. Backend (Supabase)
 
-Projeto de referência: **`TCM`** — ref `ogqnbhuvoypmqefxbijr`.
+Projeto de referência: **`TCM`** — ref `wrnqglsrhbaufdoogeuq`.
 
 ### Migrations
 
-Num projeto novo, aplicar `supabase/sql/setup-complete.sql` (agrega 0001→0015).
-Caso contrário, aplicar migrations individualmente (`0001`→`0015`):
+Num projeto novo, aplicar `supabase/sql/setup-complete.sql` (agrega 0001→0015)
+e depois as migrations `0016_profile_topup.sql` e
+`0017_tournament_edit_invite.sql`, que não estão no script agregado:
 
 ```bash
-supabase link --project-ref ogqnbhuvoypmqefxbijr
-supabase db push
+supabase link --project-ref wrnqglsrhbaufdoogeuq
+supabase db query --remote --file supabase/sql/setup-complete.sql
+supabase db query --remote --file supabase/migrations/0016_profile_topup.sql
+supabase db query --remote --file supabase/migrations/0017_tournament_edit_invite.sql
 ```
 
 Helper local (Windows/PowerShell, via Management API):
@@ -27,31 +30,57 @@ Helper local (Windows/PowerShell, via Management API):
 .\scripts\apply-supabase-migration.ps1 -File supabase\migrations\0015_manual_payments.sql
 ```
 
+### Login com Google
+
+No Google Cloud Console criar (na mesma conta Google usada no projeto):
+
+1. **OAuth client do tipo «Aplicação Web»**: em *Authorized redirect URIs* adicionar
+   `https://wrnqglsrhbaufdoogeuq.supabase.co/auth/v1/callback`; em *Authorized
+   JavaScript origins* adicionar `http://localhost:3000` e o domínio de produção.
+2. **OAuth client do tipo «Android»**: pacote `com.tiraococo.app`, com as
+   impressões digitais SHA-1 de desenvolvimento (debug) e de produção (EAS).
+
+Registar no Supabase (Dashboard → Authentication → Providers → Google):
+
+- *Client ID* = **Web Client ID**
+- *Client Secret* = **Web Client Secret**
+- *Authorized Client IDs* = **Android Client ID** (separado por vírgula do Web
+  quando aplicável)
+- *Skip nonce check* = ligado (a biblioteca nativa gratuita não envia nonce)
+
+Redirects permitidos (Dashboard → Authentication → URL Configuration):
+`http://localhost:3000/auth/callback` e `mobile://auth/callback` (mais
+`https://<dominio>/auth/callback` em produção).
+
+No mobile, preencher `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` em `apps/mobile/.env`
+com o **Web Client ID**; o login nativo usa `@react-native-google-signin/google-signin`
+e `signInWithIdToken`. Requer EAS development build (não funciona em Expo Go).
+
 ### Edge Functions
 
 ```bash
 # Sincronizar o motor antes de publicar submit-move
 bun run sync:engine
 
-supabase functions deploy submit-move        --project-ref ogqnbhuvoypmqefxbijr
-supabase functions deploy send-sms-hook      --project-ref ogqnbhuvoypmqefxbijr
-supabase functions deploy admin-manage       --project-ref ogqnbhuvoypmqefxbijr --use-api
+supabase functions deploy submit-move        --project-ref wrnqglsrhbaufdoogeuq
+supabase functions deploy send-sms-hook      --project-ref wrnqglsrhbaufdoogeuq
+supabase functions deploy admin-manage       --project-ref wrnqglsrhbaufdoogeuq --use-api
 ```
 
 Funções de pagamento (manual + PSP automático):
 
 ```bash
-supabase functions deploy create-deposit-intent --project-ref ogqnbhuvoypmqefxbijr
-supabase functions deploy psp-webhook           --project-ref ogqnbhuvoypmqefxbijr --no-verify-jwt
-supabase functions deploy submit-kyc            --project-ref ogqnbhuvoypmqefxbijr
-supabase functions deploy request-payout        --project-ref ogqnbhuvoypmqefxbijr
-supabase functions deploy payout-webhook        --project-ref ogqnbhuvoypmqefxbijr --no-verify-jwt
+supabase functions deploy create-deposit-intent --project-ref wrnqglsrhbaufdoogeuq
+supabase functions deploy psp-webhook           --project-ref wrnqglsrhbaufdoogeuq --no-verify-jwt
+supabase functions deploy submit-kyc            --project-ref wrnqglsrhbaufdoogeuq
+supabase functions deploy request-payout        --project-ref wrnqglsrhbaufdoogeuq
+supabase functions deploy payout-webhook        --project-ref wrnqglsrhbaufdoogeuq --no-verify-jwt
 ```
 
 ### Segredos das funções
 
 ```bash
-supabase secrets set --project-ref ogqnbhuvoypmqefxbijr \
+supabase secrets set --project-ref wrnqglsrhbaufdoogeuq \
   REAL_MONEY_ENABLED=true \
   PAYOUTS_ENABLED=true \
   ADMIN_EMAILS="email-do-admin@exemplo.com"
@@ -69,7 +98,7 @@ responde `checkout_failed appypay_not_configured`); detalhes em
 `supabase/functions/PAYMENTS.md`:
 
 ```bash
-supabase secrets set --project-ref ogqnbhuvoypmqefxbijr \
+supabase secrets set --project-ref wrnqglsrhbaufdoogeuq \
   APPYPAY_ENV=sandbox \
   APPYPAY_CLIENT_ID=<client-id> \
   APPYPAY_CLIENT_SECRET=<client-secret> \
@@ -85,7 +114,7 @@ automaticamente na primeira cobrança; `BITPAY_WEBHOOK_SECRET` é opcional
 (valida a assinatura, além da reconsulta à API).
 
 ```bash
-supabase secrets set --project-ref ogqnbhuvoypmqefxbijr \
+supabase secrets set --project-ref wrnqglsrhbaufdoogeuq \
   BITPAY_SK=sk_test_...
 # opcionais: BITPAY_WEBHOOK_SECRET=whsec_...  BITPAY_ENV=production
 ```
@@ -94,7 +123,7 @@ supabase secrets set --project-ref ogqnbhuvoypmqefxbijr \
 > depósitos via BitPay são simulados até haver chaves `sk_live_…`.
 
 No portal AppyPay, configurar o webhook de cada aplicação (GPO e REF) para
-`https://ogqnbhuvoypmqefxbijr.supabase.co/functions/v1/psp-webhook?provider=appypay`
+`https://wrnqglsrhbaufdoogeuq.supabase.co/functions/v1/psp-webhook?provider=appypay`
 (método POST). A AppyPay não assina os payloads — `psp-webhook` valida por
 reconsulta `GET /v2.0/charges/{id}`.
 
