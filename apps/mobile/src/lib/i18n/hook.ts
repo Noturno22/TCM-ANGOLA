@@ -1,13 +1,17 @@
 /**
- * Hook de i18n — PT-only (sem settings de idioma no mobile).
- * Devolve `t` tipado (chaves do dicionário PT).
+ * Hook de i18n mobile — sincroniza o idioma persistido nas settings com t().
+ * Devolve `t` tipado (chaves do dicionário PT) e o idioma atual.
  */
-import { t, type I18nKey, type I18nVars } from './index';
+import { useSettings } from '@/store/settings';
+import { setLanguage, t as translate, type I18nKey, type I18nVars } from './index';
 
 export interface UseTResult {
   t: (key: I18nKey, vars?: I18nVars) => string;
+  lang: string;
 }
 
 export function useT(): UseTResult {
-  return { t };
+  const language = useSettings((s) => s.language);
+  setLanguage(language);
+  return { t: translate, lang: language };
 }

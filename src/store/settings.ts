@@ -9,6 +9,7 @@ import {
   FREE_LINE_STYLE_ID,
   FREE_PIECE_STYLE_ID,
 } from '@/lib/cosmetics';
+import type { Language } from '@/lib/i18n';
 
 export type CosmeticKind = 'background' | 'line' | 'piece';
 
@@ -19,7 +20,7 @@ export interface Settings {
   reduceMotion: boolean;
   colorblindMode: boolean;
   vibration: boolean;
-  language: 'pt' | 'en' | 'fr';
+  language: Language;
   aiThinkingDelay: number; // ms (400-900, spec §6)
   backgroundId: string;
   lineStyleId: string;

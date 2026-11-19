@@ -18,6 +18,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useSettings } from '@/store/settings';
+import { isLanguage, LANGUAGES } from '@/lib/i18n';
 import { useProfile } from '@/store/profile';
 import { useAuth } from '@/store/auth';
 import { GameCard, GameButton, SectionTitle } from '@/components/game/ui';
@@ -170,15 +171,19 @@ export function SettingsScreen() {
             <span className="text-sm flex-1">Idioma da interface</span>
             <Select
               value={settings.language}
-              onValueChange={(v) => settings.set('language', v as 'pt' | 'en' | 'fr')}
+              onValueChange={(v) => {
+                if (isLanguage(v)) settings.set('language', v);
+              }}
             >
-              <SelectTrigger className="w-36 h-12">
+              <SelectTrigger className="w-44 h-12">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="pt">Português</SelectItem>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="fr">Français</SelectItem>
+                {LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.id} value={lang.id}>
+                    {lang.flag} {lang.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

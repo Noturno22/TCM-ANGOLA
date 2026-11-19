@@ -164,6 +164,10 @@
       "name": "@tira/engine",
       "version": "0.1.0",
     },
+    "packages/i18n": {
+      "name": "@tira/i18n",
+      "version": "1.0.0",
+    },
   },
   "packages": {
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "https://registry.npmjs.com/@alloc/quick-lru/-/quick-lru-5.2.0.tgz", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
@@ -1051,6 +1055,8 @@
     "@tira/design-tokens": ["@tira/design-tokens@workspace:packages/design-tokens"],
 
     "@tira/engine": ["@tira/engine@workspace:packages/engine"],
+
+    "@tira/i18n": ["@tira/i18n@workspace:packages/i18n"],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.10.1", "https://registry.npmjs.com/@tybys/wasm-util/-/wasm-util-0.10.1.tgz", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg=="],
 

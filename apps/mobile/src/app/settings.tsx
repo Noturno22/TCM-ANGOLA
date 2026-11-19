@@ -25,6 +25,7 @@ import {
   Alert,
   Modal,
   Pressable,
+  ScrollView,
   Switch,
   Text,
   View,
@@ -32,6 +33,7 @@ import {
 } from 'react-native';
 import { GameButton, GameCard, SectionTitle } from '@/components/game/ui';
 import { TiraScreen, alpha } from '@/components/tira';
+import { LANGUAGES } from '@/lib/i18n';
 import { toast } from '@/lib/toast';
 import { useAuth } from '@/store/auth';
 import { useProfile } from '@/store/profile';
@@ -42,18 +44,6 @@ const ADMIN_EMAILS = (process.env.EXPO_PUBLIC_ADMIN_EMAILS ?? '')
   .split(',')
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
-
-const LANGUAGES: { id: 'pt' | 'en' | 'fr'; label: string }[] = [
-  { id: 'pt', label: 'Português' },
-  { id: 'en', label: 'English' },
-  { id: 'fr', label: 'Français' },
-];
-
-const LANGUAGE_LABELS: Record<'pt' | 'en' | 'fr', string> = {
-  pt: 'Português',
-  en: 'English',
-  fr: 'Français',
-};
 
 const APPEARANCE_TOGGLES: {
   key: 'colorblindMode' | 'symbolsOnPieces' | 'reduceMotion';
@@ -297,7 +287,7 @@ export default function SettingsScreen() {
                     fontFamily: typography.fontFamily.body,
                   }}
                 >
-                  {LANGUAGE_LABELS[settings.language]}
+                  {LANGUAGES.find((l) => l.id === settings.language)?.label ?? settings.language}
                 </Text>
                 <ChevronDown size={16} color={colors.textMuted} />
               </Pressable>
@@ -416,57 +406,59 @@ export default function SettingsScreen() {
               overflow: 'hidden',
             }}
           >
-            {LANGUAGES.map((option, index) => {
-              const active = settings.language === option.id;
-              return (
-                <Pressable
-                  key={option.id}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active }}
-                  onPress={() => {
-                    settings.set('language', option.id);
-                    setLanguageOpen(false);
-                  }}
-                  style={({ pressed }) => ({
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    paddingHorizontal: spacing[4],
-                    paddingVertical: spacing[3],
-                    borderTopWidth: index === 0 ? 0 : 1,
-                    borderTopColor: colors.border,
-                    backgroundColor: active
-                      ? alpha(colors.gold, 0.1)
-                      : pressed
-                        ? colors.surfaceAlt
-                        : colors.transparent,
-                  })}
-                >
-                  <Text
-                    style={{
-                      fontSize: 15.75,
-                      fontWeight: active
-                        ? typography.fontWeight.semibold
-                        : typography.fontWeight.medium,
-                      color: active ? colors.gold : colors.text,
-                      fontFamily: typography.fontFamily.body,
+            <ScrollView style={{ maxHeight: 420 }}>
+              {LANGUAGES.map((option, index) => {
+                const active = settings.language === option.id;
+                return (
+                  <Pressable
+                    key={option.id}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    onPress={() => {
+                      settings.set('language', option.id);
+                      setLanguageOpen(false);
                     }}
+                    style={({ pressed }) => ({
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingHorizontal: spacing[4],
+                      paddingVertical: spacing[3],
+                      borderTopWidth: index === 0 ? 0 : 1,
+                      borderTopColor: colors.border,
+                      backgroundColor: active
+                        ? alpha(colors.gold, 0.1)
+                        : pressed
+                          ? colors.surfaceAlt
+                          : colors.transparent,
+                    })}
                   >
-                    {option.label}
-                  </Text>
-                  {active ? (
-                    <View
+                    <Text
                       style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: radii.pill,
-                        backgroundColor: colors.gold,
+                        fontSize: 15.75,
+                        fontWeight: active
+                          ? typography.fontWeight.semibold
+                          : typography.fontWeight.medium,
+                        color: active ? colors.gold : colors.text,
+                        fontFamily: typography.fontFamily.body,
                       }}
-                    />
-                  ) : null}
-                </Pressable>
-              );
-            })}
+                    >
+                      {option.flag} {option.label}
+                    </Text>
+                    {active ? (
+                      <View
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: radii.pill,
+                          backgroundColor: colors.gold,
+                        }}
+                      />
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
           </View>
         </View>
       </Modal>

@@ -55,6 +55,7 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     ".playwright-mcp/**",
     ".omo/**",
     "mini-services/**",
+    "packages/i18n/scripts/**",
   ]
 }];
 
