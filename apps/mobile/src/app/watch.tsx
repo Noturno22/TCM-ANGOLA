@@ -2,9 +2,9 @@
  * Watch — port 1:1 do WatchScreen web: duas IAs jogam ao vivo com comentário
  * em PT, tabuleiro, controlos de reprodução e configuração de dificuldades.
  *
- * Adaptações mobile: háptica no lugar dos sons (`playSound`), overlay de fim
- * sem gradiente (não há expo-linear-gradient) e tabuleiro dimensionado à
- * largura do ecrã. O resto segue o conteúdo/ordem/cores do web.
+ * Adaptações mobile: overlay de fim sem gradiente (não há
+ * expo-linear-gradient) e tabuleiro dimensionado à largura do ecrã. O resto
+ * segue o conteúdo/ordem/cores do web.
  */
 import { chooseMove, type Difficulty } from '@tira/ai';
 import {
@@ -43,6 +43,7 @@ import { Board } from '@/components/board/Board';
 import { GameButton, GameCard } from '@/components/game/ui';
 import { TiraScreen, alpha } from '@/components/tira';
 import { commentOnMove, commentOnStart, type Commentary } from '@/content';
+import { playSound } from '@/lib/sound';
 import { boardGeometry, colors, radii, spacing, typography } from '@/theme';
 
 type Phase = 'intro' | 'playing' | 'finished';
@@ -104,6 +105,7 @@ const CAPTION: TextStyle = {
 };
 
 function feedback(kind: 'move' | 'win' | 'threat' | 'start' | 'click'): void {
+  playSound(kind);
   if (kind === 'win') {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
     return;

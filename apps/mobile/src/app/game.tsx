@@ -37,6 +37,7 @@ import {
 import { Path, Svg } from 'react-native-svg';
 import { getLegalMoves, isGameOver, type Move, type Square } from '@tira/engine';
 import { Board } from '@/components/board/Board';
+import { CocoDoMeioPopup } from '@/components/game/CocoDoMeioPopup';
 import {
   ConfirmSheet,
   TiraButton,
@@ -47,6 +48,7 @@ import {
   alpha,
 } from '@/components/tira';
 import { useGame } from '@/game/useGame';
+import { isTrappedInMiddle } from '@/lib/cocoDoMeio';
 import type { I18nKey } from '@/lib/i18n';
 import { useT } from '@/lib/i18n/hook';
 import { useGameStore } from '@/store/game';
@@ -372,7 +374,12 @@ export default function GameScreen() {
         </Pressable>
       }
       style={{ gap: spacing[4] }}
-      overlay={gameOver ? <GameOverOverlay /> : undefined}
+      overlay={
+        <>
+          <CocoDoMeioPopup active={!gameOver && isTrappedInMiddle(state)} />
+          {gameOver ? <GameOverOverlay /> : null}
+        </>
+      }
     >
       {/* Jogadores + relógios */}
       <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: spacing[3] }}>

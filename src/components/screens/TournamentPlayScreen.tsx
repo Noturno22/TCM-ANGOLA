@@ -182,9 +182,9 @@ export function TournamentPlayScreen() {
         </div>
       </div>
 
-      {/* "Tira o coco do meio" — pop-ups animados (a minha vez encurralada) */}
+      {/* "Tira o coco do meio" — pop-ups animados (jogador da vez encurralado) */}
       <CocoDoMeioPopup
-        active={!gameEnded && game.state.currentPlayer === game.humanSide && isTrappedInMiddle(game.state)}
+        active={!gameEnded && isTrappedInMiddle(game.state)}
         moveCount={game.moveCount}
       />
 

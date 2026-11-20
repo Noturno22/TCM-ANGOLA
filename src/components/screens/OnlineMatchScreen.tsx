@@ -13,6 +13,7 @@ import {
   Handshake,
   Flag,
   Coins,
+  AlertTriangle,
 } from 'lucide-react';
 import { useApp } from '@/store/app';
 import { useAuth } from '@/store/auth';
@@ -23,6 +24,7 @@ import {
   potForStake,
   sideForUser,
   timeLeftSeconds,
+  type MoveErrorCode as OnlineMoveErrorCode,
 } from '@/lib/online/match';
 import { fetchProfiles } from '@/lib/online/rooms';
 import { Board } from '@/components/game/Board';
@@ -31,6 +33,17 @@ import { CocoDoMeioPopup } from '@/components/game/CocoDoMeioPopup';
 import { isTrappedInMiddle } from '@/lib/cocoDoMeio';
 import { playSound } from '@/lib/sound';
 import { cn } from '@/lib/utils';
+
+const MOVE_ERROR_MESSAGES: Partial<Record<OnlineMoveErrorCode | 'unknown', string>> = {
+  not_your_turn: 'Não é a tua vez.',
+  turn_expired: 'O teu tempo esgotou.',
+  destination_occupied: 'Casa ocupada.',
+  path_blocked: 'Caminho bloqueado.',
+  not_your_piece: 'Essa peça não é tua.',
+  not_enough_coins: 'Moedas insuficientes.',
+  age_restricted: 'Só para maiores de 18 anos (com data de nascimento confirmada).',
+  unknown: 'Não foi possível concluir. Tenta novamente.',
+};
 
 export function OnlineMatchScreen() {
   const navigate = useApp((s) => s.navigate);
@@ -291,6 +304,16 @@ export function OnlineMatchScreen() {
           )}
         </GameCard>
 
+        {error && (
+          <p
+            role="alert"
+            className="mb-3 flex items-center justify-center gap-1.5 text-center text-xs font-medium text-p2"
+          >
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+            {MOVE_ERROR_MESSAGES[error] ?? MOVE_ERROR_MESSAGES.unknown}
+          </p>
+        )}
+
         {/* Tabuleiro */}
         <div className="flex justify-center mb-4">
           <Board
@@ -301,6 +324,7 @@ export function OnlineMatchScreen() {
             winningLine={state.winningLine}
             threatSquares={[]}
             onSquareClick={handleSquareClick}
+            flipped={mySide === 'P2'}
             disabled={!isMyTurn}
             size="md"
           />
@@ -322,8 +346,8 @@ export function OnlineMatchScreen() {
         </div>
       </div>
 
-      {/* "Tira o coco do meio" — pop-ups animados (a minha vez encurralada) */}
-      <CocoDoMeioPopup active={!finished && isMyTurn && isTrappedInMiddle(state)} moveCount={match.moveCount} />
+      {/* "Tira o coco do meio" — pop-ups animados (jogador da vez encurralado) */}
+      <CocoDoMeioPopup active={!finished && isTrappedInMiddle(state)} moveCount={match.moveCount} />
 
       {/* Overlay de resultado */}
       <AnimatePresence>

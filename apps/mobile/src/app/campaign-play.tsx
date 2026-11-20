@@ -15,10 +15,12 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, useWindowDimensions, View } from 'react-native';
 import { Board } from '@/components/board/Board';
+import { CocoDoMeioPopup } from '@/components/game/CocoDoMeioPopup';
 import { GameButton, GameCard } from '@/components/game/ui';
 import { TiraHeading, TiraScreen, TiraText, alpha } from '@/components/tira';
 import { getCampaignLevel, type CampaignLevel } from '@/content';
 import { useGame } from '@/game/useGame';
+import { isTrappedInMiddle } from '@/lib/cocoDoMeio';
 import type { I18nKey, I18nVars } from '@/lib/i18n';
 import { useT } from '@/lib/i18n/hook';
 import { useCampaign } from '@/store/campaign';
@@ -235,20 +237,23 @@ export default function CampaignPlayScreen() {
     <TiraScreen
       style={{ gap: 0 }}
       overlay={
-        result ? (
-          <ResultOverlay
-            level={level}
-            success={result === 'success'}
-            hasNext={hasNext}
-            state={state}
-            lastMove={lastMove}
-            hasWinningLine={hasWinningLine}
-            boardSize={resultBoardSize}
-            onNext={handleNext}
-            onRestart={handleRestart}
-            onBack={() => router.replace('/campaign')}
-          />
-        ) : undefined
+        <>
+          <CocoDoMeioPopup active={!gameEnded && isTrappedInMiddle(state)} />
+          {result ? (
+            <ResultOverlay
+              level={level}
+              success={result === 'success'}
+              hasNext={hasNext}
+              state={state}
+              lastMove={lastMove}
+              hasWinningLine={hasWinningLine}
+              boardSize={resultBoardSize}
+              onNext={handleNext}
+              onRestart={handleRestart}
+              onBack={() => router.replace('/campaign')}
+            />
+          ) : null}
+        </>
       }
     >
       <View style={{ alignItems: 'center', gap: 2, marginBottom: spacing[4] }}>

@@ -19,6 +19,10 @@ import {
 import { useApp } from '@/store/app';
 import { useGame } from '@/store/game';
 import { useSettings } from '@/store/settings';
+import { useI18n } from '@/lib/i18n/hook';
+import type { I18nKey, I18nVars } from '@/lib/i18n';
+
+type Translator = (key: I18nKey, vars?: I18nVars) => string;
 import { isGameOver, type Square, type Threat, type Move, type Cell } from '@tira/engine';
 import { playSound } from '@/lib/sound';
 import { Board } from '@/components/game/Board';
@@ -42,6 +46,7 @@ import {
 import { cn } from '@/lib/utils';
 
 export function GameScreen() {
+  const { t } = useI18n();
   const navigate = useApp((s) => s.navigate);
   const back = useApp((s) => s.back);
   const {
@@ -139,29 +144,30 @@ export function GameScreen() {
     : [];
 
   const p1Label =
-    mode === 'pve' || mode === 'practice'
-      ? humanSide === 'P1' ? 'Tu' : `IA ${diffLabel(difficulty)}`
+    mode === 'pvp'
+      ? t('game.player1')
       : mode === 'cvc'
-        ? `IA ${diffLabel(difficulty)} (P1)`
-        : 'Jogador 1';
+        ? `${t('game.ia')} (P1)`
+        : humanSide === 'P1'
+          ? t('game.you')
+          : `${t('game.ia')} ${t(`diff.${difficulty}`)}`;
   const p2Label =
-    mode === 'pve' || mode === 'practice'
-      ? humanSide === 'P2' ? 'Tu' : `IA ${diffLabel(difficulty)}`
+    mode === 'pvp'
+      ? t('game.player2')
       : mode === 'cvc'
-        ? `IA ${diffLabel(difficulty)} (P2)`
-        : 'Jogador 2';
+        ? `${t('game.ia')} (P2)`
+        : humanSide === 'P2'
+          ? t('game.you')
+          : `${t('game.ia')} ${t(`diff.${difficulty}`)}`;
 
   const p1Active = state.currentPlayer === 'P1' && !isGameOver(state);
   const p2Active = state.currentPlayer === 'P2' && !isGameOver(state);
+  const flipped = (mode === 'pve' || mode === 'practice') && humanSide === 'P2';
 
   const gameOver = isGameOver(state);
 
-  // "Tira o coco do meio": vez humana com peça no meio encurralada
-  const cocoActive =
-    !gameOver &&
-    mode !== 'cvc' &&
-    (mode === 'pvp' || state.currentPlayer === humanSide) &&
-    isTrappedInMiddle(state);
+  // "Tira o coco do meio": jogador da vez (humano ou IA) encurralado no meio
+  const cocoActive = !gameOver && isTrappedInMiddle(state);
 
   const handleExit = () => {
     if (!isGameOver(state) && mode !== 'cvc') {
@@ -171,8 +177,14 @@ export function GameScreen() {
   };
 
   const modeText =
-    mode === 'pvp' ? '2 Jogadores' : mode === 'pve' ? 'vs IA' : mode === 'practice' ? 'Treino Livre' : 'IA vs IA';
-  const diffText = mode !== 'pvp' ? diffLabel(difficulty) : null;
+    mode === 'pvp'
+      ? t('mode.pvp')
+      : mode === 'pve'
+        ? t('game.vs_ai')
+        : mode === 'cvc'
+          ? t('mode.cvc')
+          : t('mode.practice');
+  const diffText = mode !== 'pvp' ? t(`diff.${difficulty}`) : null;
   const bannerTone: 'green' | 'red' | 'gold' = gameOver ? 'gold' : p1Active ? 'green' : 'red';
 
   return (
@@ -202,8 +214,8 @@ export function GameScreen() {
               )}
             </p>
             <p className="text-[12px] font-semibold text-white/85">
-              Partida #{moveCount}
-              {showThreats && ' • Tutorial'}
+              {t('game.match', { n: moveCount })}
+              {showThreats && ` • ${t('mode.tutorial')}`}
             </p>
           </div>
           <button
@@ -267,7 +279,7 @@ export function GameScreen() {
                 !p1Active && !p2Active && !gameOver && 'text-muted-foreground',
               )}
             >
-              {getStatusMessage(state, mode, humanSide, isAiThinking, showThreats, currentThreats)}
+              {getStatusMessage(state, mode, humanSide, isAiThinking, showThreats, currentThreats, t)}
             </motion.p>
           </AnimatePresence>
         </StatusBanner>
@@ -282,6 +294,7 @@ export function GameScreen() {
             winningLine={winningLine}
             threatSquares={threatSquares}
             onSquareClick={handleSquareClick}
+            flipped={flipped}
             disabled={mode === 'cvc' || ((mode === 'pve' || mode === 'practice') && state.currentPlayer !== humanSide)}
             size="md"
           />
@@ -292,18 +305,18 @@ export function GameScreen() {
           <StatChip
             icon={<Trophy className="h-4 w-4 text-white/80" />}
             value={moveCount}
-            label="Jogadas"
+            label={t('game.moves')}
           />
           <StatChip
             icon={<Trophy className="h-4 w-4 text-gold" />}
             value={state.history.length}
-            label="Histórico"
+            label={t('profile.history')}
           />
           {showThreats && (
             <StatChip
               icon={<Eye className={cn('h-4 w-4', currentThreats.length > 0 ? 'text-p2' : 'text-white/60')} />}
               value={currentThreats.length}
-              label="Ameaças"
+              label={t('game.threats')}
             />
           )}
         </div>
@@ -317,15 +330,15 @@ export function GameScreen() {
             className="px-2 text-[12.5px]"
           >
             <Undo2 className="h-4 w-4 shrink-0" />
-            Anular
+            {t('game.undo')}
           </NeonButton>
           <NeonButton tone="gold" onClick={toggleThreats} className="px-2 text-[12.5px]">
             <Eye className="h-4 w-4 shrink-0" />
-            {showThreats ? 'Ocultar' : 'Ameaças'}
+            {showThreats ? t('game.hide') : t('game.threats')}
           </NeonButton>
           <NeonButton tone="green" onClick={restart} className="px-2 text-[12.5px]">
             <RotateCcw className="h-4 w-4 shrink-0" />
-            Reiniciar
+            {t('game.restart')}
           </NeonButton>
         </div>
 
@@ -334,25 +347,23 @@ export function GameScreen() {
             <AlertDialogTrigger asChild>
               <NeonButton tone="red" disabled={gameOver} className="font-extrabold">
                 <Flag className="h-4 w-4 shrink-0" />
-                Desistir
+                {t('game.resign')}
               </NeonButton>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Desistir da partida?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Vais perder a partida. Isto conta como derrota nas tuas estatísticas.
-                </AlertDialogDescription>
+                <AlertDialogTitle>{t('game.resign.confirm')}</AlertDialogTitle>
+                <AlertDialogDescription>{t('game.resign.desc')}</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => {
                     resign();
                   }}
                   className="bg-p2 text-white hover:bg-p2/90"
                 >
-                  Sim, desistir
+                  {t('common.yes_resign')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -362,18 +373,16 @@ export function GameScreen() {
             <AlertDialogTrigger asChild>
               <NeonButton tone="green">
                 <LogOut className="h-4 w-4 shrink-0" />
-                Sair
+                {t('game.exit')}
               </NeonButton>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Sair da partida?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Se saíres agora, a partida conta como derrota. Queres mesmo sair?
-                </AlertDialogDescription>
+                <AlertDialogTitle>{t('game.exit.confirm')}</AlertDialogTitle>
+                <AlertDialogDescription>{t('game.exit.desc')}</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Continuar a jogar</AlertDialogCancel>
+                <AlertDialogCancel>{t('common.continue')}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => {
                     if (!gameOver) resign();
@@ -381,7 +390,7 @@ export function GameScreen() {
                   }}
                   className="bg-p2 text-white hover:bg-p2/90"
                 >
-                  Sair
+                  {t('game.exit')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -638,6 +647,7 @@ function GameOverOverlay({
   onExit: () => void;
   reduceMotion: boolean;
 }) {
+  const { t } = useI18n();
   const isDraw = winner === null;
   const humanWon = (mode === 'pve' || mode === 'practice') && winner === humanSide;
   const humanLost = (mode === 'pve' || mode === 'practice') && winner && winner !== humanSide;
@@ -647,24 +657,24 @@ function GameOverOverlay({
   const naturalWin = winner !== null && winningLine !== null && winningLine.length === 3;
 
   const title = isDraw
-    ? 'Empate!'
+    ? t('game.draw')
     : mode === 'pve' || mode === 'practice'
       ? humanWon
-        ? 'Vitória!'
-        : 'Derrota'
+        ? t('game.victory')
+        : t('game.defeat')
       : mode === 'cvc'
-        ? `IA ${winner === 'P1' ? '1' : '2'} venceu!`
-        : `Jogador ${winner === 'P1' ? '1' : '2'} venceu!`;
+        ? t('game.ai_won', { n: winner === 'P1' ? 1 : 2 })
+        : t('game.player_won', { n: winner === 'P1' ? 1 : 2 });
 
   const subtitle = isDraw
-    ? 'A posição repetiu-se.'
+    ? t('game.draw.desc')
     : naturalWin
       ? mode === 'pve' || mode === 'practice'
         ? humanWon
-          ? 'Venceste a IA. Parabéns!'
-          : 'A IA foi mais forte. Tenta novamente!'
-        : 'Linha de três completa!'
-      : 'A partida terminou sem linha vencedora.';
+          ? t('game.win.human')
+          : t('game.win.ai')
+        : t('game.win.line')
+      : t('game.end.no_winner');
 
   const ResultIcon = isDraw ? Handshake : humanWon ? Trophy : humanLost ? Frown : Trophy;
   const color = isDraw
@@ -737,8 +747,8 @@ function GameOverOverlay({
           <div className="rounded-xl border border-border/60 bg-surface-2/60 p-3">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
               {winner && winningLine && winningLine.length === 3
-                ? 'Como foi a vitória'
-                : 'Posição final'}
+                ? t('game.end.board_win')
+                : t('game.end.board_final')}
             </p>
             <div className="flex justify-center">
               <Board
@@ -758,22 +768,20 @@ function GameOverOverlay({
           <div className="mt-3 mb-4 text-xs text-muted-foreground space-y-0.5">
             {winner && winningLine && winningLine.length === 3 ? (
               <p>
-                Como venceu:{' '}
-                <span className="text-foreground font-medium">{describeLine(winningLine)}</span>
+                {t('game.end.won_by')}{' '}
+                <span className="text-foreground font-medium">{describeLine(winningLine, t)}</span>
                 {lastMove && (
                   <span className="block mt-0.5">
-                    Jogada final: casa {lastMove.from} → casa {lastMove.to}
+                    {t('game.end.final_move', { from: lastMove.from, to: lastMove.to })}
                   </span>
                 )}
               </p>
             ) : (
               <p>
                 {lastMove
-                  ? `Última jogada: casa ${lastMove.from} → casa ${lastMove.to}. `
+                  ? `${t('game.end.last_move', { from: lastMove.from, to: lastMove.to })} `
                   : ''}
-                {isDraw
-                  ? 'Nenhuma linha foi completada — a posição repetiu-se.'
-                  : 'Nenhuma linha foi completada.'}
+                {isDraw ? t('game.end.no_line_draw') : t('game.end.no_line')}
               </p>
             )}
           </div>
@@ -781,11 +789,11 @@ function GameOverOverlay({
           <div className="space-y-2">
             <GameButton variant="p1" className="w-full h-12" onClick={onRestart}>
               <RotateCcw className="w-4 h-4 mr-2" />
-              Jogar novamente
+              {t('game.play_again')}
             </GameButton>
             <GameButton variant="outline" className="w-full h-12" onClick={onExit}>
               <LogOut className="w-4 h-4 mr-2" />
-              Sair
+              {t('game.exit')}
             </GameButton>
           </div>
         </GameCard>
@@ -794,20 +802,20 @@ function GameOverOverlay({
   );
 }
 
-const LINE_LABELS: Record<string, string> = {
-  '1,2,3': 'linha de baixo',
-  '4,5,6': 'linha do meio',
-  '7,8,9': 'linha de cima',
-  '1,4,7': 'coluna da esquerda',
-  '2,5,8': 'coluna do meio',
-  '3,6,9': 'coluna da direita',
-  '1,5,9': 'diagonal principal',
-  '3,5,7': 'diagonal secundária',
+const LINE_LABEL_KEYS: Record<string, I18nKey> = {
+  '1,2,3': 'game.line.bottom',
+  '4,5,6': 'game.line.mid',
+  '7,8,9': 'game.line.top',
+  '1,4,7': 'game.line.col_left',
+  '2,5,8': 'game.line.col_mid',
+  '3,6,9': 'game.line.col_right',
+  '1,5,9': 'game.line.diag_main',
+  '3,5,7': 'game.line.diag_sec',
 };
 
-function describeLine(line: readonly number[]): string {
+function describeLine(line: readonly number[], t: Translator): string {
   const key = [...line].sort((a, b) => a - b).join(',');
-  return LINE_LABELS[key] ?? 'linha vencedora';
+  return t(LINE_LABEL_KEYS[key] ?? 'game.line.other');
 }
 
 function getStatusMessage(
@@ -817,25 +825,22 @@ function getStatusMessage(
   isAiThinking: boolean,
   showThreats: boolean,
   currentThreats: Threat[],
+  t: Translator,
 ): string {
   if (state.status === 'WIN_P1' || state.status === 'WIN_P2') {
     if (mode === 'pve' || mode === 'practice') {
-      return state.winner === humanSide ? 'Venceste!' : 'A IA venceu!';
+      return state.winner === humanSide ? t('game.win_status') : t('game.lose_status');
     }
-    return `Jogador ${state.winner === 'P1' ? '1' : '2'} venceu!`;
+    if (mode === 'cvc') return t('game.ai_won', { n: state.winner === 'P1' ? 1 : 2 });
+    return t('game.player_won', { n: state.winner === 'P1' ? 1 : 2 });
   }
-  if (state.status === 'DRAW') return 'Empate! A posição repetiu-se.';
-  if (isAiThinking) return 'A IA está a pensar…';
+  if (state.status === 'DRAW') return t('game.draw');
+  if (mode === 'cvc') return isAiThinking ? t('game.ai_thinking') : `${t('game.ia')} vs ${t('game.ia')}`;
+  if (isAiThinking) return t('game.ai_thinking');
   const isHumanTurn = mode === 'pve' || mode === 'practice' ? state.currentPlayer === humanSide : true;
   if (isHumanTurn) {
-    if (showThreats && currentThreats.length > 0) {
-      return 'Ameaça do adversário! Bloqueia!';
-    }
-    return 'A tua vez. Escolhe uma peça.';
+    if (showThreats && currentThreats.length > 0) return t('game.threat_warning');
+    return t('game.your_turn');
   }
-  return 'Vez do adversário…';
-}
-
-function diffLabel(d: string): string {
-  return d === 'easy' ? 'Fácil' : d === 'medium' ? 'Média' : d === 'hard' ? 'Difícil' : 'Perfeita';
+  return t('game.opponent_turn');
 }

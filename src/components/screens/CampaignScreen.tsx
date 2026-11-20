@@ -17,9 +17,11 @@ import { useApp } from '@/store/app';
 import { useCampaign } from '@/store/campaign';
 import { CAMPAIGN_LEVELS, TOTAL_CAMPAIGN_LEVELS, type CampaignLevel } from '@/lib/campaign';
 import { GameCard } from '@/components/game/ui';
+import { useI18n } from '@/lib/i18n/hook';
 import { cn } from '@/lib/utils';
 
 export function CampaignScreen() {
+  const { t } = useI18n();
   const navigate = useApp((s) => s.navigate);
   const setCampaignLevelId = useApp((s) => s.setCampaignLevelId);
   const completed = useCampaign((s) => s.completed);
@@ -44,9 +46,9 @@ export function CampaignScreen() {
             <Flag className="w-7 h-7 text-gold" />
           </div>
           <div className="flex-1">
-            <h2 className="font-display text-2xl tracking-wide">CAMPANHA</h2>
+            <h2 className="font-display text-2xl tracking-wide">{t('campaign.title')}</h2>
             <p className="text-xs text-muted-foreground">
-              {completedCount} / {TOTAL_CAMPAIGN_LEVELS} níveis completos
+              {t('campaign.progress', { done: completedCount, total: TOTAL_CAMPAIGN_LEVELS })}
             </p>
             <div className="h-2 rounded-full bg-surface-2 overflow-hidden mt-2">
               <motion.div
@@ -119,7 +121,7 @@ export function CampaignScreen() {
                         </h3>
                         {isCurrent && (
                           <span className="text-[9px] px-1.5 py-0.5 rounded bg-gold/15 text-gold font-semibold uppercase animate-pulse-glow">
-                            Atual
+                            {t('campaign.current')}
                           </span>
                         )}
                         {isCompleted && (
@@ -132,7 +134,7 @@ export function CampaignScreen() {
                       <div className="flex items-center gap-3 text-[10px]">
                         <span className="flex items-center gap-1 text-muted-foreground">
                           <Target className="w-3 h-3" />
-                          {diffLabel(level.difficulty)}
+                          {t(`diff.${level.difficulty}`)}
                         </span>
                         <span className="flex items-center gap-1 text-gold">
                           <Trophy className="w-3 h-3" />
@@ -141,24 +143,26 @@ export function CampaignScreen() {
                         {level.humanSide === 'P2' && (
                           <span className="flex items-center gap-1 text-p2">
                             <Crown className="w-3 h-3" />
-                            Vermelho
-                          </span>
+                             {t('campaign.red_side')}
+                           </span>
                         )}
                         {level.objective.type === 'win_fast' && (
                           <span className="flex items-center gap-1 text-orange">
                             <Zap className="w-3 h-3" />
-                            ≤{level.objective.maxMoves} jog
+                             {t('campaign.win_fast_tag', { n: level.objective.maxMoves ?? 0 })}
                           </span>
                         )}
                         {level.objective.type === 'survive' && (
                           <span className="flex items-center gap-1 text-orange">
                             <Clock className="w-3 h-3" />
-                            Sobreviver {level.objective.minMoves} jog
+                             {t('campaign.survive_tag', { n: level.objective.minMoves ?? 0 })}
                           </span>
                         )}
                         {attempts > 0 && (
                           <span className="text-muted-foreground ml-auto">
-                            {attempts} tentativa{attempts > 1 ? 's' : ''}
+                            {attempts > 1
+                              ? t('campaign.attempts.plural', { n: attempts })
+                              : t('campaign.attempts', { n: attempts })}
                           </span>
                         )}
                       </div>
@@ -184,17 +188,13 @@ export function CampaignScreen() {
         <div className="flex gap-3">
           <Trophy className="w-5 h-5 text-gold shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold mb-1">Completa todos os níveis</p>
+            <p className="text-sm font-semibold mb-1">{t('campaign.tip.title')}</p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Cada nível tem um objetivo único. Completa-os todos para te tornares um mestre do Tira o Cocó do Meio!
+              {t('campaign.tip.desc')}
             </p>
           </div>
         </div>
       </GameCard>
     </div>
   );
-}
-
-function diffLabel(d: string): string {
-  return d === 'easy' ? 'Fácil' : d === 'medium' ? 'Médio' : d === 'hard' ? 'Difícil' : 'Perfeito';
 }

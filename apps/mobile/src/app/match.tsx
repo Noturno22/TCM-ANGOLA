@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, useWindowDimensions, View } from 'react-native';
 import { getLegalMoves, isGameOver, type Move, type Square } from '@tira/engine';
 import { Board } from '@/components/board/Board';
+import { CocoDoMeioPopup } from '@/components/game/CocoDoMeioPopup';
 import {
   TiraButton,
   TiraCard,
@@ -21,6 +22,8 @@ import {
   TiraText,
   alpha,
 } from '@/components/tira';
+import { isTrappedInMiddle } from '@/lib/cocoDoMeio';
+import { playSound } from '@/lib/sound';
 import { fetchUsernames } from '@/lib/online/rooms';
 import {
   matchToGameState,
@@ -131,6 +134,8 @@ export default function MatchScreen() {
           ? Haptics.NotificationFeedbackType.Success
           : Haptics.NotificationFeedbackType.Warning,
     ).catch(() => undefined);
+    if (match.winner === 'draw') playSound('draw');
+    else if (match.winner) playSound('win');
   }, [gameOver, match, mySide]);
 
   const onSquarePress = useCallback(
@@ -140,6 +145,7 @@ export default function MatchScreen() {
       const cell = state.board[sq - 1];
       if (cell === mySide) {
         Haptics.selectionAsync().catch(() => undefined);
+        playSound('select');
         setSelected(sq);
         return;
       }
@@ -148,8 +154,11 @@ export default function MatchScreen() {
           (m) => m.from === selected && m.to === sq,
         );
         if (legal) {
+          playSound('move');
           void playMove(selected, sq);
           setSelected(null);
+        } else {
+          playSound('error');
         }
       }
     },
@@ -283,14 +292,19 @@ export default function MatchScreen() {
       }
       style={{ gap: spacing[4] }}
       overlay={
-        gameOver ? (
-          <MatchOverlay
-            winnerMySide={match.winner === mySide}
-            isDraw={match.winner === 'draw'}
-            stake={match.stake}
-            onLeave={confirmLeave}
+        <>
+          <CocoDoMeioPopup
+            active={!gameOver && state !== null && isTrappedInMiddle(state)}
           />
-        ) : undefined
+          {gameOver ? (
+            <MatchOverlay
+              winnerMySide={match.winner === mySide}
+              isDraw={match.winner === 'draw'}
+              stake={match.stake}
+              onLeave={confirmLeave}
+            />
+          ) : null}
+        </>
       }
     >
       {/* Jogadores */}

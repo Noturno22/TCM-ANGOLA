@@ -33,6 +33,7 @@ import {
 } from '@/components/tira';
 import { PUZZLES, type Puzzle } from '@/content';
 import { useT } from '@/lib/i18n/hook';
+import { playSound } from '@/lib/sound';
 import { useProfile } from '@/store/profile';
 import { boardGeometry, colors, radii, spacing } from '@/theme';
 
@@ -134,6 +135,7 @@ export default function LightningScreen() {
     setNewRecord(false);
     feedbackBusy.current = false;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
+    playSound('start');
   }, [runPuzzles]);
 
   const nextPuzzle = useCallback(
@@ -166,6 +168,7 @@ export default function LightningScreen() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
             () => undefined,
           );
+          playSound('achievementRare');
         }
         setPhase('finished');
         return;
@@ -192,6 +195,7 @@ export default function LightningScreen() {
         const legal = getLegalMoves(currentState, 'P1');
         const targets = legal.filter((m) => m.from === sq).map((m) => m.to);
         Haptics.selectionAsync().catch(() => undefined);
+        playSound('select');
         setSelectedSquare(sq);
         setValidTargets(targets);
         return;
@@ -217,6 +221,8 @@ export default function LightningScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
           () => undefined,
         );
+        playSound('move');
+        if (isWin) playSound('bonus');
         const delay = isWin ? 900 : 1200;
         setTimeout(() => nextPuzzle(true), delay);
       } else {
@@ -225,6 +231,7 @@ export default function LightningScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
           () => undefined,
         );
+        playSound('error');
         setTimeout(() => {
           setFeedback('none');
           setSelectedSquare(null);

@@ -18,9 +18,11 @@ import { ChevronRight, Flag, Frown, RefreshCw, Target, Trophy } from 'lucide-rea
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Board } from '@/components/board/Board';
+import { CocoDoMeioPopup } from '@/components/game/CocoDoMeioPopup';
 import { GameButton, GameCard } from '@/components/game/ui';
 import { TiraHeading, TiraScreen, TiraText, alpha } from '@/components/tira';
 import { useGame } from '@/game/useGame';
+import { isTrappedInMiddle } from '@/lib/cocoDoMeio';
 import { getEntrant } from '@/lib/tournament';
 import { useGameStore } from '@/store/game';
 import { useTournament } from '@/store/tournament';
@@ -182,15 +184,18 @@ export default function TournamentPlayScreen() {
       scroll={false}
       style={{ paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0, gap: 0 }}
       overlay={
-        result ? (
-          <ResultOverlay
-            result={result}
-            state={game.state}
-            lastMove={game.lastMove}
-            winningLine={game.winningLine}
-            onBack={() => router.replace('/tournament')}
-          />
-        ) : undefined
+        <>
+          <CocoDoMeioPopup active={!gameEnded && isTrappedInMiddle(game.state)} />
+          {result ? (
+            <ResultOverlay
+              result={result}
+              state={game.state}
+              lastMove={game.lastMove}
+              winningLine={game.winningLine}
+              onBack={() => router.replace('/tournament')}
+            />
+          ) : null}
+        </>
       }
     >
       <View style={{ flex: 1 }}>

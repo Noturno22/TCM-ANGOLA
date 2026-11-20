@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useProfile } from '@/store/profile';
 import { useApp } from '@/store/app';
+import { useI18n } from '@/lib/i18n/hook';
 import { AoaWalletPanel } from '@/components/payments/AoaWalletPanel';
 import { REAL_MONEY_ENABLED } from '@/lib/config/flags';
 import { GameButton, GameCard, SectionTitle } from '@/components/game/ui';
@@ -42,6 +43,7 @@ interface Transaction {
 }
 
 export function WalletScreen() {
+  const { t } = useI18n();
   const profile = useProfile();
   const addCoins = useProfile((s) => s.addCoins);
   const navigate = useApp((s) => s.navigate);
@@ -58,7 +60,7 @@ export function WalletScreen() {
     () => [
       {
         id: 'play3',
-        label: 'Joga 3 partidas',
+        label: t('wallet.mission.play3'),
         icon: <Trophy className="w-4 h-4" />,
         current: Math.min(profile.totalMatches, 3),
         target: 3,
@@ -67,7 +69,7 @@ export function WalletScreen() {
       },
       {
         id: 'streak2',
-        label: 'Vence 2 seguidas',
+        label: t('wallet.mission.streak2'),
         icon: <Flame className="w-4 h-4" />,
         current: Math.min(profile.currentStreak, 2),
         target: 2,
@@ -76,7 +78,7 @@ export function WalletScreen() {
       },
       {
         id: 'draw1',
-        label: 'Empata 1 partida',
+        label: t('wallet.mission.draw1'),
         icon: <Handshake className="w-4 h-4" />,
         current: Math.min(profile.draws, 1),
         target: 1,
@@ -84,7 +86,7 @@ export function WalletScreen() {
         color: 'orange',
       },
     ],
-    [profile.totalMatches, profile.currentStreak, profile.draws],
+    [profile.totalMatches, profile.currentStreak, profile.draws, t],
   );
 
   /** Histórico simulado da moeda virtual do jogo (não é dinheiro real). */
@@ -92,7 +94,7 @@ export function WalletScreen() {
     const txs: Transaction[] = [
       {
         id: 'welcome',
-        label: 'Bónus de boas-vindas',
+        label: t('wallet.tx.welcome'),
         amount: 5000,
         date: 'Início',
         type: 'in',
@@ -107,7 +109,11 @@ export function WalletScreen() {
       else amount = 10;
       txs.push({
         id: m.id,
-        label: `${won ? 'Vitória' : draw ? 'Empate' : 'Partida'} vs ${m.opponent}`,
+        label: won
+          ? t('wallet.tx.win', { opponent: m.opponent })
+          : draw
+            ? t('wallet.tx.draw', { opponent: m.opponent })
+            : t('wallet.tx.loss', { opponent: m.opponent }),
         amount,
         date: new Date(m.date).toLocaleDateString('pt-PT', {
           day: '2-digit',
@@ -117,14 +123,14 @@ export function WalletScreen() {
       });
     }
     return txs;
-  }, [profile.matches]);
+  }, [profile.matches, t]);
 
   const handleClaimBonus = () => {
     if (bonusClaimed) return;
     addCoins(500);
     setBonusClaimed(true);
     toast.success('Bónus diário recebido!', {
-      description: '+500 KZ virtuais adicionados à tua carteira de jogo.',
+      description: t('wallet.bonus.success'),
     });
   };
 
@@ -145,7 +151,7 @@ export function WalletScreen() {
               </span>
               <span className="font-display text-2xl text-gold">KZ</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">Moeda virtual · Sem valor real</p>
+            <p className="text-xs text-muted-foreground mt-2">{t('wallet.virtual')}</p>
           </div>
         </GameCard>
       </motion.div>
@@ -201,11 +207,9 @@ export function WalletScreen() {
             {bonusClaimed ? <CalendarCheck className="w-6 h-6" /> : <Gift className="w-6 h-6" />}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-display text-lg tracking-wide">Bónus Diário</h3>
+            <h3 className="font-display text-lg tracking-wide">{t('wallet.bonus.title')}</h3>
             <p className="text-xs text-muted-foreground">
-              {bonusClaimed
-                ? 'Já recebeste o teu bónus hoje. Volta amanhã!'
-                : 'Recebe 500 KZ virtuais grátis. Disponível uma vez por dia.'}
+              {bonusClaimed ? t('wallet.bonus.done') : t('wallet.bonus.desc')}
             </p>
           </div>
           <GameButton
@@ -215,11 +219,11 @@ export function WalletScreen() {
             aria-label="Receber bónus diário"
           >
             {bonusClaimed ? (
-              'Recebido'
+              t('wallet.bonus.received')
             ) : (
               <>
                 <Gift className="w-3.5 h-3.5 mr-1" />
-                Receber
+                {t('wallet.bonus.claim')}
               </>
             )}
           </GameButton>
@@ -228,7 +232,7 @@ export function WalletScreen() {
 
       {/* Missões */}
       <div>
-        <SectionTitle title="Missões" />
+        <SectionTitle title={t('wallet.missions')} />
         <div className="space-y-2">
           {missions.map((m) => {
             const pct = (m.current / m.target) * 100;
@@ -280,15 +284,17 @@ export function WalletScreen() {
       {/* Histórico da moeda virtual */}
       <div>
         <SectionTitle
-          title="Histórico do jogo"
+          title={t('wallet.history')}
           action={
-            <span className="text-xs text-muted-foreground">{transactions.length} movimentos</span>
+            <span className="text-xs text-muted-foreground">
+              {t('wallet.movements', { n: transactions.length })}
+            </span>
           }
         />
         <GameCard className="divide-y divide-border/30">
           {transactions.length === 0 ? (
             <div className="p-6 text-center text-sm text-muted-foreground">
-              Ainda não tens movimentos.
+              {t('wallet.no_tx')}
             </div>
           ) : (
             transactions.map((tx) => (
@@ -328,8 +334,8 @@ export function WalletScreen() {
       <div className="flex items-start gap-2.5 px-3 py-3 rounded-xl bg-surface/60 border border-border/40">
         <Info className="w-4 h-4 shrink-0 mt-0.5 text-muted-foreground" />
         <p className="text-xs text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Joga com responsabilidade.</strong> As moedas do jogo
-          são virtuais e sem valor monetário.{' '}
+          <strong className="text-foreground">{t('wallet.responsible.title')}</strong>{' '}
+          {t('wallet.responsible.desc')}{' '}
           {REAL_MONEY_ENABLED
             ? 'Os depósitos na carteira (AOA) envolvem dinheiro real e são processados por um prestador de pagamentos; os levantamentos exigem verificação de identidade (KYC).'
             : 'O jogo ainda não movimenta dinheiro real.'}

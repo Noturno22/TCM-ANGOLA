@@ -37,13 +37,14 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#131A16",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 200
         }
       ],
       "expo-audio",
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -52,9 +53,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "59f6d936-74a3-4099-bb5e-a3e5d6bfe853"
+        "projectId": "f5165061-9afa-4c45-a2c7-3a2bc7956a4d"
       }
     },
-    "owner": "isabel239898"
+    "owner": "samaina"
   }
 }

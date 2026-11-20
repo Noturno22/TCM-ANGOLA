@@ -32,6 +32,7 @@ import {
   alpha,
 } from '@/components/tira';
 import { useT } from '@/lib/i18n/hook';
+import { playSound } from '@/lib/sound';
 import { useProfile } from '@/store/profile';
 import { boardGeometry, colors, radii, spacing, type ColorToken } from '@/theme';
 
@@ -104,6 +105,7 @@ export default function ChallengeScreen() {
         const legal = getLegalMoves(currentState, 'P1');
         const targets = legal.filter((m) => m.from === sq).map((m) => m.to);
         Haptics.selectionAsync().catch(() => undefined);
+        playSound('select');
         setSelectedSquare(sq);
         setValidTargets(targets);
       } else if (selectedSquare && validTargets.includes(sq)) {
@@ -118,6 +120,7 @@ export default function ChallengeScreen() {
             setSelectedSquare(null);
             setValidTargets([]);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
+            playSound('move');
             if (isMate2) {
               setPhase('awaiting-ia');
             } else {
@@ -127,6 +130,8 @@ export default function ChallengeScreen() {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
                 () => undefined,
               );
+              playSound('win');
+              playSound('achievement');
             }
           } else {
             setPhase('wrong');
@@ -135,6 +140,7 @@ export default function ChallengeScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
               () => undefined,
             );
+            playSound('error');
             setTimeout(() => {
               setWrongFlash(false);
               setWrongMove(null);
@@ -149,6 +155,7 @@ export default function ChallengeScreen() {
           if (isWin) {
             const { state: newState } = applyMove(currentState, move);
             setCurrentState(newState);
+            playSound('move');
             setSelectedSquare(null);
             setValidTargets([]);
             setPhase('solved');
@@ -157,13 +164,16 @@ export default function ChallengeScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
               () => undefined,
             );
+            playSound('win');
+            playSound('achievement');
           } else {
-            setPhase('wrong');
+              setPhase('wrong');
             setWrongMove(move);
             setWrongFlash(true);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
               () => undefined,
             );
+            playSound('error');
             setTimeout(() => {
               setWrongFlash(false);
               setWrongMove(null);
@@ -185,6 +195,7 @@ export default function ChallengeScreen() {
       const iaMove = chooseMove(currentState, 'perfect', Date.now());
       if (iaMove) {
         const { state: newState } = applyMove(currentState, iaMove);
+        playSound('move');
         setCurrentState(newState);
         const wins = getWinningMoves(newState, 'P1');
         setPhase(wins.length > 0 ? 'second-move' : 'first-move');

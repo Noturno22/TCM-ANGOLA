@@ -12,6 +12,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createGame, isGameOver, type GameState, type PlayerId, type Square } from '@tira/engine';
 import { createAsyncStorage } from '@/lib/storage';
+import { playSound } from '@/lib/sound';
 import {
   aiSeed,
   applyAiMove,
@@ -69,20 +70,30 @@ export const useGameStore = create<GameStore>()(
       startGame: (opts) => {
         const match = createMatch(opts);
         set({ ...match, isAiThinking: false, startTime: Date.now() });
+        playSound('start');
       },
 
       selectSquare: (sq) => {
         const targets = selectableTargets(get(), sq);
         if (targets === null) return;
         set({ selectedSquare: sq, validTargets: targets });
+        playSound('select');
       },
 
       attemptMove: (to) => {
         const next = applyHumanMove(get(), to);
-        if (!next) return;
+        if (!next) {
+          if (get().selectedSquare !== null) playSound('error');
+          return;
+        }
         set({ ...next });
+        playSound('move');
         if (isGameOver(next.state)) {
+          if (next.state.winner) playSound('win');
+          else playSound('draw');
           recordCurrentMatch(get(), next.state);
+        } else if (next.currentThreats.length > 0) {
+          playSound('threat');
         }
       },
 
@@ -93,8 +104,13 @@ export const useGameStore = create<GameStore>()(
           : null;
         if (next) {
           set({ ...next, isAiThinking: false });
+          playSound('move');
           if (isGameOver(next.state)) {
+            if (next.state.winner) playSound('win');
+            else playSound('draw');
             recordCurrentMatch(get(), next.state);
+          } else if (next.currentThreats.length > 0) {
+            playSound('threat');
           }
           return;
         }

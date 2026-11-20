@@ -14,6 +14,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { alpha } from '@/components/tira/alpha';
+import { playSound } from '@/lib/sound';
 import { xpProgress } from '@/store/profile';
 import { colors, radii, spacing, typography } from '@/theme';
 
@@ -83,7 +84,11 @@ export function GameButton({
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled }}
       disabled={disabled}
-      onPress={onPress}
+      onPress={() => {
+        if (disabled) return;
+        playSound('click');
+        onPress?.();
+      }}
       style={({ pressed }) => [
         {
           height: spacing[12],

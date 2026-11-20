@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import type { ReactNode } from 'react';
 import { Pressable, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { alpha } from '@/components/tira/alpha';
+import { playSound } from '@/lib/sound';
 import { colors, radii, spacing, typography } from '@/theme';
 
 export type TiraButtonVariant = 'primary' | 'gold' | 'outline' | 'ghost' | 'p1' | 'p2';
@@ -103,6 +104,7 @@ export function TiraButton({
         if (disabled) return;
         if (haptic) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+          playSound('click');
         }
         onPress?.();
       }}

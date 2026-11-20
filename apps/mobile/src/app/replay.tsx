@@ -25,6 +25,7 @@ import {
 } from '@/components/tira';
 import { commentOnMove, commentOnStart } from '@/content';
 import { useT } from '@/lib/i18n/hook';
+import { playSound } from '@/lib/sound';
 import { useGameStore } from '@/store/game';
 import { useProfile, type MatchRecord } from '@/store/profile';
 import { boardGeometry, colors, radii, spacing } from '@/theme';
@@ -139,6 +140,7 @@ export default function ReplayScreen() {
                 accessibilityState={{ selected: active }}
                 onPress={() => {
                   Haptics.selectionAsync().catch(() => undefined);
+                  playSound('select');
                   setSelectedId(s.id);
                 }}
                 style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
@@ -209,6 +211,7 @@ function ReplayView({ source, onClose }: { source: ReplaySource; onClose: () => 
     if (!playing || isAtEnd) return;
     const timer = setTimeout(() => {
       Haptics.selectionAsync().catch(() => undefined);
+      playSound('move');
       setPly((p) => Math.min(totalPlies, p + 1));
     }, 900);
     return () => clearTimeout(timer);
@@ -228,6 +231,7 @@ function ReplayView({ source, onClose }: { source: ReplaySource; onClose: () => 
 
   const handlePlay = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+    playSound('click');
     if (isAtEnd) {
       setPly(0);
       setPlaying(true);
@@ -240,6 +244,7 @@ function ReplayView({ source, onClose }: { source: ReplaySource; onClose: () => 
     (delta: number) => {
       setPlaying(false);
       Haptics.selectionAsync().catch(() => undefined);
+      playSound('move');
       setPly((p) => Math.min(totalPlies, Math.max(0, p + delta)));
     },
     [totalPlies],

@@ -24,11 +24,15 @@ import { GameButton, GameCard } from '@/components/game/ui';
 import { CocoDoMeioPopup } from '@/components/game/CocoDoMeioPopup';
 import { isTrappedInMiddle } from '@/lib/cocoDoMeio';
 import { playSound } from '@/lib/sound';
+import { useI18n } from '@/lib/i18n/hook';
+import type { I18nKey, I18nVars } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 type ResultType = 'success' | 'failure' | null;
+type Translator = (key: I18nKey, vars?: I18nVars) => string;
 
 export function CampaignPlayScreen() {
+  const { t } = useI18n();
   const back = useApp((s) => s.back);
   const navigate = useApp((s) => s.navigate);
   const campaignLevelId = useApp((s) => s.campaignLevelId);
@@ -130,9 +134,9 @@ export function CampaignPlayScreen() {
       <div className="space-y-5 animate-slide-up pb-4">
         <GameCard className="p-8 text-center">
           <Flag className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground mb-4">Nenhum nível selecionado.</p>
+          <p className="text-sm text-muted-foreground mb-4">{t('campaign_play.none')}</p>
           <GameButton variant="p1" onClick={() => navigate('campaign')}>
-            Voltar à Campanha
+            {t('campaign_play.back')}
           </GameButton>
         </GameCard>
       </div>
@@ -156,7 +160,10 @@ export function CampaignPlayScreen() {
           </button>
           <div className="text-center flex-1 min-w-0">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Nível {level.id} • {diffLabel(level.difficulty)}
+              {t('campaign_play.level_of', {
+                id: level.id,
+                diff: t(`diff.${level.difficulty}`),
+              })}
             </p>
             <p className="text-xs text-gold font-medium truncate">{level.title}</p>
           </div>
@@ -180,11 +187,13 @@ export function CampaignPlayScreen() {
                <Target className="w-5 h-5" />}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Objetivo</p>
-              <p className="text-sm font-medium">{objectiveText(level)}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                {t('campaign_play.objective')}
+              </p>
+              <p className="text-sm font-medium">{objectiveText(level, t)}</p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] text-muted-foreground">Jogadas</p>
+              <p className="text-[10px] text-muted-foreground">{t('game.moves')}</p>
               <p className={cn(
                 'font-display text-lg',
                 level.objective.type === 'win_fast' && game.moveCount > (level.objective.maxMoves ?? 0)
@@ -209,6 +218,7 @@ export function CampaignPlayScreen() {
             winningLine={game.winningLine}
             threatSquares={[]}
             onSquareClick={handleSquareClick}
+            flipped={game.humanSide === 'P2'}
             disabled={game.state.currentPlayer !== game.humanSide}
             size="md"
           />
@@ -222,7 +232,7 @@ export function CampaignPlayScreen() {
             onClick={() => setShowHint((v) => !v)}
           >
             <Lightbulb className="w-4 h-4 mr-2" />
-            Dica
+            {t('campaign_play.hint')}
           </GameButton>
           <GameButton
             variant="p2"
@@ -230,7 +240,7 @@ export function CampaignPlayScreen() {
             onClick={handleRestart}
           >
             <RefreshCw className="w-4 h-4 mr-2" />
-            Reiniciar
+            {t('campaign_play.restart')}
           </GameButton>
         </div>
 
@@ -254,9 +264,9 @@ export function CampaignPlayScreen() {
         </AnimatePresence>
       </div>
 
-      {/* "Tira o coco do meio" — pop-ups animados (a minha vez encurralada) */}
+      {/* "Tira o coco do meio" — pop-ups animados (jogador da vez encurralado) */}
       <CocoDoMeioPopup
-        active={!gameEnded && game.state.currentPlayer === game.humanSide && isTrappedInMiddle(game.state)}
+        active={!gameEnded && isTrappedInMiddle(game.state)}
         moveCount={game.moveCount}
       />
 
@@ -290,12 +300,12 @@ export function CampaignPlayScreen() {
                       'font-display text-3xl leading-none tracking-wide',
                       result === 'success' ? 'text-p1 text-glow-gold' : 'text-p2',
                     )}>
-                      {result === 'success' ? 'NÍVEL COMPLETO!' : 'Tenta outra vez'}
+                      {result === 'success' ? t('campaign_play.complete') : t('campaign_play.fail')}
                     </h2>
                     <p className="text-xs text-muted-foreground mt-1">
                       {result === 'success'
-                        ? `+${level.reward} KZ de recompensa`
-                        : 'Não desistas! Tenta uma estratégia diferente.'}
+                        ? t('campaign_play.reward_line', { reward: level.reward })
+                        : t('campaign_play.fail.desc')}
                     </p>
                   </div>
                 </div>
@@ -303,7 +313,9 @@ export function CampaignPlayScreen() {
                 {/* Tabuleiro REAL da posição final */}
                 <div className="rounded-xl border border-border/60 bg-surface-2/60 p-3">
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
-                    {game.winningLine && game.winningLine.length === 3 ? 'Como foi a vitória' : 'Posição final'}
+                    {game.winningLine && game.winningLine.length === 3
+                      ? t('game.end.board_win')
+                      : t('game.end.board_final')}
                   </p>
                   <div className="flex justify-center">
                     <Board
@@ -322,8 +334,11 @@ export function CampaignPlayScreen() {
 
                 <p className="mt-3 mb-4 text-xs text-muted-foreground">
                   {game.lastMove
-                    ? `Última jogada: casa ${game.lastMove.from} → casa ${game.lastMove.to}`
-                    : 'Nenhuma linha foi completada.'}
+                    ? t('game.end.last_move', {
+                        from: game.lastMove.from,
+                        to: game.lastMove.to,
+                      })
+                    : t('game.end.no_line')}
                 </p>
 
                 <div className="space-y-2">
@@ -331,21 +346,23 @@ export function CampaignPlayScreen() {
                     <>
                       <GameButton variant="p1" className="w-full" onClick={handleNextLevel}>
                         <ChevronRight className="w-4 h-4 mr-2" />
-                        {getCampaignLevel(level.id + 1) ? 'Próximo nível' : 'Concluir campanha'}
+                        {getCampaignLevel(level.id + 1)
+                          ? t('campaign_play.next')
+                          : t('campaign_play.finish')}
                       </GameButton>
                       <GameButton variant="outline" className="w-full" onClick={handleRestart}>
                         <RefreshCw className="w-4 h-4 mr-2" />
-                        Jogar novamente
+                        {t('campaign_play.again')}
                       </GameButton>
                     </>
                   ) : (
                     <>
                       <GameButton variant="p1" className="w-full" onClick={handleRestart}>
                         <RefreshCw className="w-4 h-4 mr-2" />
-                        Tentar novamente
+                        {t('campaign_play.retry')}
                       </GameButton>
                       <GameButton variant="outline" className="w-full" onClick={() => navigate('campaign')}>
-                        Voltar à Campanha
+                        {t('campaign_play.back')}
                       </GameButton>
                     </>
                   )}
@@ -379,14 +396,14 @@ function checkObjective(
   return false;
 }
 
-function objectiveText(level: CampaignLevel): string {
+function objectiveText(level: CampaignLevel, t: Translator): string {
   const { objective } = level;
-  if (objective.type === 'win') return 'Vence a partida';
-  if (objective.type === 'win_fast') return `Vence em ${objective.maxMoves} jogadas ou menos`;
-  if (objective.type === 'survive') return `Resiste ${objective.minMoves} jogadas sem perder`;
-  return 'Vence a partida';
-}
-
-function diffLabel(d: string): string {
-  return d === 'easy' ? 'Fácil' : d === 'medium' ? 'Médio' : d === 'hard' ? 'Difícil' : 'Perfeito';
+  if (objective.type === 'win') return t('campaign_play.obj.win');
+  if (objective.type === 'win_fast') {
+    return t('campaign_play.obj.win_fast', { n: objective.maxMoves ?? 0 });
+  }
+  if (objective.type === 'survive') {
+    return t('campaign_play.obj.survive', { n: objective.minMoves ?? 0 });
+  }
+  return t('campaign_play.obj.win');
 }
